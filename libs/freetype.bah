@@ -1,0 +1,147 @@
+#cLib "lfreetype"
+
+#define FT_Library ptr
+#define FT_Face ptr
+#define FT_GlyphSlot ptr
+
+struct FT_Bitmap_ {
+    rows: uint32
+    width: uint32
+    pitch: int32
+    buff: byte*
+    num_grays: uint16
+    pixel_mode: byte
+    palette_mode: byte
+    palette: ptr
+}
+
+struct FT_Generic_ {
+    data: ptr
+    finalizer: function(ptr)
+}
+
+struct FT_BBox_ {
+    xMin: int
+    yMin: int
+    xMax: int
+    yMax: int
+}
+
+struct FT_Glyph_Metrics_ {
+    width: int
+    height: int
+    horiBearingX: int
+    horiBearingY: int
+    horiAdvance: int
+    vertBearingX: int
+    vertBearingY: int
+    vertAdvance: int
+
+}
+
+struct FT_Vector_ {
+    x: int
+    y: int
+}
+
+struct FT_Outline_ {
+    n_contours: uint16
+    n_points: uint16
+
+    points: FT_Vector_*
+    tags: byte*
+    contours: uint16*
+    flags: int32
+}
+
+struct FT_GlyphSlotRec_ {
+    library: FT_Library
+    face: FT_Face
+    next: FT_GlyphSlotRec_*
+    glyph_index: uint32
+    generic: FT_Generic_
+
+    metrics: FT_Glyph_Metrics_
+    linearHoriAdvance: int
+    linearVertAdvance: int
+    advance: FT_Vector_
+
+    format: uint
+
+    bitmap: FT_Bitmap_
+    bitmap_left: int32
+    bitmap_top: int32
+
+    outline: FT_Outline_
+
+    num_subglyphs: uint32
+    subglyphs: ptr
+
+    control_data: ptr
+    control_len: int
+
+    lsb_delta: int
+    rsb_delta: int
+
+    other: ptr
+
+    internal: ptr
+}
+
+struct FT_FaceRec_ {
+    num_faces: int
+    face_index: int
+
+    face_flags: int
+    style_flags: int
+
+    num_glyphs: int
+
+    family_name: byte*
+    style_name: byte*
+
+    num_fixed_sizes: int32
+    available_sizes: ptr
+
+    num_charmaps: int32
+    charmaps: ptr
+
+    generic: FT_Generic_
+
+    FT_BBox: FT_BBox_
+
+    units_per_EM: uint16
+    ascender: int16
+    descender: int16
+    height: int16
+
+    max_advance_width: int16
+    max_advance_height: int16
+
+    underline_position: int16
+    underline_thickness: int16
+
+    glyph: FT_GlyphSlotRec_*
+    size: ptr
+    charmap: ptr
+
+    driver: ptr
+    memory: ptr
+    stream: ptr
+
+    sizes_list: ptr
+
+    autohint: FT_Generic_
+    extensions: ptr
+
+    internal: ptr
+}
+
+#define FT_Init_FreeType(l FT_Library*) int
+#define FT_New_Face(l FT_Library, p byte*, i int, f FT_FaceRec_**) int
+#define FT_Done_Face(f FT_FaceRec_**)
+#define FT_Set_Char_Size(f FT_FaceRec_*, w int, h int, resH int, resV int) int
+#define FT_Set_Pixel_Sizes(f FT_FaceRec_*, w int, h int)
+#define FT_Get_Char_Index(f FT_FaceRec_*, c uint) uint
+#define FT_Load_Char(f FT_FaceRec_*, c uint, f int) int
+#define FT_Select_Charmap(f FT_FaceRec_*, e int) int

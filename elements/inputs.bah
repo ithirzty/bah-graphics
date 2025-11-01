@@ -1,0 +1,348 @@
+#import "../ui_struct.bah"
+
+#import "./base.bah"
+
+INPUT_BACKGROUND_COLOR = rgbColor{180, 180, 180}
+INPUT_FOCUSED_BACKGROUND_COLOR = rgbColor{220, 220, 220}
+INPUT_PLACEHOLDER_TEXT_COLOR = rgbColor{60,60,60}
+INPUT_TEXT_COLOR = rgbColor{0,0,0}
+INPUT_TEXT_SELECTION_COLOR = rgbColor{120, 120, 255}
+
+struct uiTextInput extend uiElement {
+    text: str = "Text input"
+    value: []byte
+    carret: uint
+    offsets: [int,int]
+    selection: [int, int]
+    selectionType: byte
+
+    _deleteSelection() {
+        from = this.selection[0]
+        to = this.selection[1]
+        i=from; for i < to, i++ {
+            delete(this.value, from)
+        }
+        this.carret = from
+        this.selectionType = 0
+    }
+
+    _handleArrowMovement(c uint32) {
+        if c == Char_arr_left {
+            if this.carret > 0 {
+                if this.window.isKeyModifier(Key_CTRL) {
+                    i = <int>(this.carret-2); for i != -1, i-- {
+                        if isSpace(this.value[i]) {
+                            break
+                        }
+                    }
+                    i++
+                    this.carret = i
+                } else {
+                    this.carret--
+                }
+            }
+        } else if c == Char_arr_right {
+            if this.carret < len(this.value) {
+                if this.window.isKeyModifier(Key_CTRL) {
+                    i = this.carret+1; for i < len(this.value), i++ {
+                        if isSpace(this.value[i]) {
+                            break
+                        }
+                    }
+                    this.carret = i
+                } else {
+                    this.carret++
+                }
+            }
+        } else if c == Char_arr_down {
+            this.carret = len(this.value)
+        } else if c == Char_arr_up {
+            this.carret = 0
+        }
+    }
+
+    _handleCursorMovement() {
+        elemPos = this.getPosition()
+        relPos = this.window.getCursorPosition()
+        relPos[0] -= elemPos[0] + this.padding[0]
+        // relPos[1] -= elemPos[1] + this.padding[1]
+
+        ui = <ui*>this.window
+
+
+        i=0; for i < len(this.value), i++ {
+            currDim = this.window.measureByteArr(ui.font, this.value, 0, i)[0]
+            if <int>currDim >= relPos[0] {
+                break
+            }
+        }
+
+        this.carret = i
+    }
+
+    events(evnt uint32) {
+        if evnt == windowEventKeyDown {
+            c = this.window.getEventChar()
+
+            if (c == Char_arr_left || c == Char_arr_right) && this.window.isKeyModifier(Key_SHIFT) {
+                if this.selectionType == 0 {
+                    if c = Char_arr_right {
+                        this.selectionType = 1
+                        this.selection[0] = this.carret
+                    } else if c == Char_arr_left {
+                        this.selectionType = 2
+                        this.selection[1] = this.carret
+                    }
+                }
+
+                this._handleArrowMovement(c)
+
+                if this.selectionType == 1 {
+
+                    if this.carret < this.selection[0] {
+                        this.selection[1] = this.selection[0]
+                        this.selection[0] = this.carret
+                        this.selectionType = 2
+                    } else {
+                        this.selection[1] = this.carret
+                    }
+
+                } else if this.selectionType == 2 {
+                    if this.carret > this.selection[1] {
+                        this.selection[0] = this.selection[1]
+                        this.selection[1] = this.carret
+                        this.selectionType = 1
+                    } else {
+                        this.selection[0] = this.carret
+                    }
+
+                }
+            } else {
+
+                if c == Char_backspace {
+                    if this.selectionType == 0 {
+                        if this.carret > 0 {
+                            delete(this.value, this.carret - 1)
+                            this.carret--
+                        }
+                    } else {
+                        this._deleteSelection()
+                    }
+                } else if c == Char_arr_left || c == Char_arr_right || c == Char_arr_down || c == Char_arr_up {
+                    this._handleArrowMovement(c)
+                } else if c == Char_delete {
+                    if this.carret < len(this.value) {
+                        delete(this.value, this.carret)
+                    }
+                } else if c == Char_delete {
+                    if this.carret < len(this.value) {
+                        delete(this.value, this.carret)
+                    }
+                } else if c == Char_left_shift || c == Char_right_shift {
+
+                } else if c == Char_Left_CTRL || c == Char_Right_CTRL {
+
+                } else if c == Char_tab || c == Char_shit_tab {
+                    ui = <ui*>this.window
+                    i=0; for i < len(ui.elements), i++ {
+                        if ui.elements[i] == this {
+                            if this.window.isKeyModifier(Key_SHIFT) {
+                                i--
+                                for i != -1, i-- {
+                                    if ui.elements[i].focusable {
+                                        ui.setFocus(ui.elements[i])
+                                        break
+                                    }
+                                }
+                                break
+                            } else {
+                                i++
+                                for i < len(ui.elements), i++ {
+                                    if ui.elements[i].focusable {
+                                        ui.setFocus(ui.elements[i])
+                                        break
+                                    }
+                                }
+                                break
+                            }
+                        }
+                    }
+                } else if c == Char_enter {
+                    
+                } else if this.window.isKeyModifier(Key_CTRL) {
+                    if c == <uint32>'a' {
+                        this.selectionType = 1
+                        this.carret = len(this.value)
+                        this.selection[0] = 0
+                        this.selection[1] = len(this.value)
+                    } else if c == <uint32>'c' {
+                        if this.selectionType != 0 {
+                            
+                        }
+                    } else if c == <uint32>'x' {
+                        if this.selectionType != 0 {
+                            
+                        }
+                    } else if c == <uint32>'v' {
+                        if this.selectionType != 0 {
+
+                        }
+                    }
+                } else {
+                    if c < 65000 {
+                        if this.selectionType != 0 {
+                            this._deleteSelection()
+                        }
+                        if this.carret == len(this.value) {
+                            this.value[len(this.value)] = c
+                        } else {
+                            i=len(this.value)
+                            for i > this.carret, i-- {
+                                this.value[i] = this.value[i-1]
+                            }
+                            this.value[this.carret] = c
+                        }
+                        this.carret++
+                    } else {
+                        println(intToStr(c))
+                    }
+                }
+
+                if c != Char_left_shift && c != Char_right_shift && this.window.isKeyModifier(Key_CTRL) == false {
+                    this.selectionType = 0
+                }
+            }
+
+        } else if evnt == uiEventElementClicked {
+            if this.window.isKeyModifier(Key_SHIFT) {
+                oCarret = this.carret
+                this._handleCursorMovement()
+                if this.selectionType == 0 {
+                    if this.carret > oCarret {
+                        this.selectionType = 1
+                        this.selection[0] = oCarret
+                    } else if this.carret < oCarret {
+                        this.selectionType = 2
+                        this.selection[1] = oCarret
+                    }
+                }
+
+
+                if this.selectionType == 1 {
+                    if this.carret < this.selection[0] {
+                        this.selection[1] = this.selection[0]
+                        this.selection[0] = this.carret
+                        this.selectionType = 2
+                    } else {
+                        this.selection[1] = this.carret
+                    }
+
+                } else if this.selectionType == 2 {
+                    if this.carret > this.selection[1] {
+                        this.selection[0] = this.selection[1]
+                        this.selection[1] = this.carret
+                        this.selectionType = 1
+                    } else {
+                        this.selection[0] = this.carret
+                    }
+
+                }
+            } else {
+                this.selectionType = 0
+                this._handleCursorMovement()
+            }
+        }
+    }
+
+    draw(w ui*) {
+        w.font.setSize(this.fontSize)
+
+        pos = this.getPosition()
+        size = this.getSize()
+
+        bgColor = INPUT_BACKGROUND_COLOR
+
+        if this.focused {
+            bgColor = INPUT_FOCUSED_BACKGROUND_COLOR
+        }
+
+        w.drawRoundedRect(pos, size, 8, bgColor)
+
+        fullTextLength = w.measureByteArr(w.font, this.value, 0, len(this.value))[0]
+        carretTextLength = w.measureByteArr(w.font, this.value, 0, this.carret)[0]
+
+        availableWidth = this.size[0] - this.padding[0] * 2
+
+        textMin = 0
+        textMax = len(this.value)
+
+        for carretTextLength >= availableWidth {
+            textMin++
+            carretTextLength = w.measureByteArr(w.font, this.value, textMin, this.carret)[0]
+        }
+
+        if fullTextLength >= availableWidth {
+            //TODO: calculate textMin and textMax based on overflow
+            i = textMin + 1
+            for i < textMax, i++ {
+                currDim = w.measureByteArr(w.font, this.value, textMin, i)[0]
+                if currDim > availableWidth {
+                    break
+                }
+            }
+            textMax = i
+        }
+
+        this.offsets = [textMin, textMax]
+
+        if this.focused && this.selectionType != 0 {
+            self = this.selection[0]
+            selt = this.selection[1]
+
+            if self < textMin {
+                self = textMin
+            }
+
+            if selt > textMax {
+                selt = textMax
+            }
+
+
+            textSizesSelectionFrom = w.measureByteArr(w.font, this.value, textMin, self)[0]
+            textSizesSelectionTo = w.measureByteArr(w.font, this.value, self, selt)[0]
+
+            w.drawRect([pos[0] + this.padding[0] + textSizesSelectionFrom, pos[1] + this.size[1] / 2 - this.fontSize], [textSizesSelectionTo, this.fontSize * 2], INPUT_TEXT_SELECTION_COLOR)
+        }
+
+        if len(this.value) == 0 {
+            w.drawText(w.font, this.text, INPUT_PLACEHOLDER_TEXT_COLOR, [pos[0] + this.padding[0], pos[1] + this.size[1] / 2 + this.fontSize / 2 + 2])
+        } else {
+            w.drawByteArr(w.font, this.value, textMin, textMax, INPUT_TEXT_COLOR, [pos[0] + this.padding[0], pos[1] + this.size[1] / 2 + this.fontSize / 2 + 2])
+        }
+
+        if this.focused {
+            textSizeToCarret = w.measureByteArr(w.font, this.value, textMin, this.carret)[0]
+            w.drawRect([pos[0] + this.padding[0] + textSizeToCarret, pos[1] + this.size[1] / 2 - this.fontSize], [1, this.fontSize * 2], BLACK)
+        }
+
+    }
+
+    _init() {
+        this._events = this.events
+        this._draw = this.draw
+
+        if this.fontSize == 0 {
+            this.fontSize = 8
+        }
+
+        if this.padding[0] == 0 {
+            this.padding = [8, 8]
+        }
+
+        if this.size[0] == 0 {
+            this.size = [300, this.fontSize + this.padding[1] * 2]
+        }
+
+        this.cursor = "xterm"
+    }
+}

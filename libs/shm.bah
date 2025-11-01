@@ -1,0 +1,57 @@
+
+struct ipc_perm {
+    uid: uint32
+    gid: uint32
+    cuid: uint32
+    guid: uint32
+    mode: uint32
+}
+
+//Location: /usr/include/bits/types/struct_shmid_ds.h:24
+struct shmid_ds {
+	shm_perm: ipc_perm
+	shm_segsz: int32
+	shm_atime: int
+	shm_dtime: int
+	shm_ctime: int
+	shm_cpid: int32
+	shm_lpid: int32
+	shm_nattch: uint
+	__glibc_reserved5: uint
+	__glibc_reserved6: uint
+}
+
+//Location: /usr/include/bits/shm.h:83
+struct shminfo {
+	shmmax: uint
+	shmmin: uint
+	shmmni: uint
+	shmseg: uint
+	shmall: uint
+	__glibc_reserved1: uint
+	__glibc_reserved2: uint
+	__glibc_reserved3: uint
+	__glibc_reserved4: uint
+}
+
+//Location: /usr/include/bits/shm.h:96
+struct shm_info {
+	used_ids: int32
+	shm_tot: uint
+	shm_rss: uint
+	shm_swp: uint
+	swap_attempts: uint
+	swap_successes: uint
+}
+
+//Location: /usr/include/sys/shm.h:50
+#define shmctl(__shmid int32, __cmd int32, __buf shmid_ds*) int32
+
+//Location: /usr/include/sys/shm.h:62
+#define shmget(__key int32, __size uint, __shmflg int32) int32
+
+//Location: /usr/include/sys/shm.h:65
+#define shmat(__shmid int32, __shmaddr ptr, __shmflg int32) ptr
+
+//Location: /usr/include/sys/shm.h:69
+#define shmdt(__shmaddr ptr) int32

@@ -1,0 +1,334 @@
+#import "time.bah"
+
+#import "./graphics.bah"
+
+const uiEventElementAdded    = 1024
+const uiEventElementHoverIn  = 1025
+const uiEventElementHoverOut = 1026
+const uiEventElementClicked  = 1027
+const uiEventElementFocusIn  = 1028
+const uiEventElementFocusOut = 1029
+
+#import "./elements/base.bah"
+
+#define __uiHandleEvents(ui window*, event uint32)
+#define __uiSetElementOnFocus(ui window*, elem uiElement*)
+
+struct ui extend window {
+    font: font
+    elements: []uiElement*
+    focusedElement: uiElement*
+
+    frameStart: uint
+    isDrawing: bool
+
+    alreadyDrawn: bool
+    needsRedraw: bool
+
+    _init() {
+        this.font = getSystemUIfont()
+        this.events = __uiHandleEvents
+    }
+
+    addElement(elem uiElement*) {
+        elem.window = this
+        this.elements[len(this.elements)] = elem
+        if this.isExposed {
+            if this.isDrawing == false {
+                this.frameStart = getTimeUnix()
+            }
+            this.redraw()
+        }
+    }
+
+    setFocus(elem uiElement*) {
+        __uiSetElementOnFocus(this, elem)
+    }
+}
+
+__uiPropagateUpdateElementMask(ui ui*, currElem uiElement*) {
+    i=0; for i < len(currElem.elements), i++ {
+        pos = currElem.elements[i].getPosition()
+        size = currElem.elements[i].getSize()
+        if currElem.elements[i].manualDrawingMode == false {
+            ui.getRect(pos, size, currElem.elements[i].maskedBuffer)
+        }
+    }
+}
+
+__uiRedrawElement(ui ui*, elem uiElement*) {
+    if ui.isDrawing == false {
+        ui.frameStart = getTimeUnix()
+        ui.isDrawing = true
+    }
+    ui.needsRedraw = true
+    currElem = elem
+    for currElem != null, currElem = currElem.parent {
+        if currElem.hashChanged() == false {
+            ui.alreadyDrawn = true
+            drawFn = currElem._draw
+            if drawFn != null {
+                pos = currElem.getPosition()
+                size = currElem.getSize()
+                if currElem.manualDrawingMode == false {
+                    ui.drawRectImage(pos, size, currElem.maskedBuffer)
+                }
+
+                drawFn(currElem, ui)
+                __uiPropagateUpdateElementMask(ui, currElem)
+
+                i=0; for i < len(currElem.elements), i++ {
+                    __uiRedrawElement(ui, currElem.elements[i])
+                }
+                break
+            }
+        }
+    }
+
+    if currElem == null {
+        ui.alreadyDrawn = false
+    }
+
+}
+
+__uiDispatchEvent(ui ui*, elem uiElement*, event uint32) {
+    currElem = elem
+    fn = currElem._events
+    if fn != null {
+        fn(currElem, event)
+    }
+
+    // if elem.manualDrawingMode == false {
+        __uiRedrawElement(ui, elem)
+    // }
+}
+
+_uiElementRecusriveRemove(elem uiElement*, ui ui*, forceRemove bool) bool {
+    toRemove = forceRemove || elem.toRemove
+    hasRemoved = false
+    i=0; for i < len(elem.elements), i++ {
+        if _uiElementRecusriveRemove(elem.elements[i], ui, toRemove) {
+            if forceRemove == false {
+                hasRemoved = true
+                delete(elem.elements, i)
+                i--
+            }
+        }
+    }
+
+    if hasRemoved && toRemove == false {
+        __uiRedrawElement(ui, elem)
+    }
+
+    return toRemove
+}
+
+_uiElementRecusriveResetHover(elem uiElement*, ui ui*) {
+    wasHovered = elem.hovered
+    elem.hovered = false
+    if wasHovered {
+        __uiRedrawElement(ui, elem)
+        __uiDispatchEvent(ui, elem, uiEventElementHoverOut)
+    }
+    
+    i=0; for i < len(elem.elements), i++ {
+        _uiElementRecusriveResetHover(elem.elements[i], ui)
+    }
+}
+
+_uiElementRecusriveHover(elem uiElement*, ui ui*, pos [int,int]) [uiElement*, uint, bool] {
+    elemPos = elem.getPosition()
+    elemSize = elem.getSize()
+    cursorChanged = false
+    nb = 0
+    if pos[0] >= elemPos[0] && pos[0] < elemPos[0] + elemSize[0] {
+        if pos[1] >= elemPos[1] && pos[1] < elemPos[1] + elemSize[1] {
+            wasHovered = elem.hovered
+            elem.hovered = true
+            nb++
+            i=0; for i < len(elem.elements), i++ {
+                childCons = _uiElementRecusriveHover(elem.elements[i], ui, pos)
+                nb += childCons[1]
+                if childCons[2] {
+                    cursorChanged = true
+                }
+                if childCons[0] != null {
+                    if len(childCons[0].cursor) != 0 {
+                        ui.setCursor(childCons[0].cursor)
+                        cursorChanged = true
+                    }
+                    __uiDispatchEvent(ui, childCons[0], uiEventElementHoverIn)
+                }
+            }
+
+            if wasHovered {
+                if len(elem.cursor) != 0 {
+                    cursorChanged = true
+                }
+
+                return [null, nb, cursorChanged]
+            }
+
+            if len(elem.cursor) != 0 {
+                ui.setCursor(elem.cursor)
+                cursorChanged = true
+            }
+            __uiDispatchEvent(ui, elem, uiEventElementHoverIn)
+
+            return [elem, nb, cursorChanged]
+        }
+    }
+    _uiElementRecusriveResetHover(elem, ui)
+    return [null, nb, false]
+}
+
+_uiElementRecusriveCollide(elem uiElement*, pos [int,int]) uiElement* {
+    elemPos = elem.getPosition()
+    elemSize = elem.getSize()
+    if pos[0] >= elemPos[0] && pos[0] < elemPos[0] + elemSize[0] {
+        if pos[1] >= elemPos[1] && pos[1] < elemPos[1] + elemSize[1] {
+            if elem.focusable {
+                return elem
+            }
+
+            i=0; for i < len(elem.elements), i++ {
+                ce = _uiElementRecusriveCollide(elem.elements[i], pos)
+                if ce != null && ce.focusable {
+                    return ce
+                }
+            }
+        }
+    }
+    return null
+}
+
+__uiSetElementOnFocus(ui ui*, elem uiElement*) {
+    if ui.focusedElement != null {
+        ui.focusedElement.clicked = false
+        __uiRedrawElement(ui, ui.focusedElement)
+        ui.focusedElement.focused = false
+        __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
+        ui.focusedElement = null
+    }
+    ui.focusedElement = elem
+    ui.focusedElement.focused = true
+    __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusIn)
+    elem.clicked = true
+    __uiRedrawElement(ui, elem)
+}
+
+__uiForceDrawElement(ui ui*, elem uiElement*) {
+    fn = elem._draw
+    if fn != null {
+        fn(elem, ui)
+        elem.hashChanged()
+    }
+
+    i=0; for i < len(elem.elements), i++ {
+        __uiForceDrawElement(ui, elem.elements[i])
+    }
+}
+
+__uiHandleEvents(ui ui*, event uint32) {
+    if event == windowEventInitialize || event == windowEventDraw {
+        i=0; for i < len(ui.elements), i++ {
+            if ui.elements[i].toRemove {
+                _uiElementRecusriveRemove(ui.elements[i], ui, true)
+                delete(ui.elements, i)
+                ui.alreadyDrawn = false
+                i--
+            }
+        }
+        if ui.alreadyDrawn == false {
+            if ui.isDrawing == false {
+                ui.frameStart = getTimeUnix()
+                ui.isDrawing = true
+            }
+            ui.clear(WHITE)
+            i=0; for i < len(ui.elements), i++ {
+                __uiForceDrawElement(ui, ui.elements[i])
+            }
+        } else {
+            ui.alreadyDrawn = false
+        }
+        if ui.isDrawing {
+            ui.isDrawing = false
+            totalTime = (getTimeUnix() - ui.frameStart)
+            // ms = totalTime / 1000000
+            // fps = 1000000000 / totalTime
+            // print("Frame took: "+uintToStr(ms)+" ms\t("+uintToStr(fps)+" fps)        \r")
+        }
+    }
+
+    if event == windowEventKeyDown || event == windowEventKeyUp {
+        if ui.focusedElement != null {
+            __uiDispatchEvent(ui, ui.focusedElement, event)
+        }
+    } else if event == windowEventMouseMove {
+        pos = ui.getCursorPosition()
+        nb = 0
+        cursorChanged = false
+        i=0; for i < len(ui.elements), i++ {
+            elems = _uiElementRecusriveHover(ui.elements[i], ui, pos)
+            nb += elems[1]
+            if elems[2] {
+                cursorChanged = true
+            }
+            if elems[0] != null {
+                break
+            }
+        }
+
+        if nb == 0 || cursorChanged == false {
+            ui.setCursor("left_ptr")
+        }
+    }else if event == windowEventMouseDown {
+        pos = ui.getCursorPosition()
+        clickedBtn = ui.getEventButton()
+        if clickedBtn == MOUSE_LEFT_BUTTON {
+            i=0; for i < len(ui.elements), i++ {
+                elem = _uiElementRecusriveCollide(ui.elements[i], pos)
+                if elem != null {
+                    __uiSetElementOnFocus(ui, elem)
+                    break
+                }
+            }
+        }
+    } else if event == windowEventMouseUp {
+        pos = ui.getCursorPosition()
+        clickedBtn = ui.getEventButton()
+        if clickedBtn == MOUSE_LEFT_BUTTON {
+            if ui.focusedElement != null {
+                i=0; for i < len(ui.elements), i++ {
+                    elem = _uiElementRecusriveCollide(ui.elements[i], pos)
+                    if elem != null {
+                        if elem != ui.focusedElement {
+                            ui.focusedElement.clicked = false
+                            __uiRedrawElement(ui, ui.focusedElement)
+                            ui.focusedElement.focused = false
+                            __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
+                            ui.focusedElement = null
+                        } else {
+                            elem.clicked = false
+                            __uiDispatchEvent(ui, elem, uiEventElementClicked)
+                            break
+                        }
+                    }
+                }
+                if i == len(ui.elements) && ui.focusedElement != null {
+                    ui.focusedElement.clicked = false
+                    __uiRedrawElement(ui, ui.focusedElement)
+                    ui.focusedElement.focused = false
+                    __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
+                    ui.focusedElement = null
+                }
+            }
+        }
+    }
+
+    if ui.needsRedraw {
+        ui.redraw()
+        ui.needsRedraw = false
+    }
+
+}

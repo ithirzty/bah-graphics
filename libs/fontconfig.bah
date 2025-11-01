@@ -1,0 +1,14 @@
+#cLib "lfontconfig"
+
+#define FcConfig ptr
+#define FcPattern ptr
+
+#define FcConfigGetCurrent() FcConfig*
+#define FcNameParse(name char*) FcPattern*
+#define FcConfigSubstitute(config FcConfig*, p FcPattern*, kind int32) bool
+#define FcDefaultSubstitute(p FcPattern*)
+#define FcFontMatch(config FcConfig*, p FcPattern*, res int32*) FcPattern*
+#define FcPatternGetString(p FcPattern*, obj char*, n int32, res char**) int32
+#define FcPatternDestroy(p FcPattern*)
+#define FcFini()
+#define FcInit()

@@ -1,0 +1,168 @@
+#import "string.bah"
+
+#import "./libs/freetype.bah"
+#import "./libs/fontconfig.bah"
+
+#import "./colors.bah"
+
+struct __fontGlyphCache {
+    codepoint: uint32
+    size: uint32
+    glyph: FT_GlyphSlotRec_
+}
+
+struct font {
+    lib: FT_Library
+    face: FT_FaceRec_*
+    fontSize: uint
+    currX: int
+    currY: int
+    slotsCache: []__fontGlyphCache
+
+    load(path str) bool {
+        if this.face != null {
+            FT_Done_Face(this.face)
+        }
+        err = FT_Init_FreeType(&this.lib)
+        if err != 0 {
+            println("error initializing freetype2")
+            return false
+        }
+
+        err = FT_New_Face(this.lib, cStr(path), 0, &this.face)
+
+        if err != 0 {
+            panic("error loading font")
+            return false
+        }
+        return true
+    }
+
+    setSize(s uint) {
+        FT_Set_Char_Size(this.face, s * 64, s * 64, 96, 128)
+        this.fontSize = s
+    }
+
+    writeChar(c uint32, color rgbColor, setPixel function(ptr, [int,int], rgbColor), window ptr) {
+        slot = this.face.glyph
+
+        i=0; for i < len(this.slotsCache), i++ {
+            sc = &this.slotsCache[i]
+            if sc.codepoint == c && sc.size == this.fontSize {
+                slot = &sc.glyph
+                break
+            }
+        }
+
+        if i == len(this.slotsCache) {
+            err = FT_Load_Char(this.face, c, 4)
+            if err != 0 {
+                panic("error loading char")
+            }
+            this.slotsCache[i] = __fontGlyphCache {
+                codepoint: c
+                glyph: *slot
+                size: this.fontSize
+            }
+            this.slotsCache[i].glyph.bitmap.buff = <byte*>memoryAllocSTR_NZ(slot.bitmap.pitch * slot.bitmap.rows)
+
+            memcpy(this.slotsCache[i].glyph.bitmap.buff, slot.bitmap.buff, slot.bitmap.pitch * slot.bitmap.rows)
+
+        }
+
+        bitmap = slot.bitmap
+        raw = <byte*>bitmap.buff
+
+        y=0; for y < bitmap.rows, y++ {
+            linePtr = <byte*>(<uint>raw + y * bitmap.pitch)
+            if bitmap.pitch < 0 {
+                linePtr = <byte*>(<uint>raw + y * (bitmap.rows - 1 - y) * (0 - bitmap.pitch))
+            }
+            x = 0; for x < bitmap.width, x++ {
+                rColor rgbColor
+
+                if bitmap.pixel_mode == 1 {
+                    rawC = <byte*>(<uint>linePtr + (x >> 3))
+                    n = 0
+                    mask = 0x80
+                    for n < (x & 7), n++ {
+                        mask = mask >> 1
+                    }
+
+                    if *rawC & mask != 0 {
+                        rColor = color
+                    }
+                } else {
+                    rColor = color
+                    rColor.a = *<byte*>(<uint>linePtr + x)
+                }
+
+                
+                rx = this.currX + x + slot.bitmap_left
+                ry = this.currY + y - slot.bitmap_top
+
+                setPixel(window, [rx, ry], rColor)
+            }
+        }
+
+        this.currX += (slot.advance.x >> 6)
+        this.currY += (slot.advance.y >> 6)
+    }
+
+    measureChar(c uint32) {
+        slot = this.face.glyph
+
+        i=0; for i < len(this.slotsCache), i++ {
+            sc = &this.slotsCache[i]
+            if sc.codepoint == c && sc.size == this.fontSize {
+                slot = &sc.glyph
+                break
+            }
+        }
+
+        if i == len(this.slotsCache) {
+            err = FT_Load_Char(this.face, c, 4)
+            if err != 0 {
+                panic("error loading char")
+            }
+            this.slotsCache[i] = __fontGlyphCache {
+                codepoint: c
+                glyph: *slot
+                size: this.fontSize
+            }
+            this.slotsCache[i].glyph.bitmap.buff = <byte*>memoryAllocSTR_NZ(slot.bitmap.pitch * slot.bitmap.rows)
+
+            memcpy(this.slotsCache[i].glyph.bitmap.buff, slot.bitmap.buff, slot.bitmap.pitch * slot.bitmap.rows)
+
+        }
+
+        this.currX += (slot.advance.x >> 6)
+        this.currY += (slot.advance.y >> 6)
+    }
+
+}
+
+getSystemUIfont() font {
+    FcInit()
+
+    config = FcConfigGetCurrent()
+    pat = FcNameParse("")
+    FcConfigSubstitute(config, pat, 0)
+    FcDefaultSubstitute(pat)
+
+    systemUiFont = font{}
+
+    res = 0
+    font = FcFontMatch(config, pat, &res)
+    if font != null {
+        file byte*
+        FcPatternGetString(font, "file", 0, &file)
+        systemUiFont.load(cStrToBah(file))
+        FcPatternDestroy(font)
+    }
+
+    FcPatternDestroy(pat)
+    FcFini()
+    systemUiFont.setSize(12)
+    return systemUiFont
+}

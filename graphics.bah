@@ -1,0 +1,723 @@
+#import "iostream.bah"
+#import "string.bah"
+#import "json.bah"
+
+#import "./libs/xcb.bah"
+#import "./libs/shm.bah"
+#import "./libs/math.bah"
+
+#import "./colors.bah"
+#import "./fonts.bah"
+#import "./keys.bah"
+
+const windowEventInitialize = 0
+const windowEventDraw = 1
+const windowEventMouseMove = 2
+const windowEventClose = 3
+const windowEventMouseDown = 4
+const windowEventMouseUp = 5
+const windowEventKeyDown = 6
+const windowEventKeyUp = 7
+
+const __graphicsDrawRequestTypeRect = 0
+const __graphicsDrawRequestTypeCircle = 1
+const __graphicsDrawRequestTypeRectImg = 2
+
+const __graphicsNbDrawers = 1
+
+struct __graphicsDrawRequest {
+    from: [int,int]
+    to: [int,int]
+    color: rgbColor*
+    type: byte
+}
+
+struct window {
+    connection: ptr
+    screen: xcb_screen_t*
+    window: uint32
+    keySyms: ptr
+    cursorCtx: ptr
+    frameBuffer: byte*
+    events: function(window*, uint32)
+
+    width: uint
+    height: uint
+
+    lastKeyCode: byte
+    lastMouseCode: byte
+    keyModifiers: uint
+    shiftLock: bool
+
+    isExposed: bool
+    isRunning: bool
+    
+    callEventFunction(event uint32) {
+        eventFn = this.events
+        if eventFn == null {
+            return
+        }
+
+        eventFn(this, event)
+    }
+
+    isKeyModifier(keyMod uint32) bool {
+        if keyMod == Key_CTRL {
+            return this.keyModifiers & 0x01 != 0
+        }
+
+        if keyMod == Key_SHIFT || keyMod == Char_left_shift || keyMod == Char_right_shift {
+            return this.keyModifiers & 0x02 != 0
+        }
+
+        if keyMod == Key_ALT {
+            return this.keyModifiers & 0x04 != 0
+        }
+
+        if keyMod == Key_ALT_GR {
+            return this.keyModifiers & 0x08 != 0
+        }
+
+        return false
+    }
+
+    getEventKey() byte {
+        return this.lastKeyCode
+    }
+
+    getEventChar() uint32 {
+        col = 0
+        if this.isKeyModifier(Key_SHIFT) || this.shiftLock {
+            col = 1
+        }
+        n = xcb_key_symbols_get_keysym(this.keySyms, this.lastKeyCode, col)
+        if n == 0 {
+            n = xcb_key_symbols_get_keysym(this.keySyms, this.lastKeyCode, 0)
+        }
+        return n
+    }
+
+    getEventButton() byte {
+        return this.lastMouseCode
+    }
+
+    getCursorPosition() [int, int] {
+        cookie = xcb_query_pointer(this.connection, this.window)
+        reply = xcb_query_pointer_reply(this.connection, cookie, null)
+
+        return [<uint>reply.win_x, <uint>reply.win_y]
+    }
+
+    setCursor(name str) {
+        cursor = xcb_cursor_load_cursor(this.cursorCtx, name)
+        xcb_change_window_attributes(this.connection, this.window, XCB_CW_CURSOR, &cursor)
+    }
+
+    redraw() {
+        xcb_clear_area(this.connection, 1, this.window, 0, 0, 0, 0)
+        // expose = xcb_expose_event_t {
+        //     response_type: 23
+        //     window: this.window
+        //     x: 0
+        //     y: 0
+        //     width: this.width
+        //     height: this.height
+        //     count: 0
+        // }
+
+        // xcb_send_event(
+        //     this.connection,
+        //     0,                 // propagate = false
+        //     this.window,
+        //     XCB_EVENT_MASK_EXPOSURE,
+        //     <ptr>&expose
+        // )
+        xcb_flush(this.connection)
+    }
+
+    close() {
+        ev = xcb_client_message_event_t{
+            response_type: 33
+            format: 32
+            window: this.window
+            type: 68
+        }
+
+        xcb_send_event(
+            this.connection,
+            0,
+            this.window,
+            XCB_EVENT_MASK_NO_EVENT,
+            <ptr>&ev
+        )
+        xcb_flush(this.connection)
+    }
+
+    clear(color rgbColor) {
+        n = <uint32>color
+        memset(this.frameBuffer, n, this.width * this.height * 4)
+    }
+
+    setPixel(pos [int,int], color rgbColor) {
+        offset = (pos[1] * this.width + pos[0]) * 4
+
+        if offset < 0 || offset >= this.width * this.height * 4 {
+            return
+        }
+
+        if color.a != 255 {
+            da = <float><uint>color.a / 255.0
+            ida = 1.0 - da
+
+            color.b = <uint>(<float><uint>color.b * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset))     * ida)
+            color.g = <uint>(<float><uint>color.g * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset + 1)) * ida)
+            color.r = <uint>(<float><uint>color.r * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset + 2)) * ida)
+        }
+
+        v = (<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16)
+        *(<uint32*>(<uint>this.frameBuffer + offset)) = v
+
+        // *(<byte*>(<uint>this.frameBuffer + offset)) = color.b
+        // *(<byte*>(<uint>this.frameBuffer + offset + 1)) = color.g
+        // *(<byte*>(<uint>this.frameBuffer + offset + 2)) = color.r
+    }
+
+    currentGraphicsRequest: __graphicsDrawRequest
+    haveFrame: mutexCondition
+    haveFrameMut: mutex
+    frameDone: byte
+
+    __threadedDrawer(m uint) {
+        req = &this.currentGraphicsRequest
+
+        if req.type == __graphicsDrawRequestTypeRect {
+            nbLines = ((req.to[1] - req.from[1]) / (__graphicsNbDrawers + 1))
+            localFrom = req.from[1] + m * nbLines
+            localTo = localFrom + nbLines
+            y = localFrom
+            for y < localTo, y ++ {
+                x = req.from[0]
+                for x < req.to[0], x++ {
+                    this.setPixel([x,y], *req.color)
+                }
+            }
+        } else if req.type == __graphicsDrawRequestTypeRectImg {
+            println("img")
+            nbLines = ((req.to[1] - req.from[1]) / (__graphicsNbDrawers + 1))
+            localFrom = req.from[1] + m * nbLines
+            localTo = localFrom + nbLines
+            y = localFrom
+            buff = <[]rgbColor>req.color
+            width = req.to[0] - req.from[0]
+            for y < localTo, y ++ {
+                n = y * width
+                x = req.from[0]
+                for x < req.to[0], x++ {
+                    this.setPixel([x,y], buff[n])
+                    n++
+                }
+            }            
+        }
+    }
+
+    __drawThreadworker(m uint) {
+        for true {
+            this.haveFrame.wait(this.haveFrameMut)
+
+            if this.isRunning == false {
+                break
+            }
+
+            this.__threadedDrawer(m)
+
+            atomic_add(&this.frameDone, 1)
+        }
+    }
+
+    __drawRequest(req __graphicsDrawRequest) {
+        this.currentGraphicsRequest = req
+        this.frameDone = 0
+        this.haveFrame.broadcast()
+
+        this.__threadedDrawer(0)
+
+        for atomic_load(&this.frameDone) != __graphicsNbDrawers {
+            sched_yield()
+        }
+    }
+
+    getRect(pos [int, int], size [uint, uint], buff []rgbColor) {
+        n = 0
+        y=pos[1]; for y < pos[1] + size[1], y++ {
+            if y >= this.height || y < 0 {
+                continue
+            }
+            x = pos[0]; for x < pos[0] + size[0], x++ {
+                if x >= this.width || x < 0 {
+                    continue
+                }
+
+                offset = (y * this.width + x) * 4
+                color = rgbColor{}
+                color.b = *(<byte*>(<uint>this.frameBuffer + offset))
+                color.g = *(<byte*>(<uint>this.frameBuffer + offset + 1))
+                color.r = *(<byte*>(<uint>this.frameBuffer + offset + 2))
+                buff[n] = color
+                n++
+            }
+        }
+    }
+
+    drawRect(pos [int, int], size [uint, uint], color rgbColor) {
+        if color.a == 0 {
+            return
+        }
+        max = [pos[0] + size[0], pos[1] + size[1]]
+
+        if size[0] * size[1] > 100000 {
+            this.__drawRequest(__graphicsDrawRequest{
+                from: pos
+                to: max
+                color: &color
+                type: __graphicsDrawRequestTypeRect
+            })
+            return
+        }
+
+
+        y=pos[1]; for y < max[1], y++ {
+            if y >= this.height || y < 0 {
+                continue
+            }
+            x = pos[0]; for x < max[0], x++ {
+                if x >= this.width || x < 0 {
+                    continue
+                }
+                
+                this.setPixel([x,y], color)
+            }
+        }
+    }
+
+    drawRectImage(pos [int, int], size [uint, uint], buff []rgbColor) {        
+        n = 0
+        max = [pos[0] + size[0], pos[1] + size[1]]
+
+        if size[0] * size[1] > 100000 {
+            this.__drawRequest(__graphicsDrawRequest{
+                from: pos
+                to: max
+                color: <ptr>buff
+                type: __graphicsDrawRequestTypeRectImg
+            })
+            return
+        }
+
+
+        y=pos[1]; for y < max[1], y++ {
+            if y >= this.height || y < 0 {
+                continue
+            }
+            x = pos[0]; for x < max[0], x++ {
+                if x >= this.width || x < 0 {
+                    continue
+                }
+                
+                this.setPixel([x,y], buff[n])
+                n++
+            }
+        }
+    }
+
+    drawCircle(pos [int, int], radi uint, color rgbColor) {
+        if color.a == 0 {
+            return
+        }
+        fradi = <float>radi
+        y=pos[1] - radi; for y < pos[1] + radi, y++ {
+            if y >= this.height || y < 0 {
+                continue
+            }
+            x = pos[0] - radi; for x < pos[0] + radi, x++ {
+                if x >= this.width || x < 0 {
+                    continue
+                }
+
+                dx = <float>x - <float>pos[0]
+                dy = <float>y - <float>pos[1]
+                d = sqrt(dx*dx + dy*dy)
+                if d > fradi {
+                    continue
+                }
+
+                rColor = color
+
+                if fradi - d < 1.0 {
+                    rColor.a = <byte>((fradi - d) / 1.0 * 255.0)
+                }
+
+                this.setPixel([x,y], rColor)
+            }
+        }
+    }
+
+    drawRoundedRect(pos [int, int], size [uint, uint], radi uint, color rgbColor) {        
+        if color.a == 0 {
+            return
+        }
+        center = [pos[0] + size[0] / 2, pos[1] + size[1] / 2]
+        corners = [size[0] / 2 - radi, size[1] / 2 - radi]
+        y=pos[1]; for y < pos[1] + size[1], y++ {
+            if y >= this.height || y < 0 {
+                continue
+            }
+            x = pos[0]; for x < pos[0] + size[0], x++ {
+                offset = (y * this.width + x) * 4
+                if x >= this.width || x < 0 {
+                    continue
+                }
+
+                dx = x - center[0]
+                dy = y - center[1]
+
+                if dx < 0 {
+                    dx = 0 - dx
+                }
+
+                if dy < 0 {
+                    dy = 0 - dy
+                }
+
+                if dx > corners[0] && dy > corners[1] {
+                    continue
+                }
+
+
+                this.setPixel([x,y], color)
+            }
+
+        }
+
+        this.drawCircle([pos[0] + radi - 1, pos[1] + radi - 1], radi, color)
+        this.drawCircle([pos[0] + size[0] - radi, pos[1] + radi - 1], radi, color)
+        this.drawCircle([pos[0] + radi - 1, pos[1] + size[1] - radi], radi, color)
+        this.drawCircle([pos[0] + size[0] - radi, pos[1] + size[1] - radi], radi, color)
+    }
+
+    drawText(fnt font, text str, color rgbColor, pos [int, int]) {
+        fnt.currX = pos[0]
+        fnt.currY = pos[1]
+        i=0; for i < len(text), i++ {
+            codePoint = <uint32>text[i]
+
+            if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
+                if text[i] & 0xE0 == 0xC0 {
+                    codePoint = <uint32>((text[i] & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
+                    i++
+                } else if text[i] & 0xF0 == 0xE0 && i+2 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
+                    i += 2
+                } else if text[i] & 0xF8 == 0xF0 && i+3 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
+                    i += 3
+                }
+            }
+
+
+            fnt.writeChar(codePoint, color, this.setPixel, this)
+        }
+    }
+
+    drawByteArr(fnt font, text []byte, from uint, to uint, color rgbColor, pos [int, int]) {
+        fnt.currX = pos[0]
+        fnt.currY = pos[1]
+        i=from; for i < to, i++ {
+            codePoint = <uint32>text[i]
+
+            if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
+                if text[i] & 0xE0 == 0xC0 {
+                    codePoint = <uint32>((text[i] & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
+                    i++
+                } else if text[i] & 0xF0 == 0xE0 && i+2 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
+                    i += 2
+                } else if text[i] & 0xF8 == 0xF0 && i+3 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
+                    i += 3
+                }
+            }
+
+            fnt.writeChar(codePoint, color, this.setPixel, this)
+        }
+    }
+
+    measureText(fnt font, text str) [uint, uint] {
+        ocx = fnt.currX
+        ocy = fnt.currY
+        fnt.currX = 0
+        fnt.currY = 0
+        i=0; for i < len(text), i++ {
+            codePoint = <uint32>text[i]
+
+            if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
+                if text[i] & 0xE0 == 0xC0 {
+                    codePoint = <uint32>((text[i] & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
+                    i++
+                } else if text[i] & 0xF0 == 0xE0 && i+2 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
+                    i += 2
+                } else if text[i] & 0xF8 == 0xF0 && i+3 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
+                    i += 3
+                }
+            }
+
+            fnt.measureChar(codePoint)
+        }
+
+        res = [fnt.currX, fnt.currY]
+        fnt.currX = ocx
+        fnt.currY = ocy
+        return res
+    }
+
+    measureByteArr(fnt font, text []byte, from uint, to uint) [uint, uint] {
+        ocx = fnt.currX
+        ocy = fnt.currY
+        fnt.currX = 0
+        fnt.currY = 0
+        i=from; for i < to, i++ {
+            codePoint = <uint32>text[i]
+
+            if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
+                if text[i] & 0xE0 == 0xC0 {
+                    codePoint = <uint32>((text[i] & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
+                    i++
+                } else if text[i] & 0xF0 == 0xE0 && i+2 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
+                    i += 2
+                } else if text[i] & 0xF8 == 0xF0 && i+3 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
+                    i += 3
+                }
+            }
+
+            fnt.measureChar(codePoint)
+        }
+
+        res = [fnt.currX, fnt.currY]
+        fnt.currX = ocx
+        fnt.currY = ocy
+        return res
+    }
+
+    launch(width uint, height uint, title str) {
+
+        this.haveFrame.init()
+        this.haveFrameMut.init()
+
+        this.isRunning = true
+
+        threadWrkrFn = this.__drawThreadworker
+
+        i=1; for i <= __graphicsNbDrawers, i++ {
+            async threadWrkrFn(this, i)
+
+        }
+
+        this.width = width
+        this.height = height
+        screen_number = <int32>0
+        this.connection = xcb_connect(null, &screen_number);
+        if (xcb_connection_has_error(this.connection)) {
+            xcb_disconnect(this.connection)
+            return
+        }
+
+        setup = xcb_get_setup(this.connection)
+        iter = xcb_setup_roots_iterator(setup)
+
+        i=0; for i < screen_number, i++ {
+            xcb_screen_next(&iter)
+        }
+
+        this.screen = iter.data
+
+        this.window = xcb_generate_id(this.connection)
+        value_mask = XCB_CW_BACK_PIXMAP | XCB_CW_EVENT_MASK
+
+        value_list = [
+            XCB_BACK_PIXMAP_NONE, XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_MOTION | XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_STRUCTURE_NOTIFY
+        ]
+
+        xcb_create_window(
+            this.connection,
+            0,          // profondeur (default)
+            this.window,                        // ID de la fenêtre
+            this.screen.root,                  // fenêtre parente
+            0, 0, width, height,                // position et taille
+            10,                            // bordure
+            XCB_WINDOW_CLASS_INPUT_OUTPUT, // type
+            this.screen.root_visual,           // visual
+            value_mask, &value_list
+        )
+
+        xcb_change_property(
+            this.connection,
+            XCB_PROP_MODE_REPLACE,
+            this.window,
+            XCB_ATOM_WM_NAME,
+            XCB_ATOM_STRING,
+            8,
+            len(title),
+            cStr(title)
+        )
+
+        xcb_map_window(this.connection, this.window)
+        xcb_flush(this.connection)
+
+        size = width * height * 4
+
+        shmid = shmget(0, size, 896)
+
+        if shmid < 0 {
+            panic("erorr allocating shared memory")
+        }
+
+        this.frameBuffer = shmat(shmid, null, 0)
+
+        shminfo = xcb_shm_segment_info_t {
+            shmseg: xcb_generate_id(this.connection)
+            shmid: shmid
+            shmaddr: this.frameBuffer
+        }
+
+        xcb_shm_attach(this.connection, shminfo.shmseg, shminfo.shmid, 0);
+        xcb_flush(this.connection)
+
+        this.keySyms = xcb_key_symbols_alloc(this.connection)
+
+        xcb_cursor_context_new(this.connection, this.screen, &this.cursorCtx)
+
+        event xcb_generic_event_t*
+
+        gc = xcb_generate_id(this.connection)
+        values = [0]
+        xcb_create_gc(this.connection, gc, this.window, XCB_GC_GRAPHICS_EXPOSURES, &values)
+
+        this.isExposed = false
+        for true, event = xcb_wait_for_event(this.connection) {
+            if event == null {
+                if this.isExposed {
+                    this.callEventFunction(windowEventClose)
+                    break
+                }
+                continue
+            }
+
+            eventType = event.response_type & 0x7F
+
+            if eventType == 22 {
+                cfg = <xcb_configure_notify_event_t *>event
+                this.width  = cfg.width
+                this.height = cfg.height
+
+                xcb_shm_detach(this.connection, shminfo.shmseg)
+                shmdt(this.frameBuffer)
+                shmctl(shminfo.shmid, 0, null)
+
+                // nouvelle taille
+                size = this.width * this.height * 4;
+                shminfo.shmid = shmget(0, size, 896)
+                this.frameBuffer = shmat(shminfo.shmid, null, 0)
+                shminfo.shmseg = xcb_generate_id(this.connection)
+
+                // nouveau segment
+                xcb_shm_attach(this.connection, shminfo.shmseg, shminfo.shmid, 0)
+                this.callEventFunction(windowEventDraw)
+            } else if eventType == 12 {
+                if this.isExposed == false {
+                    this.callEventFunction(windowEventInitialize)
+                    this.isExposed = true
+                }
+
+                this.callEventFunction(windowEventDraw)
+
+                xcb_shm_put_image(
+                    this.connection,
+                    this.window,
+                    gc,
+                    this.width, this.height,
+                    0, 0, this.width, this.height,
+                    0, 0,
+                    this.screen.root_depth,
+                    XCB_IMAGE_FORMAT_Z_PIXMAP,
+                    0,
+                    shminfo.shmseg,
+                    0
+                )
+
+                xcb_flush(this.connection)
+                c = xcb_get_input_focus(this.connection)
+                xcb_get_input_focus_reply(this.connection, c, null)
+            } else if eventType == 6 {
+                this.callEventFunction(windowEventMouseMove)
+            } else if eventType == 4 {
+                this.lastMouseCode = event.pad0
+                this.callEventFunction(windowEventMouseDown)
+            } else if eventType == 5 {
+                this.lastMouseCode = event.pad0
+                this.callEventFunction(windowEventMouseUp)
+            } else if eventType == 2 {
+                this.lastKeyCode = event.pad0
+
+                if event.pad0 == 37 || event.pad0 == 105 {
+                    this.keyModifiers = this.keyModifiers | 0x01 //ctrl
+                } else if event.pad0 == 50 || event.pad0 == 62 {
+                    this.keyModifiers = this.keyModifiers | 0x02 //shift
+                } else if event.pad0 == 64 {
+                    this.keyModifiers = this.keyModifiers | 0x04 //alt
+                } else if event.pad0 == 108 {
+                    this.keyModifiers = this.keyModifiers | 0x08 //altgr
+                } else if event.pad0 == 66 {
+                    this.shiftLock = this.shiftLock == false
+                }
+                this.callEventFunction(windowEventKeyDown)
+            } else if eventType == 3 {
+                this.lastKeyCode = event.pad0
+
+                if event.pad0 == 37 || event.pad0 == 105 {
+                    this.keyModifiers = this.keyModifiers & ~0x01
+                } else if event.pad0 == 50 || event.pad0 == 62 {
+                    this.keyModifiers = this.keyModifiers & ~0x02
+                } else if event.pad0 == 64 {
+                    this.keyModifiers = this.keyModifiers & ~0x04
+                } else if event.pad0 == 108 {
+                    this.keyModifiers = this.keyModifiers & ~0x08
+                }
+                this.callEventFunction(windowEventKeyUp)
+            } else if eventType == 33 {
+                break
+            }
+            //  else {
+            //     println("unkown event: "+intToStr(eventType))
+            // }
+
+            free(event)
+        }
+
+        this.isRunning = false
+        this.haveFrame.broadcast()
+
+        xcb_cursor_context_free(this.cursorCtx)
+        xcb_shm_detach(this.connection, shminfo.shmseg)
+        shmdt(this.frameBuffer)
+        shmctl(shmid, 0, null)
+        xcb_key_symbols_free(this.keySyms)
+        xcb_disconnect(this.connection)
+
+        this.haveFrame.destroy()
+        this.haveFrameMut.destroy()
+    }
+
+}

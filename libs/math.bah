@@ -1,0 +1,3 @@
+#cLib "lm"
+
+#define sqrt(x float) float

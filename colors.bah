@@ -1,0 +1,46 @@
+struct rgbColor {
+    r: byte
+    g: byte
+    b: byte
+    a: byte = 255
+
+    lum(l byte) rgbColor {
+        fl = <float><uint>l / 255.0
+        r = <float><uint>this.r / 255.0
+        g = <float><uint>this.g / 255.0
+        b = <float><uint>this.b / 255.0
+
+        maxVal = r
+        if g > r {
+            if b > g {
+                maxVal = b
+            } else {
+                maxVal = g
+            }
+        } else if b > r {
+            maxVal = b
+        }
+
+        scale = fl / maxVal * 255.0
+
+        return rgbColor {
+            r: <byte>(r * scale + 0.5)
+            g: <byte>(g * scale + 0.5)
+            b: <byte>(b * scale + 0.5)
+        }
+    }
+
+    mult(l byte) rgbColor {
+        return rgbColor {
+            r: <byte>((<uint>this.r * <uint>l) / 255)
+            g: <byte>((<uint>this.g * <uint>l) / 255)
+            b: <byte>((<uint>this.b * <uint>l) / 255)
+        }
+    }
+}
+
+const RED = rgbColor{255, 0, 0}
+const GREEN = rgbColor{0, 255, 0}
+const BLUE = rgbColor{0, 0, 255}
+const BLACK = rgbColor{0, 0, 0}
+const WHITE = rgbColor{255,255,255}

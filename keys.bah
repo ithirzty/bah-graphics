@@ -1,0 +1,25 @@
+const Key_CTRL   = 37
+const Key_SHIFT  = 50
+const Key_ALT    = 64
+const Key_ALT_GR = 108
+
+const MOUSE_LEFT_BUTTON   = 1
+const MOUSE_MIDDLE_BUTTON = 2
+const MOUSE_RIGHT_BUTTON  = 3
+const MOUSE_SCROLL_DOWN   = 4
+const MOUSE_SCROLL_UP     = 5
+
+const Char_backspace   = 65288
+const Char_delete      = 65535
+const Char_arr_left    = 65361
+const Char_arr_right   = 65363
+const Char_arr_up      = 65362
+const Char_arr_down    = 65364
+const Char_left_shift  = 65505
+const Char_right_shift = 65506
+const Char_enter       = 65293
+const Char_Left_CTRL   = 65507
+const Char_Right_CTRL  = 65508
+const Char_tab         = 65289
+const Char_shit_tab    = 65056
+const Char_caps_lock   = 65509

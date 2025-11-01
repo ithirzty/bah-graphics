@@ -1,0 +1,93 @@
+#import "../ui_struct.bah"
+
+#import "./base.bah"
+
+BUTTON_BACKGROUND_COLOR = rgbColor{180, 180, 180}
+BUTTON_BACKGROUND_HOVERED_COLOR = rgbColor{150, 150, 150}
+BUTTON_BACKGROUND_CLICKED_COLOR = rgbColor{120, 120, 120}
+BUTTON_TEXT_COLOR = rgbColor{0,0,0}
+
+struct uiButton extend uiElement {
+    text: str = "Button"
+    onclick: function(uiButton*)
+
+    events(evnt uint32) {
+        clickFn = this.onclick
+
+        if evnt == uiEventElementClicked {
+            if clickFn != null {
+                clickFn(this)
+            }
+        } else if evnt == windowEventKeyDown {
+            c = this.window.getEventChar()
+            if c == Char_enter || c == <uint32>' ' {
+                if clickFn != null {
+                    clickFn(this)
+                }
+            } else if c == Char_tab || c == Char_shit_tab {
+                ui = <ui*>this.window
+                i=0; for i < len(ui.elements), i++ {
+                    if ui.elements[i] == this {
+                        if this.window.isKeyModifier(Key_SHIFT) {
+                            i--
+                            for i != -1, i-- {
+                                if ui.elements[i].focusable {
+                                    ui.setFocus(ui.elements[i])
+                                    break
+                                }
+                            }
+                            break
+                        } else {
+                            i++
+                            for i < len(ui.elements), i++ {
+                                if ui.elements[i].focusable {
+                                    ui.setFocus(ui.elements[i])
+                                    break
+                                }
+                            }
+                            break
+                        }
+                    }
+                }
+            }
+        }
+
+    }
+
+    draw(w ui*) {
+        w.font.setSize(this.fontSize)
+        textWidth = w.measureText(w.font, this.text)[0]
+
+        this.size[0] = textWidth + this.padding[0] * 2
+        this.size[1] = this.fontSize + this.padding[1] * 2
+
+        pos = this.getPosition()
+        size = this.getSize()
+
+        bgColor = BUTTON_BACKGROUND_COLOR
+        if this.clicked {
+            bgColor = BUTTON_BACKGROUND_CLICKED_COLOR
+        } else if this.hovered {
+            bgColor = BUTTON_BACKGROUND_HOVERED_COLOR
+        }
+
+        w.drawRoundedRect(pos, size, 8, bgColor)
+        w.drawText(w.font, this.text, BUTTON_TEXT_COLOR, [pos[0] + this.padding[0], pos[1] + this.size[1] / 2 + this.fontSize / 2 + 2])
+    }
+
+    _init() {
+        this._events = this.events
+        this._draw = this.draw
+
+        this.cursor = "hand1"
+
+        if this.fontSize == 0 {
+            this.fontSize = 8
+        }
+
+        if this.padding[0] == 0 {
+            this.padding = [8, 8]
+        }
+
+    }
+}

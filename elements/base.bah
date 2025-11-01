@@ -1,0 +1,156 @@
+#import "../graphics.bah"
+
+#define __uiRedrawElement(ui window*, elem ptr)
+
+const _uiPosFlagPx = 1
+const _uiPosFlagPc = 2
+
+const uiBasisCenter = 1024
+const uiBasisEnd    = 2048
+
+struct uiPos {
+    ammount: int16
+    flags: int16
+
+    basis(bs int16) uiPos {
+        this.flags = this.flags | bs
+        return *this
+    }
+}
+
+pixels(px int) uiPos {
+    return uiPos {
+        ammount: px
+        flags: _uiPosFlagPx
+    }
+}
+
+percents(pc int) uiPos {
+    return uiPos {
+        ammount: pc
+        flags: _uiPosFlagPc
+    }
+}
+
+#define __uiCalculateElemPosVec(elem ptr, posVec [uiPos,uiPos]) [int,int]
+
+struct uiElement {
+    pos: [uiPos,uiPos]
+    margin: [uiPos,uiPos]
+    size: [uint,uint]
+    padding: [uint,uint]
+    fontSize: uint
+    cursor: str
+
+    elements: []uiElement*
+    parent: uiElement*
+    window: window*
+    maskedBuffer: []rgbColor
+
+    maskHash: uint
+
+    toRemove: bool
+    focusable: bool = true
+    manualDrawingMode: bool = false
+
+    hovered: bool
+    clicked: bool
+    focused: bool
+
+    _events: function(uiElement*, uint32)
+    _draw: function(uiElement*, window*)
+
+    getSize() [uint,uint] {
+        size = this.size
+        return size
+    }
+
+    getMargin() [int,int] {
+        return __uiCalculateElemPosVec(this, this.margin)
+    }
+
+    getPosition() [int,int] {
+        margin = __uiCalculateElemPosVec(this, this.margin)
+        r = __uiCalculateElemPosVec(this, this.pos)
+        r[0] += margin[0]
+        r[1] += margin[1]
+
+        if this.parent != null {
+            parentPos = this.parent.getPosition()
+            r[0] += parentPos[0]
+            r[1] += parentPos[1]
+        }
+        return r
+    }
+
+    remove() {
+        this.toRemove = true
+    }
+
+    hashChanged() bool {
+        pos = this.getPosition()
+        size = this.getSize()
+        newHash = pos[0] + pos[1] * 16384 + size[0] * 32768 + size[1] * 49152
+
+        if newHash != this.maskHash {
+            this.maskHash = newHash
+            this.window.getRect(pos, size, this.maskedBuffer)
+            return true
+        }
+
+        return false
+    }
+
+    addElement(elem uiElement*) {
+        elem.parent = this
+        elem.window = this.window
+        this.elements[len(this.elements)] = elem
+        if this.parent != null && this.window != null {
+            __uiRedrawElement(this.window, this)   
+        }
+    }
+}
+
+__uiCalculateElemPosVec(this uiElement*, pos [uiPos,uiPos]) [int,int] {
+    r = [0,0]
+
+    if pos[0].flags & _uiPosFlagPx != 0 {
+        r[0] = pos[0].ammount
+    } else if pos[0].flags & _uiPosFlagPc != 0 {
+        parWidth = 0
+        if this.parent != null {
+            parWidth = this.parent.getSize()[0]
+        } else {
+            parWidth = this.window.width
+        }
+
+        r[0] = <int>(<float>parWidth * (<float><int>pos[0].ammount / 100.0))
+    }
+
+    if pos[1].flags & _uiPosFlagPx != 0 {
+        r[1] = pos[1].ammount
+    } else if pos[1].flags & _uiPosFlagPc != 0 {
+        parHeight = 0
+        if this.parent != null {
+            parHeight = this.parent.getSize()[1]
+        } else {
+            parHeight = this.window.height
+        }
+
+        r[1] = <int>(<float>parHeight * (<float><int>pos[0].ammount / 100.0))
+    }
+
+    if pos[0].flags & uiBasisCenter != 0 {
+        r[0] -= this.getSize()[0] / 2
+    } else if pos[0].flags & uiBasisEnd != 0 {
+        r[0] -= this.getSize()[0]
+    }
+
+    if pos[1].flags & uiBasisCenter != 0 {
+        r[1] -= this.getSize()[1] / 2
+    } else if pos[1].flags & uiBasisEnd != 0 {
+        r[1] -= this.getSize()[1]
+    }
+
+    return r
+}
