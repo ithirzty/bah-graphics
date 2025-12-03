@@ -1,0 +1,188 @@
+#import "../ui_struct.bah"
+
+#import "./base.bah"
+
+SCROLLBAR_TRACK_COLOR = rgbColor{220, 220, 220}
+SCROLLBAR_THUMB_COLOR = rgbColor{120, 120, 255}
+
+struct uiBoxScrollbar extend uiElement {
+    trackColor: rgbColor
+    trackWidth: uint
+    thumbSize: int
+    thumbOffset: int
+    isVertical: bool
+    thumbDrag: [int, int, bool, int, int]
+    showTime: uint
+
+    events(evnt uint32) {
+        pos = this.getPosition()
+        cursorPos = this.window.getCursorPosition()
+        cursorPos[0] -= pos[0]
+        cursorPos[1] -= pos[1]
+        if evnt == uiEventElementMouseDown {
+            if cursorPos[1] >= this.thumbOffset && cursorPos[1] <= this.thumbOffset + this.thumbSize {
+                this.thumbDrag[2] = true
+                this.thumbDrag[0] = this.thumbOffset
+                this.thumbDrag[1] = cursorPos[1]
+                this.thumbDrag[3] = this.parent.offsets[0]
+                this.thumbDrag[4] = this.parent.offsets[1]
+                
+            } else {
+                this.thumbDrag[2] = false
+                this.cursor = null
+                this.window.setCursor(this.cursor)
+            }
+        } else if evnt == uiEventElementHoverIn {
+            this.showTime = getTimeUnix()
+        } else if evnt == uiEventElementHoverOut {
+            this.thumbDrag[2] = false
+            this.cursor = null
+            this.window.setCursor(this.cursor)
+            this.showTime = getTimeUnix()
+        } else if evnt == uiEventElementClicked {
+            if this.thumbDrag[2] == false {
+                parentSize = this.parent.getSize()
+                parentInnerSize = this.parent.getInnerSize()
+
+                this.thumbOffset = cursorPos[1] - this.thumbSize / 2
+                this.parent.offsets[1] = (((this.thumbOffset + this.thumbSize) * parentInnerSize[1]) / parentSize[1]) - parentSize[1]
+                if this.parent.offsets[1] < 0 {
+                    this.parent.offsets[1] = 0
+                } else if this.parent.offsets[1] + parentSize[1] > parentInnerSize[1] {
+                    this.parent.offsets[1] = parentInnerSize[1] - parentSize[1]
+                }
+                this.parent.redraw()
+            }
+
+            this.thumbDrag[2] = false
+            this.cursor = null
+            this.window.setCursor(this.cursor)
+        } else if evnt == uiEventElementHovered {
+            if this.thumbDrag[2] && this.window.getEventButton() == MOUSE_LEFT_BUTTON {
+                parentSize = this.parent.getSize()
+                parentInnerSize = this.parent.getInnerSize()
+
+                // drag = ((cursorPos[1] - this.thumbDrag[1] - this.thumbDrag[0] + this.thumbSize) * parentInnerSize[1] / parentSize[1]) - parentSize[1]
+                this.thumbOffset = this.thumbDrag[0] + cursorPos[1] - this.thumbDrag[1]
+
+
+                this.parent.offsets[1] = (((this.thumbOffset + this.thumbSize) * parentInnerSize[1]) / parentSize[1]) - parentSize[1]
+                if this.parent.offsets[1] < 0 {
+                    this.parent.offsets[1] = 0
+                } else if this.parent.offsets[1] + parentSize[1] > parentInnerSize[1] {
+                    this.parent.offsets[1] = parentInnerSize[1] - parentSize[1]
+                }
+                this.parent.redraw()
+            }
+
+        }
+
+        if this.thumbDrag[2] {
+            this.cursor = "grabbing"
+            this.window.setCursor(this.cursor)
+        } else {
+            this.cursor = null
+        }
+    }
+
+    draw(w ui*) {
+        now = getTimeUnix()
+        pos = this.getPosition()
+        this.size = [8, this.parent.size[1]]
+
+        innerSize = this.parent.getInnerSize()
+        
+        this.thumbSize = (this.size[1] * this.size[1]) / innerSize[1]
+        this.thumbOffset = (((this.parent.offsets[1] + this.size[1]) * this.size[1]) / innerSize[1]) - this.thumbSize
+
+        thumbColor = SCROLLBAR_THUMB_COLOR
+
+        if this.hovered {
+            thumbColor.a = 255
+        } else {
+            thumbColor.a = 80
+        }
+
+        if now - this.showTime < 120000000 {
+            if this.hovered {
+                this.trackColor.a = ((now - this.showTime) * 255) / 120000000
+                this.trackWidth = 4 + ((now - this.showTime) * 4) / 120000000
+            } else {
+                this.trackColor.a = 255 - (((now - this.showTime) * 255) / 120000000)
+                this.trackWidth = 8 - (((now - this.showTime) * 4) / 120000000)
+            }
+            this.redrawIn(40)
+        } else if this.hovered == false {
+            this.trackColor.a = 0
+            this.trackWidth = 4
+        } else {
+            this.trackColor.a = 255
+            this.trackWidth = 8
+        }
+
+        w.drawRoundedRect([pos[0] + this.size[0] - this.trackWidth, pos[1]], [this.trackWidth, this.size[1]], 4, this.trackColor)
+        w.drawRoundedRect([pos[0] + this.size[0] - this.trackWidth, pos[1] + this.thumbOffset], [this.trackWidth, this.thumbSize], 4, thumbColor)
+
+    }
+
+    _init() {
+        this._events = this.events
+        this._draw = this.draw
+        this.focusable = true
+
+        this.trackColor = SCROLLBAR_TRACK_COLOR
+        this.trackColor.a = 0
+        this.trackWidth = 4
+    }
+}
+
+struct uiBox extend uiElement {
+    scrollable: bool = true
+    overflows: [bool, bool]
+    scrollBars: [uiElement*,uiElement*]
+
+    backdrop: function(uiBox*, ui*)
+
+    events(evnt uint32) {
+
+    }
+
+    draw(w ui*) {
+        if this.backdrop != null {
+            bd = this.backdrop
+            bd(this, w)
+        }
+
+        pos = this.getPosition()
+        size = this.getSize()
+
+        innerSize = this.getInnerSize()
+        
+        if innerSize[1] > size[1] {
+            if this.scrollBars[1] == null {
+                this.scrollBars[1] = new uiBoxScrollbar {
+                    isVertical: true
+                    absolutePosition: true
+                    pos: [percents(100).basis(uiBasisEnd), pixels(0)]
+                }
+                this.addElement(this.scrollBars[1])
+            }
+        } else {
+            if this.scrollBars[1] != null {
+                this.scrollBars[1].remove()
+                this.scrollBars[1] = null
+            }
+        }
+    }
+
+    _init() {
+        this._events = this.events
+        this._draw = this.draw
+        this.focusable = false
+
+        if this.padding[0] == 0 {
+            this.padding = [8, 8]
+        }
+
+    }
+}

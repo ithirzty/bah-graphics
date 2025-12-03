@@ -6,8 +6,8 @@ const Key_ALT_GR = 108
 const MOUSE_LEFT_BUTTON   = 1
 const MOUSE_MIDDLE_BUTTON = 2
 const MOUSE_RIGHT_BUTTON  = 3
-const MOUSE_SCROLL_DOWN   = 4
-const MOUSE_SCROLL_UP     = 5
+const MOUSE_SCROLL_DOWN   = 5
+const MOUSE_SCROLL_UP     = 4
 
 const Char_backspace   = 65288
 const Char_delete      = 65535

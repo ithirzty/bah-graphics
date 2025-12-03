@@ -1,6 +1,8 @@
 #import "../graphics.bah"
+#import "time.bah"
 
 #define __uiRedrawElement(ui window*, elem ptr)
+#define __uiRedrawElementDelayed(ui window*, elem ptr, ms uint)
 
 const _uiPosFlagPx = 1
 const _uiPosFlagPc = 2
@@ -33,14 +35,17 @@ percents(pc int) uiPos {
 }
 
 #define __uiCalculateElemPosVec(elem ptr, posVec [uiPos,uiPos]) [int,int]
+#define __uiConstructElementTreeRecursively(elem ptr)
 
 struct uiElement {
     pos: [uiPos,uiPos]
     margin: [uiPos,uiPos]
     size: [uint,uint]
     padding: [uint,uint]
+    offsets: [int,int]
     fontSize: uint
     cursor: str
+    absolutePosition: bool
 
     elements: []uiElement*
     parent: uiElement*
@@ -79,8 +84,41 @@ struct uiElement {
             parentPos = this.parent.getPosition()
             r[0] += parentPos[0]
             r[1] += parentPos[1]
+
+            if this.absolutePosition == false {
+                r[0] -= this.parent.offsets[0]
+                r[1] -= this.parent.offsets[1]
+            }
         }
         return r
+    }
+
+    getInnerSize() [uint,uint] {
+        innerSize = [0,0]
+        thisPos = this.getPosition()
+        i=0; for i < len(this.elements), i++ {
+            if this.elements[i].absolutePosition {
+                continue
+            }
+            ePos = this.elements[i].getPosition()
+            eSize = this.elements[i].getSize()
+
+            x = ePos[0] + eSize[0] - thisPos[0]
+            y = ePos[1] + eSize[1] - thisPos[1]
+
+            if x > innerSize[0] {
+                innerSize[0] = x
+            }
+
+            if y > innerSize[1] {
+                innerSize[1] = y
+            }
+        }
+
+        innerSize[1] += this.offsets[1] + this.padding[0]
+        innerSize[0] += this.offsets[0] + this.padding[1]
+
+        return innerSize
     }
 
     remove() {
@@ -91,23 +129,53 @@ struct uiElement {
         pos = this.getPosition()
         size = this.getSize()
         newHash = pos[0] + pos[1] * 16384 + size[0] * 32768 + size[1] * 49152
-
-        if newHash != this.maskHash {
+        if this.maskHash != newHash {
             this.maskHash = newHash
-            this.window.getRect(pos, size, this.maskedBuffer)
             return true
         }
-
         return false
+    }
+
+    captureMaskedBuffer() {
+        pos = this.getPosition()
+        size = this.getSize()
+
+        if this.parent != null {
+            pos[0] -= this.parent.padding[0]
+            pos[1] -= this.parent.padding[1]
+        }
+
+        clear(this.maskedBuffer)
+        this.window.getRect(pos, size, this.maskedBuffer)
     }
 
     addElement(elem uiElement*) {
         elem.parent = this
         elem.window = this.window
         this.elements[len(this.elements)] = elem
-        if this.parent != null && this.window != null {
-            __uiRedrawElement(this.window, this)   
+        if this.window != null {
+            if this.parent != null && this.window != null {
+                __uiRedrawElement(this.window, this)   
+            }
+
+            __uiConstructElementTreeRecursively(elem)
         }
+    }
+
+    redrawIn(ms uint) {
+        __uiRedrawElementDelayed(this.window, this, ms)
+    }
+
+    redraw() {
+        __uiRedrawElement(this.window, this)
+    }
+}
+
+__uiConstructElementTreeRecursively(elem uiElement*) {
+    i=0; for i < len(elem.elements), i++ {
+        elem.elements[i].parent = elem
+        elem.elements[i].window = elem.window
+        __uiConstructElementTreeRecursively(elem.elements[i])
     }
 }
 
@@ -137,7 +205,7 @@ __uiCalculateElemPosVec(this uiElement*, pos [uiPos,uiPos]) [int,int] {
             parHeight = this.window.height
         }
 
-        r[1] = <int>(<float>parHeight * (<float><int>pos[0].ammount / 100.0))
+        r[1] = <int>(<float>parHeight * (<float><int>pos[1].ammount / 100.0))
     }
 
     if pos[0].flags & uiBasisCenter != 0 {

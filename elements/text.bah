@@ -1,0 +1,58 @@
+#import "../ui_struct.bah"
+
+#import "./base.bah"
+
+UI_TEXT_COLOR = rgbColor{0, 0, 0}
+
+struct uiText extend uiElement {
+    text: str = ""
+    color: rgbColor
+
+    events(evnt uint32) {
+
+    }
+
+    setText(s str) {
+        this.text = s
+        ui = <ui*>this.window
+        ui.font.setSize(this.fontSize)
+        this.size = this.window.measureText(ui.font, this.text)
+        this.size[0] += this.padding[0] * 2
+        this.size[1] += this.padding[1] * 2
+        this.redraw()
+    }
+
+    draw(w ui*) {
+        w.font.setSize(this.fontSize)
+
+        pos = this.getPosition()
+
+        if this.size[0] == 0 || this.size[1] == 0 {
+            this.size = w.measureText(w.font, this.text)
+            this.size[0] += this.padding[0] * 2
+            this.size[1] += this.padding[1] * 2
+        }
+
+        w.drawText(w.font, this.text, this.color, [pos[0] + this.padding[0], pos[1] + this.padding[1] + this.fontSize])
+
+        // w.drawRect(pos, this.size, GREEN)
+    }
+
+    _init() {
+        this._events = this.events
+        this._draw = this.draw
+        
+        if this.color.a == 0 {
+            this.color = UI_TEXT_COLOR
+        }
+
+        if this.fontSize == 0 {
+            this.fontSize = 8
+        }
+
+        if this.padding[0] == 0 {
+            this.padding = [this.fontSize / 2, this.fontSize / 2]
+        }
+        
+    }
+}

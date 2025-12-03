@@ -1,3 +1,5 @@
+#define pow(x float, n float) float
+
 struct rgbColor {
     r: byte
     g: byte
@@ -36,6 +38,37 @@ struct rgbColor {
             g: <byte>((<uint>this.g * <uint>l) / 255)
             b: <byte>((<uint>this.b * <uint>l) / 255)
         }
+    }
+
+    toLab() [float,float,float] {
+        return [
+            pow(<float><uint>this.r / 255.0, 2.2),
+            pow(<float><uint>this.g / 255.0, 2.2),
+            pow(<float><uint>this.b / 255.0, 2.2)
+        ]
+    }
+
+    fromLab(c [float,float,float]) {
+        this.r = <byte>(pow(c[0], 1.0 / 2.2) * 255.0)
+        this.g = <byte>(pow(c[1], 1.0 / 2.2) * 255.0)
+        this.b = <byte>(pow(c[2], 1.0 / 2.2) * 255.0)
+    }
+
+    interpolate(c rgbColor, x int) rgbColor {
+        t = <float>x / 255.0
+        c1 = this.toLab()
+        c2 = c.toLab()
+
+        c2[0] = c1[0] + (c2[0] - c1[0]) * t
+        c2[1] = c1[1] + (c2[1] - c1[1]) * t
+        c2[2] = c1[2] + (c2[2] - c1[2]) * t
+
+        r = rgbColor{
+            a: <byte>(<int>this.a + ((<int>c.a - <int>this.a) * x) / 255)
+        }
+        r.fromLab(c2)
+
+        return r
     }
 }
 

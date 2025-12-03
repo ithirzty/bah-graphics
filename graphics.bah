@@ -23,7 +23,7 @@ const __graphicsDrawRequestTypeRect = 0
 const __graphicsDrawRequestTypeCircle = 1
 const __graphicsDrawRequestTypeRectImg = 2
 
-const __graphicsNbDrawers = 1
+const __graphicsNbDrawers = 1 // CAN ONLY BE ONE FOR NOW (so 2 threads in total)
 
 struct __graphicsDrawRequest {
     from: [int,int]
@@ -43,6 +43,7 @@ struct window {
 
     width: uint
     height: uint
+    scissor: [bool,int,int,int,int]
 
     lastKeyCode: byte
     lastMouseCode: byte
@@ -51,6 +52,7 @@ struct window {
 
     isExposed: bool
     isRunning: bool
+    hasDrawn: bool
     
     callEventFunction(event uint32) {
         eventFn = this.events
@@ -109,29 +111,16 @@ struct window {
     }
 
     setCursor(name str) {
+        if len(name) == 0 {
+            name = "left_ptr"
+        }
+
         cursor = xcb_cursor_load_cursor(this.cursorCtx, name)
         xcb_change_window_attributes(this.connection, this.window, XCB_CW_CURSOR, &cursor)
     }
 
     redraw() {
         xcb_clear_area(this.connection, 1, this.window, 0, 0, 0, 0)
-        // expose = xcb_expose_event_t {
-        //     response_type: 23
-        //     window: this.window
-        //     x: 0
-        //     y: 0
-        //     width: this.width
-        //     height: this.height
-        //     count: 0
-        // }
-
-        // xcb_send_event(
-        //     this.connection,
-        //     0,                 // propagate = false
-        //     this.window,
-        //     XCB_EVENT_MASK_EXPOSURE,
-        //     <ptr>&expose
-        // )
         xcb_flush(this.connection)
     }
 
@@ -154,8 +143,17 @@ struct window {
     }
 
     clear(color rgbColor) {
+        this.hasDrawn = true
         n = <uint32>color
         memset(this.frameBuffer, n, this.width * this.height * 4)
+    }
+
+    setScissor(pos [int,int], size [int, int]) {
+        this.scissor = [true, pos[0], pos[1], pos[0] + size[0], pos[1] + size[1]]
+    }
+
+    disableScissor() {
+        this.scissor[0] = false
     }
 
     setPixel(pos [int,int], color rgbColor) {
@@ -163,6 +161,16 @@ struct window {
 
         if offset < 0 || offset >= this.width * this.height * 4 {
             return
+        }
+
+        if this.scissor[0] {
+            if pos[0] < this.scissor[1] || pos[0] >= this.scissor[3] {
+                return
+            }
+
+            if pos[1] < this.scissor[2] || pos[1] >= this.scissor[4] {
+                return
+            }
         }
 
         if color.a != 255 {
@@ -185,6 +193,7 @@ struct window {
     currentGraphicsRequest: __graphicsDrawRequest
     haveFrame: mutexCondition
     haveFrameMut: mutex
+    haveFrameBool: bool
     frameDone: byte
 
     __threadedDrawer(m uint) {
@@ -202,17 +211,22 @@ struct window {
                 }
             }
         } else if req.type == __graphicsDrawRequestTypeRectImg {
-            println("img")
             nbLines = ((req.to[1] - req.from[1]) / (__graphicsNbDrawers + 1))
             localFrom = req.from[1] + m * nbLines
             localTo = localFrom + nbLines
             y = localFrom
             buff = <[]rgbColor>req.color
             width = req.to[0] - req.from[0]
-            for y < localTo, y ++ {
+            for y < localTo, y++ {
                 n = y * width
                 x = req.from[0]
                 for x < req.to[0], x++ {
+                    if n >= len(buff) {
+                        break
+                    }
+                    if n < 0 {
+                        continue
+                    }
                     this.setPixel([x,y], buff[n])
                     n++
                 }
@@ -222,8 +236,13 @@ struct window {
 
     __drawThreadworker(m uint) {
         for true {
-            this.haveFrame.wait(this.haveFrameMut)
-
+            this.haveFrameMut.lock()
+            for this.haveFrameBool == false {
+                this.haveFrame.wait(this.haveFrameMut)
+            }
+            this.haveFrameBool = false
+            this.haveFrameMut.unlock()
+            
             if this.isRunning == false {
                 break
             }
@@ -235,9 +254,12 @@ struct window {
     }
 
     __drawRequest(req __graphicsDrawRequest) {
+        this.haveFrameMut.lock()
+        atomic_store(&this.frameDone, 0)
         this.currentGraphicsRequest = req
-        this.frameDone = 0
+        this.haveFrameBool = true
         this.haveFrame.broadcast()
+        this.haveFrameMut.unlock()
 
         this.__threadedDrawer(0)
 
@@ -249,12 +271,32 @@ struct window {
     getRect(pos [int, int], size [uint, uint], buff []rgbColor) {
         n = 0
         y=pos[1]; for y < pos[1] + size[1], y++ {
-            if y >= this.height || y < 0 {
+            if y < 0 {
                 continue
             }
+
+            if y >= this.height {
+                break
+            }
+
             x = pos[0]; for x < pos[0] + size[0], x++ {
-                if x >= this.width || x < 0 {
+
+                if x < 0 {
                     continue
+                }
+
+                if x >= this.width {
+                    break
+                }
+
+                if this.scissor[0] {
+                    if x < this.scissor[1]|| y < this.scissor[2] {
+                        continue
+                    }
+                    
+                    if x >= this.scissor[3] || y >= this.scissor[4] {
+                        break
+                    }
                 }
 
                 offset = (y * this.width + x) * 4
@@ -272,6 +314,7 @@ struct window {
         if color.a == 0 {
             return
         }
+        this.hasDrawn = true
         max = [pos[0] + size[0], pos[1] + size[1]]
 
         if size[0] * size[1] > 100000 {
@@ -302,6 +345,7 @@ struct window {
     drawRectImage(pos [int, int], size [uint, uint], buff []rgbColor) {        
         n = 0
         max = [pos[0] + size[0], pos[1] + size[1]]
+        this.hasDrawn = true
 
         if size[0] * size[1] > 100000 {
             this.__drawRequest(__graphicsDrawRequest{
@@ -322,6 +366,13 @@ struct window {
                 if x >= this.width || x < 0 {
                     continue
                 }
+
+                if n >= len(buff) {
+                    break
+                }
+                if n < 0 {
+                    continue
+                }
                 
                 this.setPixel([x,y], buff[n])
                 n++
@@ -333,6 +384,7 @@ struct window {
         if color.a == 0 {
             return
         }
+        this.hasDrawn = true
         fradi = <float>radi
         y=pos[1] - radi; for y < pos[1] + radi, y++ {
             if y >= this.height || y < 0 {
@@ -353,7 +405,7 @@ struct window {
                 rColor = color
 
                 if fradi - d < 1.0 {
-                    rColor.a = <byte>((fradi - d) / 1.0 * 255.0)
+                    rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
                 }
 
                 this.setPixel([x,y], rColor)
@@ -365,6 +417,16 @@ struct window {
         if color.a == 0 {
             return
         }
+        this.hasDrawn = true
+
+        if radi * 2 > size[0] {
+            radi = size[0] / 2
+        }
+
+        if radi * 2 > size[1] {
+            radi = size[1] / 2
+        }
+
         center = [pos[0] + size[0] / 2, pos[1] + size[1] / 2]
         corners = [size[0] / 2 - radi, size[1] / 2 - radi]
         y=pos[1]; for y < pos[1] + size[1], y++ {
@@ -398,17 +460,152 @@ struct window {
 
         }
 
-        this.drawCircle([pos[0] + radi - 1, pos[1] + radi - 1], radi, color)
-        this.drawCircle([pos[0] + size[0] - radi, pos[1] + radi - 1], radi, color)
-        this.drawCircle([pos[0] + radi - 1, pos[1] + size[1] - radi], radi, color)
-        this.drawCircle([pos[0] + size[0] - radi, pos[1] + size[1] - radi], radi, color)
+        fradi = <float>radi
+        
+        cPos = [pos[0] + radi - 1, pos[1] + radi - 1]
+
+        y=cPos[1] - radi; for y <= cPos[1], y++ {
+            if y >= this.height || y < 0 {
+                continue
+            }
+            x = cPos[0] - radi; for x <= cPos[0], x++ {
+                if x >= this.width || x < 0 {
+                    continue
+                }
+
+                dx = <float>x - <float>cPos[0]
+                dy = <float>y - <float>cPos[1]
+                d = sqrt(dx*dx + dy*dy)
+                if d > fradi {
+                    continue
+                }
+
+                rColor = color
+
+                if fradi - d < 1.0 {
+                    rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
+                }
+
+                this.setPixel([x,y], rColor)
+            }
+        }
+
+        cPos = [pos[0] + size[0] - radi, pos[1] + radi - 1]
+
+        y=cPos[1] - radi; for y <= cPos[1], y++ {
+            if y >= this.height || y < 0 {
+                continue
+            }
+            x = cPos[0]
+            if size[0] % 2 == 0 {
+                x++
+            }
+
+            for x < cPos[0] + radi, x++ {
+                if x >= this.width || x < 0 {
+                    continue
+                }
+
+                dx = <float>x - <float>cPos[0]
+                dy = <float>y - <float>cPos[1]
+                d = sqrt(dx*dx + dy*dy)
+                if d > fradi {
+                    continue
+                }
+
+                rColor = color
+
+                if fradi - d < 1.0 {
+                    rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
+                }
+
+                this.setPixel([x,y], rColor)
+            }
+        }
+
+        cPos = [pos[0] + radi - 1, pos[1] + size[1] - radi]
+
+        y=cPos[1]; for y < cPos[1] + radi, y++ {
+            if y >= this.height || y < 0 {
+                continue
+            }
+            x = cPos[0] - radi; for x <= cPos[0], x++ {
+                if x >= this.width || x < 0 {
+                    continue
+                }
+
+                dx = <float>x - <float>cPos[0]
+                dy = <float>y - <float>cPos[1]
+                d = sqrt(dx*dx + dy*dy)
+                if d > fradi {
+                    continue
+                }
+
+                rColor = color
+
+                if fradi - d < 1.0 {
+                    rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
+                }
+
+                this.setPixel([x,y], rColor)
+            }
+        }
+
+        cPos = [pos[0] + size[0] - radi, pos[1] + size[1] - radi]
+
+        y=cPos[1]; for y < cPos[1] + radi, y++ {
+            if y >= this.height || y < 0 {
+                continue
+            }
+            x = cPos[0]
+            if size[0] % 2 == 0 {
+                x++
+            }
+            for x < cPos[0] + radi, x++ {
+                if x >= this.width || x < 0 {
+                    continue
+                }
+
+                dx = <float>x - <float>cPos[0]
+                dy = <float>y - <float>cPos[1]
+                d = sqrt(dx*dx + dy*dy)
+                if d > fradi {
+                    continue
+                }
+
+                rColor = color
+
+                if fradi - d < 1.0 {
+                    rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
+                }
+
+                this.setPixel([x,y], rColor)
+            }
+        }
+
+        // this.drawCircle([pos[0] + radi - 1, pos[1] + radi - 1], radi, color)
+        // this.drawCircle([pos[0] + size[0] - radi, pos[1] + radi - 1], radi, color)
+        // this.drawCircle([pos[0] + radi - 1, pos[1] + size[1] - radi], radi, color)
+        // this.drawCircle([pos[0] + size[0] - radi, pos[1] + size[1] - radi], radi, color)
     }
 
     drawText(fnt font, text str, color rgbColor, pos [int, int]) {
         fnt.currX = pos[0]
         fnt.currY = pos[1]
+        this.hasDrawn = true
         i=0; for i < len(text), i++ {
+
+            if this.scissor[0] && fnt.currY - fnt.fontSize >= this.scissor[4] {
+                break
+            }
+
             codePoint = <uint32>text[i]
+
+            if text[i] == <char>10 {
+                fnt.currX = pos[0]
+                fnt.currY += fnt.fontSize + fnt.fontSize / 2
+                continue
+            }
 
             if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
                 if text[i] & 0xE0 == 0xC0 {
@@ -431,8 +628,15 @@ struct window {
     drawByteArr(fnt font, text []byte, from uint, to uint, color rgbColor, pos [int, int]) {
         fnt.currX = pos[0]
         fnt.currY = pos[1]
+        this.hasDrawn = true
         i=from; for i < to, i++ {
             codePoint = <uint32>text[i]
+
+            if text[i] == <char>10 {
+                fnt.currX = pos[0]
+                fnt.currY += fnt.fontSize + fnt.fontSize / 2
+                continue
+            }
 
             if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
                 if text[i] & 0xE0 == 0xC0 {
@@ -454,10 +658,22 @@ struct window {
     measureText(fnt font, text str) [uint, uint] {
         ocx = fnt.currX
         ocy = fnt.currY
+        maxx = ocx
         fnt.currX = 0
         fnt.currY = 0
         i=0; for i < len(text), i++ {
             codePoint = <uint32>text[i]
+
+            if text[i] == <char>10 {
+
+                if fnt.currX > maxx {
+                    maxx = fnt.currX
+                }
+
+                fnt.currX = ocx
+                fnt.currY += fnt.fontSize + fnt.fontSize / 2
+                continue
+            }
 
             if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
                 if text[i] & 0xE0 == 0xC0 {
@@ -475,7 +691,11 @@ struct window {
             fnt.measureChar(codePoint)
         }
 
-        res = [fnt.currX, fnt.currY]
+        if fnt.currX > maxx {
+            maxx = fnt.currX
+        }
+
+        res = [maxx, fnt.currY + fnt.fontSize]
         fnt.currX = ocx
         fnt.currY = ocy
         return res
@@ -484,10 +704,22 @@ struct window {
     measureByteArr(fnt font, text []byte, from uint, to uint) [uint, uint] {
         ocx = fnt.currX
         ocy = fnt.currY
+        maxx = ocx
         fnt.currX = 0
         fnt.currY = 0
         i=from; for i < to, i++ {
             codePoint = <uint32>text[i]
+
+            if text[i] == <char>10 {
+
+                if fnt.currX > maxx {
+                    maxx = fnt.currX
+                }
+
+                fnt.currX = ocx
+                fnt.currY += fnt.fontSize + fnt.fontSize / 2
+                continue
+            }
 
             if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
                 if text[i] & 0xE0 == 0xC0 {
@@ -505,7 +737,11 @@ struct window {
             fnt.measureChar(codePoint)
         }
 
-        res = [fnt.currX, fnt.currY]
+        if fnt.currX > maxx {
+            maxx = fnt.currX
+        }
+
+        res = [maxx, fnt.currY + fnt.fontSize]
         fnt.currX = ocx
         fnt.currY = ocy
         return res
@@ -619,6 +855,9 @@ struct window {
 
             if eventType == 22 {
                 cfg = <xcb_configure_notify_event_t *>event
+                if cfg.width == this.width && cfg.height == this.height {
+                    continue
+                }
                 this.width  = cfg.width
                 this.height = cfg.height
 
@@ -641,6 +880,7 @@ struct window {
                     this.isExposed = true
                 }
 
+                this.hasDrawn = false
                 this.callEventFunction(windowEventDraw)
 
                 xcb_shm_put_image(
