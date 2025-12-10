@@ -203,7 +203,9 @@ setPath(path str, isNewEntry bool) {
         //increment the history index, delete everything that could be forward
         pathHistoryIndex++
         if pathHistoryIndex != len(pathHistory) {
-            deleteRange(pathHistory, pathHistoryIndex, len(pathHistory))
+            for len(pathHistory) > pathHistoryIndex+1 {
+                delete(pathHistory, pathHistoryIndex+1)
+            }
         }
         //then insert the new history element at the current index
         pathHistory[pathHistoryIndex] = currentPath
@@ -252,6 +254,7 @@ setPath(path str, isNewEntry bool) {
         return
     }
 
+    println("Showing: "+intToStr(len(files))+" files.")
 
     //For every file in the folder
     i=0; for i < len(files), i++ {

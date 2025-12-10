@@ -15,10 +15,10 @@ const uiBasisCenter = 1024
 const uiBasisEnd    = 2048
 
 struct uiPos {
-    ammount: int16
-    flags: int16
+    ammount: int32
+    flags: int32
 
-    basis(bs int16) uiPos {
+    basis(bs int32) uiPos {
         this.flags = this.flags | bs
         return *this
     }
