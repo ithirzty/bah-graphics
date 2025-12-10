@@ -177,8 +177,18 @@ struct uiElement {
             __uiComposeElementTreeRecursively(elem)
 
             if this.parent != null && this.window != null {
-                __uiRedrawElement(this.window, this, __uiElementDrawTypeFull)   
+                __uiRedrawElement(this.window, this, __uiElementDrawTypeFull)
             }
+        }
+    }
+
+    addElementNoRedraw(elem uiElement*) {
+        elem.parent = this
+        elem.window = this.window
+        this.elements[len(this.elements)] = elem
+        if this.window != null {
+            __uiConstructElementTreeRecursively(elem)
+            __uiComposeElementTreeRecursively(elem)
         }
     }
 

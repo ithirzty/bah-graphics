@@ -350,7 +350,9 @@ struct ui extend window {
                             cPos = win.drawText(win.font, "SHIFT", rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
                             cPos = win.drawChar(win.font, '+', rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
                         }
-                        win.drawChar(win.font, win.list[i].key, rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
+                        if win.list[i].key < 65000 {
+                            win.drawChar(win.font, win.list[i].key, rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
+                        }
                     }
                 } else if event == windowEventMouseDown {
                     cursorPos = win.getCursorPosition()
@@ -458,6 +460,11 @@ __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
     ui.needsRedraw = true
     currElem = elem
     for currElem != null, currElem = currElem.parent {
+
+        if currElem.toRemove {
+            return
+        }
+
         if currElem.hashChanged() {
             if currElem.parent == null {
                 currElem = null
@@ -551,8 +558,11 @@ __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
             if currElem.manualDrawingMode == false && drawType != __uiElementDrawTypeChildren {
                 if ui.scissor[0] != false {
                     if pos[0] < ui.scissor[1] {
+                        size[0] -= ui.scissor[1] - pos[0]
                         pos[0] = ui.scissor[1]
-                    } else if pos[1] < ui.scissor[2] {
+                    }
+                    if pos[1] < ui.scissor[2] {
+                        size[1] -= ui.scissor[2] - pos[1]
                         pos[1] = ui.scissor[2]
                     }
                 }
@@ -641,7 +651,6 @@ __uiAnimationHandler(ui ui*) {
                 found = true
                 break
             }
-            // println("noep ["+intToStr(i)+"]: "+intToStr(anim.freq + anim.time)+" > "+intToStr(now)+" processed ? "+intToStr(<int>anim.processed))
         }
 
         if found {
@@ -732,6 +741,9 @@ _uiElementRecusriveRemove(elem uiElement*, ui ui*, forceRemove bool) bool {
                     }
                 }
 
+                if ui.focusedElement == elem.elements[i] {
+                    ui.focusedElement = null
+                }
                 delete(elem.elements, i)
                 i--
             }
@@ -810,15 +822,15 @@ _uiElementRecusriveCollide(elem uiElement*, pos [int,int]) uiElement* {
     elemSize = elem.getSize()
     if pos[0] >= elemPos[0] && pos[0] < elemPos[0] + elemSize[0] {
         if pos[1] >= elemPos[1] && pos[1] < elemPos[1] + elemSize[1] {
-            if elem.focusable {
-                return elem
-            }
-
             i=len(elem.elements) - 1; for i != -1, i-- {
                 ce = _uiElementRecusriveCollide(elem.elements[i], pos)
                 if ce != null && ce.focusable {
                     return ce
                 }
+            }
+
+            if elem.focusable {
+                return elem
             }
         }
     }
@@ -1162,9 +1174,7 @@ __uiConstructElementTreeRecursively(elem uiElement*) {
 
 __uiComposeElementTreeRecursively(elem uiElement*) {
     i=0; for i < len(elem.elements), i++ {
-        elem.elements[i].parent = elem
-        elem.elements[i].window = elem.window
         __uiComposeElementTreeRecursively(elem.elements[i])
-        __uiForceDrawElement(elem.window, elem)
     }
+    __uiForceDrawElement(elem.window, elem)
 }

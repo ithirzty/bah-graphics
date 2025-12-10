@@ -1,5 +1,3 @@
-#import "string.bah"
-
 #import "./libs/freetype.bah"
 #import "./libs/fontconfig.bah"
 
@@ -59,15 +57,22 @@ struct font {
             if err != 0 {
                 panic("error loading char")
             }
+
+            absPitch = slot.bitmap.pitch
+            if absPitch < 0 {
+                absPitch = 0 - absPitch
+            }
+
+
             this.slotsCache[i] = __fontGlyphCache {
                 codepoint: c
                 glyph: *slot
                 size: this.fontSize
             }
-            this.slotsCache[i].glyph.bitmap.buff = <byte*>memoryAllocSTR_NZ(slot.bitmap.pitch * slot.bitmap.rows)
-
-            memcpy(this.slotsCache[i].glyph.bitmap.buff, slot.bitmap.buff, slot.bitmap.pitch * slot.bitmap.rows)
-
+            if absPitch * slot.bitmap.rows > 0 {
+                this.slotsCache[i].glyph.bitmap.buff = <byte*>memoryAllocSTR_NZ(absPitch * slot.bitmap.rows)
+                memcpy(this.slotsCache[i].glyph.bitmap.buff, slot.bitmap.buff, absPitch * slot.bitmap.rows)
+            }
         }
 
         bitmap = slot.bitmap
@@ -125,15 +130,22 @@ struct font {
             if err != 0 {
                 panic("error loading char")
             }
+
+            absPitch = slot.bitmap.pitch
+            if absPitch < 0 {
+                absPitch = 0 - absPitch
+            }
+
+
             this.slotsCache[i] = __fontGlyphCache {
                 codepoint: c
                 glyph: *slot
                 size: this.fontSize
             }
-            this.slotsCache[i].glyph.bitmap.buff = <byte*>memoryAllocSTR_NZ(slot.bitmap.pitch * slot.bitmap.rows)
-
-            memcpy(this.slotsCache[i].glyph.bitmap.buff, slot.bitmap.buff, slot.bitmap.pitch * slot.bitmap.rows)
-
+            if absPitch * slot.bitmap.rows > 0 {
+                this.slotsCache[i].glyph.bitmap.buff = <byte*>memoryAllocSTR_NZ(absPitch * slot.bitmap.rows)
+                memcpy(this.slotsCache[i].glyph.bitmap.buff, slot.bitmap.buff, absPitch * slot.bitmap.rows)
+            }
         }
 
         this.currX += (slot.advance.x >> 6)

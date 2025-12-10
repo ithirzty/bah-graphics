@@ -132,6 +132,10 @@ struct uiBoxScrollbar extend uiElement {
 
 
         innerSize = this.parent.getInnerSize()
+
+        if innerSize[0] * innerSize[1] == 0 {
+            return
+        }
         
         if this.isVertical {
             this.thumbSize = (this.parent.size[1] * this.size[1]) / innerSize[1]
@@ -205,6 +209,10 @@ struct uiBox extend uiElement {
 
         pos = this.getPosition()
         size = this.getSize()
+
+        if this.scrollable == false {
+            return
+        }
 
         innerSize = this.getInnerSize()
         

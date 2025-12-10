@@ -9,6 +9,7 @@
 #import "./colors.bah"
 #import "./fonts.bah"
 #import "./keys.bah"
+#import "./images.bah"
 
 const windowEventInitialize = 0
 const windowEventDraw = 1
@@ -351,8 +352,8 @@ struct window {
         }
     }
 
-    drawRect(pos [int, int], size [uint, uint], color rgbColor) {
-        if color.a == 0 {
+    drawRect(pos [int, int], size [int, int], color rgbColor) {
+        if color.a == 0 || size[0] < 0 || size[1] < 0 {
             return
         }
         this.hasDrawn = true
@@ -412,6 +413,7 @@ struct window {
             }
 
             if pos[1] < this.scissor[2] {
+                n += (this.scissor[2] - pos[1]) * size[0]
                 pos[1] = this.scissor[2]
             }
 
@@ -623,10 +625,17 @@ struct window {
 
         cPos = [pos[0] + radi - 1, pos[1] + size[1] - radi]
 
-        y=cPos[1]; for y < cPos[1] + radi, y++ {
+        y=cPos[1]
+
+        if size[1] % 2 == 0 {
+            y++
+        }
+
+        for y < cPos[1] + radi, y++ {
             if y >= this.height || y < 0 {
                 continue
             }
+            
             x = cPos[0] - radi; for x <= cPos[0], x++ {
                 if x >= this.width || x < 0 {
                     continue
@@ -651,7 +660,13 @@ struct window {
 
         cPos = [pos[0] + size[0] - radi, pos[1] + size[1] - radi]
 
-        y=cPos[1]; for y < cPos[1] + radi, y++ {
+        y=cPos[1]
+
+        if size[1] % 2 == 0 {
+            y++
+        }
+
+        for y < cPos[1] + radi, y++ {
             if y >= this.height || y < 0 {
                 continue
             }

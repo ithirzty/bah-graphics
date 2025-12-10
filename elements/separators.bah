@@ -1,0 +1,100 @@
+#import "../ui_struct.bah"
+
+#import "./base.bah"
+
+UI_SEPARATOR_COLOR = rgbColor{100, 100, 100}
+
+struct uiVerticalSeparator extend uiElement {
+    backdrop: function(uiVerticalSeparator*, ui*)
+    separation: int = -1
+    maxSep: int = -1
+    minSep: int = 0
+    isHoveringSep: bool
+    isDraggingSep: bool
+
+    events(event uint32) {
+        ui = <ui*>this.window
+
+        if event == uiEventElementHovered {
+            cursorPos = ui.getCursorPosition()
+            pos = this.getPosition()
+            cursorPos[0] -= pos[0]
+            cursorPos[1] -= pos[1]
+
+            if this.isDraggingSep {
+                this.separation = cursorPos[0]
+
+                if this.separation < this.minSep {
+                    this.separation = this.minSep
+                }
+
+                if this.maxSep != -1 && this.separation > this.maxSep {
+                    this.separation = this.maxSep
+                }
+
+
+                this.redraw()
+            } else {
+                if cursorPos[0] >= this.separation - 1 && cursorPos[0] <= this.separation + 1 {
+                    if this.isHoveringSep == false {
+                        this.cursor = "sb_h_double_arrow"
+                        ui.setCursor(this.cursor)
+                    }
+
+                    this.isHoveringSep = true                
+                } else {
+                    if this.isHoveringSep {
+                        this.cursor = null
+                        ui.setCursor(this.cursor)
+                    }
+                    this.isHoveringSep = false                
+                }
+            }
+        } else if event == uiEventElementMouseDown {
+            if this.isHoveringSep && ui.getEventButton() == MOUSE_LEFT_BUTTON {
+                this.isDraggingSep = true
+            }
+        } else if event == uiEventElementClicked {
+            if ui.getEventButton() == MOUSE_LEFT_BUTTON {
+                this.isDraggingSep = false
+            }
+        } else if event == uiEventElementHoverOut {
+            if this.isHoveringSep {
+                this.cursor = null
+            }
+            this.isDraggingSep = false
+            this.isHoveringSep = false
+        }
+    }
+
+    draw(w ui*) {
+        if this.backdrop != null {
+            this.backdrop(w)
+        }
+
+        if len(this.elements) < 2 {
+            return
+        }
+
+        this.elements[0].size[0] = this.separation - 1
+        this.elements[0].size[1] = this.size[1]
+        this.elements[0].pos[0] = pixels(0)
+
+        this.elements[1].size[0] = this.size[0] - this.separation - 1
+        this.elements[1].size[1] = this.size[1]
+        this.elements[1].pos[0] = pixels(this.separation + 1)
+
+        pos = this.getPosition()
+
+        w.drawRect([pos[0] + this.separation - 1, pos[1]], [2, this.size[1]], UI_SEPARATOR_COLOR)
+    }
+
+    _init() {
+        this._draw = this.draw
+        this._events = this.events
+
+        if this.separation == -1 {
+            this.separation = this.size[0] / 2
+        }
+    }
+}

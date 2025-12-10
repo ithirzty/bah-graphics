@@ -8,14 +8,21 @@ As such, the ui library is made to be really optimized on what it draws/redraws.
 
 The window object supports alpha blending, text drawing, antialiased primitive shapes drawing and IO events.
 
+This library is still very early WIP it may still contain bugs and is not as fast as what it could be.
+
 ## Try it out:
+If you do not have [the bah compiler](https://github.com/ithirzty/bah-asm) installed yet, dot it first.
 ```bash
 git clone https://github.com/ithirzty/bah-graphics
 cd bah-graphics
-./examples/chat.bah
+./examples/explorer.bah
 ```
+<center>
 
-> Futher documentation soon.
+![explorer example](/examples/assets/explorer.png)
+(this examples weighs 400KB and takes 8MB of RAM)
+
+</center>
 
 There are two libraries inside of this library.
 
@@ -170,7 +177,7 @@ MOUSE_SCROLL_RIGHT).
 - `.drawRectImage(pos [int, int], size [uint, uint], buff []rgbColor)` draws a rectangle with a given image buffer instad of a single color.
 - `.drawCircle(pos [int, int], radi uint, color rgbColor)` draws a circle.
 - `.drawRoundedRect(pos [int, int], size [uint, uint], radi uint, color rgbColor)` draws a rectangle with a given border radius.
-- `.drawText(fnt font, text str, color rgbColor, pos [int, int]) [int,int]` draws unicode text using the specified [font].
+- `.drawText(fnt font, text str, color rgbColor, pos [int, int]) [int,int]` draws unicode text using the specified [font] returns the location of a next caracter (as measureText()).
 - `.drawChar(fnt font, c uint32, color rgbColor, pos [int,int]) [int,int]` draws a single character.
 - `.drawByteArr(fnt font, text []byte, from uint, to uint, color rgbColor, pos [int, int])` draws given range of text from an array of bytes.
 - `.measureText(fnt font, text str) [uint, uint]` returns the dimensions in pixels of a text.
@@ -181,6 +188,8 @@ MOUSE_SCROLL_RIGHT).
 
 
 ### Fonts
+The font structure.
+
 Functions:
 - `getSystemUIfont() font` returns the default system UI font.
 
@@ -195,6 +204,8 @@ Methods:
 - `.measureChar(c uint32)` advances .currX and .currY but does not draw.
 
 ### Colors
+The rgbColor structure.
+
 Fields:
 `.r`, `.g`, `.b`, `.a` represents the red, green, blue and opacity composant of a color in a range from 0 to 255. By default, `.a` is set to 255.
 
@@ -204,6 +215,17 @@ Methods:
 - `.toLab() [float,float,float]` converts rgb to lab color space.
 - `.fromLab(c [float,float,float])` sets the current color from a lab color space
 - `.interpolate(c rgbColor, x int) rgbColor` interpolates between two colors.
+
+### Images
+The image structure.
+
+Fields:
+- `.path: str` the current image path.
+- `.width` and `.height` the dimensions of the loaded image.
+- `.buf: []rgbColor` the pixel buffer.
+
+Methods:
+- `.load(s str) bool` loads (only png for now) an image of specified file path s.
 
 ### The ui structure
 The ui structure extends [the window structure](#the-window-structure). Every field and method can be reused.
@@ -254,6 +276,7 @@ Methods:
 - `.getInnerSize() [uint,uint]` returns the size of the space occupied by its children. 
 - `.remove()` removes an element.
 - `.addElement(elem uiElement*)` adds an element as child.
+- `.addElementNoRedraw(elem uiElement*)` adds an element as child but does not trigger a redraw of the element. This can be used to insert multiple elements and then calling .redraw().
 - `.redrawIn(ms uint)` schedules a redraw in x miliseconds (for animation).
 - `.redraw()` immediate redraw
 
@@ -316,6 +339,7 @@ BUTTON_CLICKED_TEXT_COLOR = rgbColor{255,255,255}
 
 #### uiBox
 A container element that can be overflowed and scrolled.
+This is the only element that has scrollbars.
 
 Fields:
 - `.backdrop: function(uiBox*, ui*)` callback called before drawing its children. This is used for drawing a backdrop inside the box or changing its size...
@@ -329,9 +353,27 @@ Fields:
 - `.spacing: int` spacing between elements in pixels.
 - `.dynamicSize: bool = true` the other axis (not the one on which children are spread) grows dynamicaly by default as it is set to true. If set to false, you will have to set manualy its size. 
 
+#### uiVerticalGridArray / uiHorizontalGridArray
+A container lays all of its children on a grid and grows dynamically in its main axis.
+
+Fields:
+- `.spacing: int` spacing between elements in pixels.
+
+#### uiVerticalSeparator / uiHorizontalSeparator
+An element that takes two containers as children and separate them on its main axis with a draggable handle.
+
+Fields:
+- `.backdrop: function(uiVerticalSeparator*, ui*)` same as uiBox's callback, called before draw call.
+- `.separation: int` to set a default separation offset.
+- `.maxSep: int` the maximum separation offset after which the separator cannot be dragged anymore.
+- `.minSep: int` the minimum separation offset after which the separator cannot be dragged anymore.
+
+Globals:
+UI_SEPARATOR_COLOR = rgbColor{100, 100, 100}
+
 ## Examples
 You can find examples in the [example directory](/examples/).
 
 ## Notes
 
-Internally, this library uses xcb, fontconfig, freetype2 and lib math to work. These are pretty standard dependencies that should by available in any graphical environement. 
+Internally, this library uses xcb, fontconfig, freetype2, libpng and libmath to work. These are pretty standard dependencies that should by available in any graphical environement. 

@@ -1,0 +1,79 @@
+#cLib "lpng"
+
+// Bindings automatically generated
+// using https://github.com/ithirzty/ctobah
+
+// Original file: /home/alois/Documents/graphics/png.h
+// Bindings of exclusively: /home/alois/Documents/graphics
+
+//Location: ./png.h:30
+struct png_info_def {
+	width: uint32
+	height: uint32
+	color_type: byte
+	bit_depth: byte
+}
+
+const PNG_COLOR_MASK_PALETTE    = 1
+const PNG_COLOR_MASK_COLOR      = 2
+const PNG_COLOR_MASK_ALPHA      = 4
+const PNG_COLOR_TYPE_GRAY       = 6
+const PNG_COLOR_TYPE_PALETTE    = 3
+const PNG_COLOR_TYPE_RGB        = 2
+const PNG_COLOR_TYPE_RGB_ALPHA  = 6
+const PNG_COLOR_TYPE_GRAY_ALPHA = 4
+
+//Location: ./png.h:45
+#define png_sig_cmp(sig byte*, start uint, num_to_check uint) uint32
+
+//Location: ./png.h:48
+#define png_create_read_struct(user_png_ver char*, error_ptr ptr, error_fn function(ptr, char*), warn_fn function(ptr, char*)) ptr
+
+//Location: ./png.h:53
+#define png_create_info_struct(png_ptr ptr) ptr
+
+//Location: ./png.h:55
+#define png_destroy_read_struct(png_ptr_ptr ptr*, info_ptr_ptr ptr*, end_info_ptr_ptr ptr*)
+
+//Location: ./png.h:60
+#define png_init_io(png_ptr ptr, fp ptr*)
+
+//Location: ./png.h:61
+#define png_set_sig_bytes(png_ptr ptr, num_bytes int32)
+
+//Location: ./png.h:64
+#define png_read_info(png_ptr ptr, info_ptr ptr)
+
+//Location: ./png.h:65
+#define png_get_image_width(png_ptr ptr, info_ptr ptr) uint32
+
+//Location: ./png.h:66
+#define png_get_image_height(png_ptr ptr, info_ptr ptr) uint32
+
+//Location: ./png.h:67
+#define png_get_color_type(png_ptr ptr, info_ptr ptr) byte
+
+//Location: ./png.h:68
+#define png_get_bit_depth(png_ptr ptr, info_ptr ptr) byte
+
+//Location: ./png.h:71
+#define png_set_palette_to_rgb(png_ptr ptr)
+
+//Location: ./png.h:72
+#define png_set_expand_gray_1_2_4_to_8(png_ptr ptr)
+
+//Location: ./png.h:73
+#define png_set_add_alpha(png_ptr ptr, filler uint32, flags int32)
+
+//Location: ./png.h:74
+#define png_set_gray_to_rgb(png_ptr ptr)
+
+//Location: ./png.h:75
+#define png_set_strip_16(png_ptr ptr)
+
+//Location: ./png.h:76
+#define png_read_update_info(png_ptr ptr, info_ptr ptr)
+
+//Location: ./png.h:79
+#define png_read_image(png_ptr ptr, row_pointers byte**)
+

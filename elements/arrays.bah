@@ -22,8 +22,72 @@ struct uiVerticalArray extend uiElement {
         if this.dynamicSize {
             this.size[0] = innerSize[0]
         }
-        // this.size[1] = sizeAcc[1] - this.spacing + this.padding[1] + this.padding[3]
-        // this.size[0] = sizeAcc[0] //+ this.padding[0] + this.padding[2]
+    }
+
+    _init() {
+        this.focusable = false
+        this._draw = this.draw
+    }
+}
+
+struct uiHorizontalArray extend uiElement {
+    spacing: int
+    dynamicSize: bool = true
+
+    draw(w ui*) {
+        sizeAcc = [this.padding[0], this.padding[1]]
+        i=0; for i < len(this.elements), i++ {
+            elem = this.elements[i]
+            elem.pos[0] = pixels(sizeAcc[0])
+            size = elem.getSize()
+            pos = elem.getPosition()
+            sizeAcc[0] += size[0] + this.spacing
+        }
+
+        innerSize = this.getInnerSize()
+
+        this.size[0] = innerSize[0]
+        if this.dynamicSize {
+            this.size[1] = innerSize[1]
+        }
+    }
+
+    _init() {
+        this.focusable = false
+        this._draw = this.draw
+    }
+}
+
+struct uiVerticalGridArray extend uiElement {
+    spacing: int
+
+    draw(w ui*) {
+        sizeAcc = [this.padding[0], this.padding[1]]
+
+        maxHeight = 0
+
+        i=0; for i < len(this.elements), i++ {
+            elem = this.elements[i]
+            elem.pos[0] = pixels(sizeAcc[0])
+            elem.pos[1] = pixels(sizeAcc[1])
+            size = elem.getSize()
+            pos = elem.getPosition()
+
+            if size[1] > maxHeight {
+                maxHeight = size[1]
+            }
+            sizeAcc[0] += size[0] + this.spacing
+
+            if sizeAcc[0] + size[0] + this.padding[2] + this.padding[0] >= this.size[0] {
+                sizeAcc[0] = this.padding[0]
+                sizeAcc[1] += maxHeight + this.spacing
+                maxHeight = 0
+            }
+
+        }
+
+        innerSize = this.getInnerSize()
+        this.size[1] = innerSize[1]
     }
 
     _init() {

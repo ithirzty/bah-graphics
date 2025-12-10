@@ -165,7 +165,7 @@ main(args []str) int {
         }
     )
     
-    ui.launch(900, 700, "Chat UI test")
+    ui.launch(500, 300, "Chat UI test")
 
     return 0
 }
