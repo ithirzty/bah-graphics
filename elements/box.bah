@@ -223,7 +223,7 @@ struct uiBox extend uiElement {
                     absolutePosition: true
                     pos: [percents(100).basis(uiBasisEnd), pixels(0)]
                 }
-                this.addElement(this.scrollBars[1])
+                this.addElementNoRedraw(this.scrollBars[1])
             }
         } else {
             if this.scrollBars[1] != null {
@@ -239,7 +239,7 @@ struct uiBox extend uiElement {
                     absolutePosition: true
                     pos: [pixels(0), percents(100).basis(uiBasisEnd)]
                 }
-                this.addElement(this.scrollBars[0])
+                this.addElementNoRedraw(this.scrollBars[0])
             }
         } else {
             if this.scrollBars[0] != null {

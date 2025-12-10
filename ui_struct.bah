@@ -566,6 +566,7 @@ __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
                         pos[1] = ui.scissor[2]
                     }
                 }
+
                 _uiDrawElementBackground(pos, size, currElem)
                 // ui.drawRectImage(pos, size, currElem.maskedBuffer)
             }
