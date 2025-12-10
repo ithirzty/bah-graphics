@@ -374,6 +374,8 @@ UI_SEPARATOR_COLOR = rgbColor{100, 100, 100}
 ## Examples
 You can find examples in the [example directory](/examples/).
 
+![chat example](/examples/assets/chat.png)
+
 ## Notes
 
 Internally, this library uses xcb, fontconfig, freetype2, libpng and libmath to work. These are pretty standard dependencies that should by available in any graphical environement. 
