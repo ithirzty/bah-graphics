@@ -407,20 +407,22 @@ _uiDrawElementBackground(pos [int,int], size [int,int], currElem uiElement*) {
 
     ui.setScissor(pos, size)
 
-    if os[1] > ui.scissor[1] {
-        ui.scissor[1] = os[1]
-    }
+    if os[0] {
+        if os[1] > ui.scissor[1] {
+            ui.scissor[1] = os[1]
+        }
 
-    if os[2] > ui.scissor[2] {
-        ui.scissor[2] = os[2]
-    }
+        if os[2] > ui.scissor[2] {
+            ui.scissor[2] = os[2]
+        }
 
-    if os[3] < ui.scissor[3] {
-        ui.scissor[3] = os[3]
-    }
+        if os[3] < ui.scissor[3] {
+            ui.scissor[3] = os[3]
+        }
 
-    if os[4] < ui.scissor[4] {
-        ui.scissor[4] = os[4]
+        if os[4] < ui.scissor[4] {
+            ui.scissor[4] = os[4]
+        }
     }
 
     if currElem.parent != null {
@@ -566,7 +568,6 @@ __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
                         pos[1] = ui.scissor[2]
                     }
                 }
-
                 _uiDrawElementBackground(pos, size, currElem)
                 // ui.drawRectImage(pos, size, currElem.maskedBuffer)
             }
