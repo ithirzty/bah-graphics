@@ -5,6 +5,8 @@
 SCROLLBAR_TRACK_COLOR = rgbColor{220, 220, 220}
 SCROLLBAR_THUMB_COLOR = rgbColor{120, 120, 255}
 
+#define __uiBox_hasBothscrollBar(box uiElement*) bool
+
 struct uiBoxScrollbar extend uiElement {
     trackColor: rgbColor
     trackWidth: uint
@@ -20,17 +22,32 @@ struct uiBoxScrollbar extend uiElement {
         cursorPos[0] -= pos[0]
         cursorPos[1] -= pos[1]
         if evnt == uiEventElementMouseDown {
-            if cursorPos[1] >= this.thumbOffset && cursorPos[1] <= this.thumbOffset + this.thumbSize {
-                this.thumbDrag[2] = true
-                this.thumbDrag[0] = this.thumbOffset
-                this.thumbDrag[1] = cursorPos[1]
-                this.thumbDrag[3] = this.parent.offsets[0]
-                this.thumbDrag[4] = this.parent.offsets[1]
-                
+            if this.isVertical {
+                if cursorPos[1] >= this.thumbOffset && cursorPos[1] <= this.thumbOffset + this.thumbSize {
+                    this.thumbDrag[2] = true
+                    this.thumbDrag[0] = this.thumbOffset
+                    this.thumbDrag[1] = cursorPos[1]
+                    this.thumbDrag[3] = this.parent.offsets[0]
+                    this.thumbDrag[4] = this.parent.offsets[1]
+                    
+                } else {
+                    this.thumbDrag[2] = false
+                    this.cursor = null
+                    this.window.setCursor(this.cursor)
+                }
             } else {
-                this.thumbDrag[2] = false
-                this.cursor = null
-                this.window.setCursor(this.cursor)
+                if cursorPos[0] >= this.thumbOffset && cursorPos[0] <= this.thumbOffset + this.thumbSize {
+                    this.thumbDrag[2] = true
+                    this.thumbDrag[0] = this.thumbOffset
+                    this.thumbDrag[1] = cursorPos[0]
+                    this.thumbDrag[3] = this.parent.offsets[0]
+                    this.thumbDrag[4] = this.parent.offsets[1]
+                    
+                } else {
+                    this.thumbDrag[2] = false
+                    this.cursor = null
+                    this.window.setCursor(this.cursor)
+                }
             }
         } else if evnt == uiEventElementHoverIn {
             this.showTime = getTimeUnix()
@@ -44,12 +61,22 @@ struct uiBoxScrollbar extend uiElement {
                 parentSize = this.parent.getSize()
                 parentInnerSize = this.parent.getInnerSize()
 
-                this.thumbOffset = cursorPos[1] - this.thumbSize / 2
-                this.parent.offsets[1] = (((this.thumbOffset + this.thumbSize) * parentInnerSize[1]) / parentSize[1]) - parentSize[1]
-                if this.parent.offsets[1] < 0 {
-                    this.parent.offsets[1] = 0
-                } else if this.parent.offsets[1] + parentSize[1] > parentInnerSize[1] {
-                    this.parent.offsets[1] = parentInnerSize[1] - parentSize[1]
+                if this.isVertical {
+                    this.thumbOffset = cursorPos[1] - this.thumbSize / 2
+                    this.parent.offsets[1] = (((this.thumbOffset + this.thumbSize) * parentInnerSize[1]) / parentSize[1]) - parentSize[1]
+                    if this.parent.offsets[1] < 0 {
+                        this.parent.offsets[1] = 0
+                    } else if this.parent.offsets[1] + parentSize[1] > parentInnerSize[1] {
+                        this.parent.offsets[1] = parentInnerSize[1] - parentSize[1]
+                    }
+                } else {
+                    this.thumbOffset = cursorPos[0] - this.thumbSize / 2
+                    this.parent.offsets[0] = (((this.thumbOffset + this.thumbSize) * parentInnerSize[0]) / parentSize[0]) - parentSize[0]
+                    if this.parent.offsets[0] < 0 {
+                        this.parent.offsets[0] = 0
+                    } else if this.parent.offsets[0] + parentSize[0] > parentInnerSize[0] {
+                        this.parent.offsets[0] = parentInnerSize[0] - parentSize[0]
+                    }
                 }
                 this.parent.redraw()
             }
@@ -62,16 +89,24 @@ struct uiBoxScrollbar extend uiElement {
                 parentSize = this.parent.getSize()
                 parentInnerSize = this.parent.getInnerSize()
 
-                // drag = ((cursorPos[1] - this.thumbDrag[1] - this.thumbDrag[0] + this.thumbSize) * parentInnerSize[1] / parentSize[1]) - parentSize[1]
-                this.thumbOffset = this.thumbDrag[0] + cursorPos[1] - this.thumbDrag[1]
-
-
-                this.parent.offsets[1] = (((this.thumbOffset + this.thumbSize) * parentInnerSize[1]) / parentSize[1]) - parentSize[1]
-                if this.parent.offsets[1] < 0 {
-                    this.parent.offsets[1] = 0
-                } else if this.parent.offsets[1] + parentSize[1] > parentInnerSize[1] {
-                    this.parent.offsets[1] = parentInnerSize[1] - parentSize[1]
+                if this.isVertical {
+                    this.thumbOffset = this.thumbDrag[0] + cursorPos[1] - this.thumbDrag[1]
+                    this.parent.offsets[1] = (((this.thumbOffset + this.thumbSize) * parentInnerSize[1]) / parentSize[1]) - parentSize[1]
+                    if this.parent.offsets[1] < 0 {
+                        this.parent.offsets[1] = 0
+                    } else if this.parent.offsets[1] + parentSize[1] > parentInnerSize[1] {
+                        this.parent.offsets[1] = parentInnerSize[1] - parentSize[1]
+                    }
+                } else {
+                    this.thumbOffset = this.thumbDrag[0] + cursorPos[0] - this.thumbDrag[1]
+                    this.parent.offsets[0] = (((this.thumbOffset + this.thumbSize) * parentInnerSize[0]) / parentSize[0]) - parentSize[0]
+                    if this.parent.offsets[0] < 0 {
+                        this.parent.offsets[0] = 0
+                    } else if this.parent.offsets[0] + parentSize[0] > parentInnerSize[0] {
+                        this.parent.offsets[0] = parentInnerSize[0] - parentSize[0]
+                    }
                 }
+
                 this.parent.redraw()
             }
 
@@ -88,19 +123,30 @@ struct uiBoxScrollbar extend uiElement {
     draw(w ui*) {
         now = getTimeUnix()
         pos = this.getPosition()
-        this.size = [8, this.parent.size[1]]
+
+        if this.isVertical {
+            this.size = [8, this.parent.size[1]]
+        } else {
+            this.size = [this.parent.size[0], 8]
+        }
+
 
         innerSize = this.parent.getInnerSize()
         
-        this.thumbSize = (this.size[1] * this.size[1]) / innerSize[1]
-        this.thumbOffset = (((this.parent.offsets[1] + this.size[1]) * this.size[1]) / innerSize[1]) - this.thumbSize
+        if this.isVertical {
+            this.thumbSize = (this.parent.size[1] * this.size[1]) / innerSize[1]
+            this.thumbOffset = (((this.parent.offsets[1] + this.parent.size[1]) * this.size[1]) / innerSize[1]) - this.thumbSize
+        } else {
+            this.thumbSize = (this.parent.size[0] * this.size[0]) / innerSize[0]
+            this.thumbOffset = (((this.parent.offsets[0] + this.parent.size[0]) * this.size[0]) / innerSize[0]) - this.thumbSize
+        }
 
         thumbColor = SCROLLBAR_THUMB_COLOR
 
         if this.hovered {
             thumbColor.a = 255
         } else {
-            thumbColor.a = 80
+            thumbColor.a = 180
         }
 
         if now - this.showTime < 120000000 {
@@ -120,8 +166,13 @@ struct uiBoxScrollbar extend uiElement {
             this.trackWidth = 8
         }
 
-        w.drawRoundedRect([pos[0] + this.size[0] - this.trackWidth, pos[1]], [this.trackWidth, this.size[1]], 4, this.trackColor)
-        w.drawRoundedRect([pos[0] + this.size[0] - this.trackWidth, pos[1] + this.thumbOffset], [this.trackWidth, this.thumbSize], 4, thumbColor)
+        if this.isVertical {
+            w.drawRoundedRect([pos[0] + this.size[0] - this.trackWidth, pos[1]], [this.trackWidth, this.size[1]], 4, this.trackColor)
+            w.drawRoundedRect([pos[0] + this.size[0] - this.trackWidth, pos[1] + this.thumbOffset], [this.trackWidth, this.thumbSize], 4, thumbColor)
+        } else {
+            w.drawRoundedRect([pos[0], pos[1] + this.size[1] - this.trackWidth], [this.size[0], this.trackWidth], 4, this.trackColor)
+            w.drawRoundedRect([pos[0] + this.thumbOffset, pos[1] + this.size[1] - this.trackWidth], [this.thumbSize, this.trackWidth], 4, thumbColor)
+        }
 
     }
 
@@ -138,7 +189,6 @@ struct uiBoxScrollbar extend uiElement {
 
 struct uiBox extend uiElement {
     scrollable: bool = true
-    overflows: [bool, bool]
     scrollBars: [uiElement*,uiElement*]
 
     backdrop: function(uiBox*, ui*)
@@ -173,16 +223,31 @@ struct uiBox extend uiElement {
                 this.scrollBars[1] = null
             }
         }
+
+        if innerSize[0] > size[0] {
+            if this.scrollBars[0] == null {
+                this.scrollBars[0] = new uiBoxScrollbar {
+                    isVertical: false
+                    absolutePosition: true
+                    pos: [pixels(0), percents(100).basis(uiBasisEnd)]
+                }
+                this.addElement(this.scrollBars[0])
+            }
+        } else {
+            if this.scrollBars[0] != null {
+                this.scrollBars[0].remove()
+                this.scrollBars[0] = null
+            }
+        }
     }
 
     _init() {
         this._events = this.events
         this._draw = this.draw
         this.focusable = false
-
-        if this.padding[0] == 0 {
-            this.padding = [8, 8]
-        }
-
     }
+}
+
+__uiBox_hasBothscrollBar(box uiElement*) bool {
+    return ((<uiBox*>box).scrollBars[0]) != ((<uiBox*>box).scrollBars[1])
 }

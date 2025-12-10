@@ -3,13 +3,121 @@
 #import "./base.bah"
 
 UI_TEXT_COLOR = rgbColor{0, 0, 0}
+UI_TEXT_SELECTION_COLOR = rgbColor{120, 120, 255}
 
 struct uiText extend uiElement {
     text: str = ""
     color: rgbColor
+    bgColor: rgbColor = rgbColor{0,0,0,0}
+            //pixel coords, text offset
+    selBeg: [int, int, int]
+    selEnd: [int, int, int]
+    isSel: bool
+
+
+    //character offset, line start character offset, line number, x pixel offset of character
+    _getTextPosition(cursorPos [int, int]) [int, int, int, int] {
+        ui = <ui*>this.window
+        pos = this.getPosition()
+        relPos = [
+            cursorPos[0] - pos[0] - this.padding[0],
+            cursorPos[1] - pos[1] - this.padding[1]
+        ]
+        
+        lineNb = relPos[1] / (this.fontSize + this.fontSize / 2)
+        
+        arr = strAsArr(this.text)
+
+                // n, start
+        currLine = [0, 0]
+        i=0; for i < len(this.text), i++ {
+            if this.text[i] == <char>10 {
+                currLine[0]++
+
+                if currLine[0] == lineNb {
+                    currLine[1] = i
+                } else if currLine[0] == lineNb+1 {
+                    currLine[0]--
+                    break
+                }
+            }
+        }
+
+        currDim = 0
+
+        for i != currLine[1] - 1, i-- {
+            currDim = this.window.measureByteArr(ui.font, <[]byte>&arr, currLine[1], i)[0]
+
+            if <int>currDim <= relPos[0] {
+                break
+            }
+        }
+
+
+        return [i, currLine[1], currLine[0], currDim]
+    }
+
+    getSelection() str {
+        sel = [this.selBeg[2], this.selEnd[2]]
+        selDist = sel[1] - sel[0]
+
+        if selDist < 0 {
+            selDist = 0 - selDist
+            tmp = sel[1]
+            sel[1] = sel[0]
+            sel[0] = tmp
+        }
+
+        if selDist == 0 {
+            return ""
+        }
+
+        return this.text[sel[0]:sel[1]]
+    }
 
     events(evnt uint32) {
+        if this.focusable == false {
+            return
+        }
 
+        ui = <ui*>this.window
+        cursorPos = this.window.getCursorPosition()
+
+
+        if ui.getEventButton() == MOUSE_LEFT_BUTTON {
+            if evnt == uiEventElementMouseDown {
+                this.isSel = true
+                // this.cursor = "xterm"
+                // this.window.setCursor("xterm")
+                textPos = this._getTextPosition(cursorPos)
+                this.selBeg = [
+                    textPos[3],
+                    textPos[2] * (this.fontSize + this.fontSize / 2),
+                    textPos[0]
+                ]
+                this.selEnd = this.selBeg
+                this.redraw()
+            } else if this.isSel {
+                textPos = this._getTextPosition(cursorPos)
+                if evnt == uiEventElementClicked {
+                    // this.cursor = "null"
+                    // this.window.setCursor(this.cursor)
+                    this.isSel = false
+                } else if evnt == uiEventElementHoverOut {
+                    this.selEnd = this.selBeg
+                    this.isSel = false
+                } else {
+                    this.selEnd = [
+                        textPos[3],
+                        textPos[2] * (this.fontSize + this.fontSize / 2),
+                        textPos[0]
+                    ]
+                    this.redraw()
+                }
+            } else if evnt == uiEventElementFocusOut {
+                this.selEnd = this.selBeg
+            }
+        }
     }
 
     setText(s str) {
@@ -19,6 +127,8 @@ struct uiText extend uiElement {
         this.size = this.window.measureText(ui.font, this.text)
         this.size[0] += this.padding[0] * 2
         this.size[1] += this.padding[1] * 2
+        this.selBeg[2] = 0
+        this.selEnd[2] = 0
         this.redraw()
     }
 
@@ -33,9 +143,48 @@ struct uiText extend uiElement {
             this.size[1] += this.padding[1] * 2
         }
 
-        w.drawText(w.font, this.text, this.color, [pos[0] + this.padding[0], pos[1] + this.padding[1] + this.fontSize])
+        w.drawRect(pos, this.size, this.bgColor)
 
-        // w.drawRect(pos, this.size, GREEN)
+        selDist = this.selBeg[2] - this.selEnd[2]
+        if selDist < 0 {
+            selDist = 0 - selDist
+        }
+
+        if selDist != 0 {
+            arr = strAsArr(this.text)
+
+            // currDim = this.window.measureByteArr(ui.font, <[]byte>&arr, currLine[1], i)[0]
+
+            selStart = this.selBeg
+            selEnd = this.selEnd
+            if this.selBeg[2] > this.selEnd[2] {
+                selStart = this.selEnd
+                selEnd = this.selBeg
+            }
+
+            startPos = [selStart[0] + pos[0], selStart[1] + pos[1]]
+
+            if this.parent != null {
+                startPos[0] -= this.parent.offsets[0]
+                startPos[1] -= this.parent.offsets[1]
+            }
+
+            startInd = selStart[2]
+            i = selStart[2]; for i < selEnd[2], i++ {
+                if this.text[i] == <char>10 {
+                    currDim = this.window.measureByteArr(w.font, <[]byte>&arr, startInd, i)[0]
+                    w.drawRect(startPos, [currDim, this.fontSize + this.fontSize / 2], UI_TEXT_SELECTION_COLOR)
+                    startPos = [pos[0], startPos[1] + this.fontSize + this.fontSize / 2]
+                    startInd = i + 1
+                }
+            }
+
+            currDim = this.window.measureByteArr(w.font, <[]byte>&arr, startInd, i)[0]
+            w.drawRect(startPos, [currDim, this.fontSize + this.fontSize / 2], UI_TEXT_SELECTION_COLOR)
+
+        }
+
+        w.drawText(w.font, this.text, this.color, [pos[0] + this.padding[0], pos[1] + this.padding[1] + this.fontSize])
     }
 
     _init() {
@@ -51,7 +200,39 @@ struct uiText extend uiElement {
         }
 
         if this.padding[0] == 0 {
-            this.padding = [this.fontSize / 2, this.fontSize / 2]
+            this.padding = [0, this.fontSize / 2, 0, 0]
+        }
+
+        if this.focusable {
+            this.cursor = "xterm"
+        }
+
+        this.contextItems[len(this.contextItems)] = uiContextItem {
+            key: 'c'
+            name: "Copy selected text."
+
+            callback: function(ci uiContextItem*, txt uiText*) {
+                sel = txt.getSelection()
+                txt.window.setClipboard(sel)
+            }
+        }
+
+        this.contextItems[len(this.contextItems)] = uiContextItem {
+            key: 'a'
+            name: "Select all text."
+
+            callback: function(ci uiContextItem*, txt uiText*) {
+                txt.selBeg[2] = 0
+                txt.selBeg[0] = 0
+                txt.selBeg[1] = 0
+
+                if txt.parent != null {
+                    txt.selBeg[0] += txt.parent.offsets[0]
+                    txt.selBeg[1] += txt.parent.offsets[1]
+                }
+
+                txt.selEnd[2] = len(txt.text)
+            }
         }
         
     }

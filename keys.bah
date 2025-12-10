@@ -8,6 +8,8 @@ const MOUSE_MIDDLE_BUTTON = 2
 const MOUSE_RIGHT_BUTTON  = 3
 const MOUSE_SCROLL_DOWN   = 5
 const MOUSE_SCROLL_UP     = 4
+const MOUSE_SCROLL_LEFT   = 6
+const MOUSE_SCROLL_RIGHT  = 7
 
 const Char_backspace   = 65288
 const Char_delete      = 65535

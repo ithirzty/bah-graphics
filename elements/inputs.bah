@@ -11,6 +11,7 @@ INPUT_TEXT_SELECTION_COLOR = rgbColor{120, 120, 255}
 
 struct uiTextInput extend uiElement {
     text: str = "Text input"
+    onsubmit: function(uiTextInput*)
     lastAction: uint
     value: []byte
     carret: uint
@@ -89,6 +90,10 @@ struct uiTextInput extend uiElement {
             this.showTime = getTimeUnix()
         }
 
+        if this.carret > len(this.value) {
+            this.carret = len(this.value)
+        }
+
         if evnt == windowEventKeyDown {
             this.lastAction = getTimeUnix() / 1000000 //to keep the carret visible
             c = this.window.getEventChar()
@@ -139,6 +144,7 @@ struct uiTextInput extend uiElement {
                     }
                 } else if c == Char_arr_left || c == Char_arr_right || c == Char_arr_down || c == Char_arr_up {
                     this._handleArrowMovement(c)
+                    this.selectionType = 0
                 } else if c == Char_delete {
                     if this.carret < len(this.value) {
                         delete(this.value, this.carret)
@@ -177,27 +183,12 @@ struct uiTextInput extend uiElement {
                         }
                     }
                 } else if c == Char_enter {
-                    
-                } else if this.window.isKeyModifier(Key_CTRL) {
-                    if c == <uint32>'a' {
-                        this.selectionType = 1
-                        this.carret = len(this.value)
-                        this.selection[0] = 0
-                        this.selection[1] = len(this.value)
-                    } else if c == <uint32>'c' {
-                        if this.selectionType != 0 {
-                            
-                        }
-                    } else if c == <uint32>'x' {
-                        if this.selectionType != 0 {
-                            
-                        }
-                    } else if c == <uint32>'v' {
-                        if this.selectionType != 0 {
-
-                        }
+                    sumbitFn = this.onsubmit
+                    if sumbitFn != null {
+                        sumbitFn(this)
                     }
-                } else {
+                    
+                } else if this.window.isKeyModifier(Key_CTRL) == false {
                     if c < 65000 {
                         if this.selectionType != 0 {
                             this._deleteSelection()
@@ -380,7 +371,7 @@ struct uiTextInput extend uiElement {
         }
 
         if this.padding[0] == 0 {
-            this.padding = [8, 8]
+            this.padding = [8, 12, 8, 12]
         }
 
         if this.size[0] == 0 {
@@ -389,5 +380,86 @@ struct uiTextInput extend uiElement {
 
         this.bgColor = INPUT_BACKGROUND_COLOR
         this.cursor = "xterm"
+
+        this.contextItems[len(this.contextItems)] = uiContextItem {
+            key: 'c'
+            name: "Copy selected text."
+
+            callback: function(ci uiContextItem*, inp uiTextInput*) {
+                if inp.selectionType != 0 {
+                    val = arrToStr(inp.value[inp.selection[0]:inp.selection[1]])
+                    inp.window.setClipboard(val)
+                }
+            }
+        }
+
+        this.contextItems[len(this.contextItems)] = uiContextItem {
+            key: 'a'
+            name: "Select all text."
+
+            callback: function(ci uiContextItem*, inp uiTextInput*) {
+                inp.selectionType = 1
+                inp.carret = len(inp.value)
+                inp.selection[0] = 0
+                inp.selection[1] = len(inp.value)
+            }
+        }
+
+        this.contextItems[len(this.contextItems)] = uiContextItem {
+            key: 'x'
+            name: "Cut selected text."
+
+            callback: function(ci uiContextItem*, inp uiTextInput*) {
+                if inp.selectionType != 0 {
+                    val = arrToStr(inp.value[inp.selection[0]:inp.selection[1]])
+                    inp.window.setClipboard(val)
+                    if inp.selectionType != 0 {
+                        inp._deleteSelection()
+                    }
+                }
+            }
+        }
+
+        this.contextItems[len(this.contextItems)] = uiContextItem {
+            key: 'v'
+            name: "Paste clipboard text."
+
+            callback: function(ci uiContextItem*, inp uiTextInput*) {
+                inp.window.getClipboard(function(w window*, cb str, inp uiTextInput*) {
+                    if inp.selectionType != 0 {
+                        inp._deleteSelection()
+                    }
+                    if inp.carret < len(inp.value) {
+                        postCarret = inp.value[inp.carret:]
+                        arrayDuplicate(postCarret)
+                        i=0; for i < len(cb), i++ {
+                            c = cb[i]
+
+                            if c == <char>10 {
+                                c = ' '
+                            }
+
+                            inp.value[i + inp.carret] = c
+                        }
+                        inp.carret += i
+                        i=0; for i < len(postCarret), i++ {
+                            inp.value[i + inp.carret] = postCarret[i]
+                        }
+                    } else {
+                        i=0; for i < len(cb), i++ {
+                            c = cb[i]
+                            if c == <char>10 {
+                                c = ' '
+                            }
+                            inp.value[i + inp.carret] = c
+                        }
+                        inp.carret += i
+                    }
+
+                }, inp)
+            }
+        }
+
+        
     }
 }

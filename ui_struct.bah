@@ -31,6 +31,218 @@ struct uiAnimation {
     processed: bool
 }
 
+struct contextMenuWindow extend window {
+    parent: window*
+    font: font
+    list: []uiContextItem
+    elem: uiElement*
+    choice: int = -1
+
+    launch(x uint, y uint, width uint, height uint) {
+        this.haveFrame.init()
+        this.haveFrameMut.init()
+
+        this.isRunning = true
+
+        threadWrkrFn = this.__drawThreadworker
+
+        i=1; for i <= __graphicsNbDrawers, i++ {
+            async threadWrkrFn(this, i)
+
+        }
+
+        this.width = width
+        this.height = height
+        screen_number = <int32>0
+        this.connection = xcb_connect(null, &screen_number);
+        if (xcb_connection_has_error(this.connection)) {
+            xcb_disconnect(this.connection)
+            return
+        }
+
+        setup = xcb_get_setup(this.connection)
+        iter = xcb_setup_roots_iterator(setup)
+
+        i=0; for i < screen_number, i++ {
+            xcb_screen_next(&iter)
+        }
+
+        this.screen = iter.data
+
+        this.window = xcb_generate_id(this.connection)
+        value_mask = XCB_CW_OVERRIDE_REDIRECT | XCB_CW_EVENT_MASK
+
+        value_list = [
+            <uint32>1,
+            XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_MOTION | XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_STRUCTURE_NOTIFY
+        ]
+
+        xcb_create_window(
+            this.connection,
+            0,          // profondeur (default)
+            this.window,                        // ID de la fenêtre
+            this.screen.root,                  // fenêtre parente
+            x, y, width, height,                // position et taille
+            0,
+            XCB_WINDOW_CLASS_INPUT_OUTPUT, // type
+            this.screen.root_visual,           // visual
+            value_mask, &value_list
+        )
+
+        xcb_map_window(this.connection, this.window)
+        xcb_flush(this.connection)
+
+        size = width * height * 4
+
+        shmid = shmget(0, size, 896)
+
+        if shmid < 0 {
+            panic("erorr allocating shared memory")
+        }
+
+        this.frameBuffer = shmat(shmid, null, 0)
+
+        shminfo = xcb_shm_segment_info_t {
+            shmseg: xcb_generate_id(this.connection)
+            shmid: shmid
+            shmaddr: this.frameBuffer
+        }
+
+        xcb_shm_attach(this.connection, shminfo.shmseg, shminfo.shmid, 0);
+        xcb_flush(this.connection)
+
+        this.keySyms = xcb_key_symbols_alloc(this.connection)
+
+        xcb_cursor_context_new(this.connection, this.screen, &this.cursorCtx)
+
+        event xcb_generic_event_t*
+
+        gc = xcb_generate_id(this.connection)
+        values = [0]
+        xcb_create_gc(this.connection, gc, this.window, XCB_GC_GRAPHICS_EXPOSURES, &values)
+
+        this.isExposed = false
+        for true, event = xcb_wait_for_event(this.connection) {
+            if event == null {
+                if this.isExposed {
+                    this.callEventFunction(windowEventClose)
+                    break
+                }
+                continue
+            }
+
+            eventType = event.response_type & 0x7F
+
+            if eventType == 22 {
+                cfg = <xcb_configure_notify_event_t *>event
+                if cfg.width == this.width && cfg.height == this.height {
+                    continue
+                }
+                this.width  = cfg.width
+                this.height = cfg.height
+
+                xcb_shm_detach(this.connection, shminfo.shmseg)
+                shmdt(this.frameBuffer)
+                shmctl(shminfo.shmid, 0, null)
+
+                // nouvelle taille
+                size = this.width * this.height * 4;
+                shminfo.shmid = shmget(0, size, 896)
+                this.frameBuffer = shmat(shminfo.shmid, null, 0)
+                shminfo.shmseg = xcb_generate_id(this.connection)
+
+                // nouveau segment
+                xcb_shm_attach(this.connection, shminfo.shmseg, shminfo.shmid, 0)
+                this.callEventFunction(windowEventDraw)
+            } else if eventType == 12 {
+                if this.isExposed == false {
+                    this.callEventFunction(windowEventInitialize)
+                    this.isExposed = true
+                }
+
+                this.hasDrawn = false
+                this.callEventFunction(windowEventDraw)
+
+                xcb_shm_put_image(
+                    this.connection,
+                    this.window,
+                    gc,
+                    this.width, this.height,
+                    0, 0, this.width, this.height,
+                    0, 0,
+                    this.screen.root_depth,
+                    XCB_IMAGE_FORMAT_Z_PIXMAP,
+                    0,
+                    shminfo.shmseg,
+                    0
+                )
+
+                xcb_flush(this.connection)
+                c = xcb_get_input_focus(this.connection)
+                xcb_get_input_focus_reply(this.connection, c, null)
+            } else if eventType == 6 {
+                this.callEventFunction(windowEventMouseMove)
+            } else if eventType == 4 {
+                this.lastMouseCode = event.pad0
+                this.callEventFunction(windowEventMouseDown)
+            } else if eventType == 5 {
+                this.lastMouseCode = event.pad0
+                this.callEventFunction(windowEventMouseUp)
+            } else if eventType == 2 {
+                this.lastKeyCode = event.pad0
+
+                if event.pad0 == 37 || event.pad0 == 105 {
+                    this.keyModifiers = this.keyModifiers | 0x01 //ctrl
+                } else if event.pad0 == 50 || event.pad0 == 62 {
+                    this.keyModifiers = this.keyModifiers | 0x02 //shift
+                } else if event.pad0 == 64 {
+                    this.keyModifiers = this.keyModifiers | 0x04 //alt
+                } else if event.pad0 == 108 {
+                    this.keyModifiers = this.keyModifiers | 0x08 //altgr
+                } else if event.pad0 == 66 {
+                    this.shiftLock = this.shiftLock == false
+                }
+                this.callEventFunction(windowEventKeyDown)
+            } else if eventType == 3 {
+                this.lastKeyCode = event.pad0
+
+                if event.pad0 == 37 || event.pad0 == 105 {
+                    this.keyModifiers = this.keyModifiers & ~0x01
+                } else if event.pad0 == 50 || event.pad0 == 62 {
+                    this.keyModifiers = this.keyModifiers & ~0x02
+                } else if event.pad0 == 64 {
+                    this.keyModifiers = this.keyModifiers & ~0x04
+                } else if event.pad0 == 108 {
+                    this.keyModifiers = this.keyModifiers & ~0x08
+                }
+                this.callEventFunction(windowEventKeyUp)
+            } else if eventType == 33 {
+                break
+            }
+            //  else {
+            //     println("unkown event: "+intToStr(eventType))
+            // }
+
+            free(event)
+        }
+
+        this.isRunning = false
+        this.haveFrame.broadcast()
+
+        xcb_cursor_context_free(this.cursorCtx)
+        xcb_shm_detach(this.connection, shminfo.shmseg)
+        shmdt(this.frameBuffer)
+        shmctl(shmid, 0, null)
+        xcb_key_symbols_free(this.keySyms)
+        xcb_disconnect(this.connection)
+
+        this.haveFrame.destroy()
+        this.haveFrameMut.destroy()
+
+        this.parent.redraw()
+    }
+}
+
 struct ui extend window {
     font: font
     elements: []uiElement*
@@ -49,6 +261,7 @@ struct ui extend window {
 
     _oldDimensions: [int,int]
 
+    ctxWindow: contextMenuWindow*
 
     _init() {
         this.font = getSystemUIfont()
@@ -60,6 +273,9 @@ struct ui extend window {
     addElement(elem uiElement*) {
         elem.window = this
         this.elements[len(this.elements)] = elem
+
+        __uiConstructElementTreeRecursively(elem)
+
         if this.isExposed {
             if this.isDrawing == false {
                 this.frameStart = getTimeUnix()
@@ -71,19 +287,170 @@ struct ui extend window {
     setFocus(elem uiElement*) {
         __uiSetElementOnFocus(this, elem)
     }
-}
 
-__uiPropagateUpdateElementMask(ui ui*, currElem uiElement*) {
-    i=0; for i < len(currElem.elements), i++ {
-        pos = currElem.elements[i].getPosition()
-        size = currElem.elements[i].getSize()
-        if currElem.elements[i].manualDrawingMode == false {
-            ui.getRect(pos, size, currElem.elements[i].maskedBuffer)
+    find(id str) uiElement* {
+        i=0; for i < len(this.elements), i++ {
+            f = this.elements[i].find(id)
+            if f != null {
+                return f
+            }
         }
+        
+        return null
+    }
+
+    launch(width uint, height uint, title str) {
+        this.ctxWindow = new contextMenuWindow {
+            parent: this
+            font: getSystemUIfont()
+            events: function(win contextMenuWindow*, event uint32) {
+                ui = <ui*>win.parent
+
+                if event == windowEventMouseMove {
+                    win.redraw()
+                } else if event == windowEventDraw || event == windowEventInitialize {
+                    win.clear(BLACK)
+                    win.setCursor("hand1")
+                    win.font.setSize(8)
+
+                    cursorPos = win.getCursorPosition()
+
+                    i=0; for i < len(win.list), i++ {
+                        pos = [1, i * 31 + 1]
+
+                        bgColor = WHITE
+                        fgColor = BLACK
+
+                        if win.choice == i {
+                            fgColor = WHITE
+                            bgColor = rgbColor{120, 120, 255}
+                        } else if cursorPos[1] >= pos[1] && cursorPos[1] < pos[1] + 30 {
+                            bgColor = rgbColor{191, 191, 255}
+                        }
+                        win.drawRect(pos, [win.width - 2, 30], bgColor)
+
+                        win.drawText(win.font, win.list[i].name, fgColor, [pos[0] + 4, pos[1] + 20])
+                        offset = 52
+
+                        if win.list[i].shift {
+                            offset += 36
+                        }
+
+                        if win.list[i].alt {
+                            offset += 25
+                        }
+
+                        cPos = [win.width - offset, pos[1] + 20]
+
+                        if win.list[i].ctrl {
+                            cPos = win.drawText(win.font, "CTRL", rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
+                            cPos = win.drawChar(win.font, '+', rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
+                        }
+                        if win.list[i].shift {
+                            cPos = win.drawText(win.font, "SHIFT", rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
+                            cPos = win.drawChar(win.font, '+', rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
+                        }
+                        win.drawChar(win.font, win.list[i].key, rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
+                    }
+                } else if event == windowEventMouseDown {
+                    cursorPos = win.getCursorPosition()
+                    i=0; for i < len(win.list), i++ {
+                        pos = [0, i * 31 + 1]
+
+                        if cursorPos[1] >= pos[1] && cursorPos[1] < pos[1] + 30 {
+                            win.choice = i
+                            // cb = win.list[i].callback
+                            // cb(&win.list[i], win.elem)
+                            break
+                        }
+                    }
+                    win.redraw()
+                } else if event == windowEventMouseUp {
+                    cursorPos = win.getCursorPosition()
+                    i=0; for i < len(win.list), i++ {
+                        pos = [0, i * 31 + 1]
+
+                        if cursorPos[1] >= pos[1] && cursorPos[1] < pos[1] + 30 {
+                            break
+                        }
+                    }
+                    if i == win.choice {
+                        win.close()
+                    } else {
+                        win.choice = -1
+                        win.redraw()
+                    }
+                }
+            }
+        }
+        win = <window*>this
+        win.launch(width, height, title)
     }
 }
 
-__uiRedrawElement(ui ui*, elem uiElement*) {
+// __uiPropagateUpdateElementMask(ui ui*, currElem uiElement*) {
+//     i=0; for i < len(currElem.elements), i++ {
+//         pos = currElem.elements[i].getPosition()
+//         size = currElem.elements[i].getSize()
+//         if currElem.elements[i].manualDrawingMode == false {
+//             ui.getRect(pos, size, currElem.elements[i].maskedBuffer)
+//         }
+//     }
+// }
+
+_uiDrawElementBackground(pos [int,int], size [int,int], currElem uiElement*) {
+    ui = <ui*>currElem.window
+
+    os = ui.scissor
+
+    ui.setScissor(pos, size)
+
+    if os[1] > ui.scissor[1] {
+        ui.scissor[1] = os[1]
+    }
+
+    if os[2] > ui.scissor[2] {
+        ui.scissor[2] = os[2]
+    }
+
+    if os[3] < ui.scissor[3] {
+        ui.scissor[3] = os[3]
+    }
+
+    if os[4] < ui.scissor[4] {
+        ui.scissor[4] = os[4]
+    }
+
+    if currElem.parent != null {
+        i=0; for i < len(currElem.parent.elements), i++ {
+            if currElem.parent.elements[i] == currElem {
+                break
+            }
+        }
+        __uiRedrawElement(ui, currElem.parent, __uiElementDrawTypeBackground + i)
+    } else {
+        ui.clear(WHITE)
+    }
+
+    ui.scissor = os
+
+}
+
+__uiIsOutsideScissor(ui ui*, pos [int,int], size [int,int]) bool {
+    max = [pos[0] + size[0], pos[1] + size[1]]
+
+    if max[0] < ui.scissor[1] || max[1] < ui.scissor[2] {
+        return true
+    }
+
+    if pos[0] > ui.scissor[3] || pos[1] > ui.scissor[4] {
+        return true
+    }
+
+    return false
+}
+
+__uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
     if ui.isDrawing == false {
         ui.frameStart = getTimeUnix()
         ui.isDrawing = true
@@ -91,117 +458,127 @@ __uiRedrawElement(ui ui*, elem uiElement*) {
     ui.needsRedraw = true
     currElem = elem
     for currElem != null, currElem = currElem.parent {
-        if currElem.hashChanged() == false {
-            ui.alreadyDrawn = true
-            drawFn = currElem._draw
-            if drawFn != null {
+        if currElem.hashChanged() {
+            if currElem.parent == null {
+                currElem = null
+                break
+            }
 
-                os = ui.scissor
+            if drawType == __uiElementDrawTypeFull {
+                __uiRedrawElement(ui, currElem.parent, __uiElementDrawTypeFull)
+                return
+            }
+        }
+        ui.alreadyDrawn = true
+        drawFn = currElem._draw
+        if drawFn != null {
+
+            pos = currElem.getPosition()
+            size = currElem.getSize()
+            if ui.scissor[0] && __uiIsOutsideScissor(ui, pos, size) {
+                return
+            }
+
+            if drawType == __uiElementDrawTypeFull && currElem.parent != null {
+                i=0; for i < len(currElem.parent.elements), i++ {
+                    if currElem.parent.elements[i] == currElem {
+                        i++
+                        break
+                    }
+                }
+
+                for i < len(currElem.parent.elements), i++ {
+                    nextElem = currElem.parent.elements[i]
+                    nextPos = nextElem.getPosition()
+                    nextMax = nextElem.getSize()
+                    nextMax[0] += nextPos[0]
+                    nextMax[1] += nextPos[1]
+                    if nextPos[0] < pos[0] + size[0] && nextPos[1] < pos[1] + size[1] && nextMax[0] > pos[0] && nextMax[1] > pos[1] {
+                        __uiRedrawElement(ui, currElem.parent, __uiElementDrawTypeFull)
+                        return
+                    }
+                }
+            }
+
+            os = ui.scissor
+            if drawType < __uiElementDrawTypeBackground {
                 if elem.parent != null {
                     scissor = [0,0,0,0]
 
                     currBox = elem.parent
                     for currBox != null, currBox = currBox.parent {
-                        size = currBox.getSize()
-                        pos = currBox.getPosition()
+                        bSize = currBox.getSize()
+                        bPos = currBox.getPosition()
+
+                        if currElem.absolutePosition == false {
+                            bPos[0] += currBox.innerMargin[0]
+                            bPos[1] += currBox.innerMargin[1]
+                            bSize[0] -= (currBox.innerMargin[0] + currBox.innerMargin[2])
+                            bSize[1] -= (currBox.innerMargin[1] + currBox.innerMargin[3])
+                        }
 
                         if scissor[2] + scissor[3] == 0 {
-                            scissor[0] = pos[0]
-                            scissor[1] = pos[1]
-                            scissor[2] = size[0]
-                            scissor[3] = size[1]
+                            scissor[0] = bPos[0]
+                            scissor[1] = bPos[1]
+                            scissor[2] = bPos[0] + bSize[0]
+                            scissor[3] = bPos[1] + bSize[1]
                             continue
                         }
 
-                        if pos[0] > scissor[0] {
-                            scissor[0] = pos[0]
+                        if bPos[0] > scissor[0] {
+                            scissor[0] = bPos[0]
                         }
 
-                        if pos[1] > scissor[1] {
-                            scissor[1] = pos[1]
+                        if bPos[1] > scissor[1] {
+                            scissor[1] = bPos[1]
                         }
 
-                        if size[0] < scissor[2] {
-                            scissor[2] = size[0]
+                        if bPos[0] + bSize[0] < scissor[2] {
+                            scissor[2] = bPos[0] + bSize[0]
                         }
 
-                        if size[1] < scissor[3] {
-                            scissor[3] = size[1]
+                        if bPos[1] + bSize[1] < scissor[3] {
+                            scissor[3] = bPos[1] + bSize[1]
                         }
                     }
 
-                    ui.setScissor([scissor[0], scissor[1]], [scissor[2], scissor[3]])
+                    ui.setScissor([scissor[0], scissor[1]], [scissor[2] - scissor[0], scissor[3] - scissor[1]])
                 } else {
                     ui.disableScissor()
                 }
-
-                pos = currElem.getPosition()
-                size = currElem.getSize()
-                if currElem.manualDrawingMode == false {
-                    if ui.scissor[0] != false {
-                        if pos[0] < ui.scissor[1] {
-                            pos[0] = ui.scissor[1]
-                        } else if pos[1] < ui.scissor[2] {
-                            pos[1] = ui.scissor[2]
-                        }
-                    }
-                    ui.drawRectImage(pos, size, currElem.maskedBuffer)
-                }
-
-                drawFn(currElem, ui)
-                __uiPropagateUpdateElementMask(ui, currElem)
-
-                ui.scissor = os
-
-                i=0; for i < len(currElem.elements), i++ {
-                    __uiRedrawElement(ui, currElem.elements[i])
-                }
-                break
             }
-        } else {
 
-            os = ui.scissor
-            if elem.parent != null {
-                scissor = [0,0,0,0]
-
-                currBox = elem.parent
-                for currBox != null, currBox = currBox.parent {
-                    size = currBox.getSize()
-                    pos = currBox.getPosition()
-
-                    if scissor[2] + scissor[3] == 0 {
-                        scissor[0] = pos[0]
-                        scissor[1] = pos[1]
-                        scissor[2] = size[0]
-                        scissor[3] = size[1]
-                        continue
-                    }
-
-                    if pos[0] > scissor[0] {
-                        scissor[0] = pos[0]
-                    }
-
-                    if pos[1] > scissor[1] {
-                        scissor[1] = pos[1]
-                    }
-
-                    if size[0] < scissor[2] {
-                        scissor[2] = size[0]
-                    }
-
-                    if size[1] < scissor[3] {
-                        scissor[3] = size[1]
+            if currElem.manualDrawingMode == false && drawType != __uiElementDrawTypeChildren {
+                if ui.scissor[0] != false {
+                    if pos[0] < ui.scissor[1] {
+                        pos[0] = ui.scissor[1]
+                    } else if pos[1] < ui.scissor[2] {
+                        pos[1] = ui.scissor[2]
                     }
                 }
+                _uiDrawElementBackground(pos, size, currElem)
+                // ui.drawRectImage(pos, size, currElem.maskedBuffer)
+            }
 
-                ui.setScissor([scissor[0], scissor[1]], [scissor[2], scissor[3]])
+            drawFn(currElem, ui)
+            // __uiPropagateUpdateElementMask(ui, currElem)
+
+
+            max = len(currElem.elements)
+            if drawType >= __uiElementDrawTypeBackground {
+                max = drawType - __uiElementDrawTypeBackground
+                i=0; for i < max, i++ {
+                    el = currElem.elements[i]
+                    __uiRedrawElement(ui, el, __uiElementDrawTypeBackground + len(el.elements))
+                }
             } else {
-                ui.disableScissor()
+                i=0; for i < max, i++ {
+                    el = currElem.elements[i]
+                    __uiRedrawElement(ui, el, __uiElementDrawTypeChildren)
+                }
             }
-
-            elem.captureMaskedBuffer()
-
             ui.scissor = os
+            break
         }
     }
 
@@ -279,15 +656,56 @@ __uiAnimationHandler(ui ui*) {
 }
 
 __uiDispatchEvent(ui ui*, elem uiElement*, event uint32) {
-    currElem = elem
-    fn = currElem._events
-    if fn != null {
-        fn(currElem, event)
+    if event == windowEventKeyDown {
+        i=0; for i < len(elem.contextItems), i++ {
+            ci = &elem.contextItems[i]
+            if ci.ctrl != ui.isKeyModifier(Key_CTRL) || ci.shift != ui.isKeyModifier(Key_SHIFT) || ci.alt != ui.isKeyModifier(Key_ALT) {
+                continue
+            }
+
+            if ci.key == ui.getEventChar() && ci.callback != null {
+                ci.callback(elem)
+                break
+            }
+        }
+    } else if event == uiEventElementMouseDown && ui.getEventButton() == MOUSE_RIGHT_BUTTON && len(elem.contextItems) != 0 {
+        curs = ui.toScreenCoord(ui.getCursorPosition())
+        ui.ctxWindow.list = elem.contextItems
+        ui.ctxWindow.elem = elem
+        ui.ctxWindow.font.setSize(8)
+
+        maxWidth = 0
+
+        i=0; for i < len(elem.contextItems), i++ {
+            size = ui.ctxWindow.measureText(ui.ctxWindow.font, elem.contextItems[i].name)[0] + 40
+
+            if elem.contextItems[i].ctrl {
+                size += 32
+            }
+
+            if elem.contextItems[i].shift {
+                size += 36
+            }
+
+            if elem.contextItems[i].alt {
+                size += 25
+            }
+
+            if size > maxWidth {
+                maxWidth = size
+            }
+        }
+
+        async ui.ctxWindow.launch(curs[0], curs[1], maxWidth + 2, len(elem.contextItems) * 31 + 1)
+    }
+
+    if elem._events != null {
+        elem._events(event)
     }
 
     // if elem.manualDrawingMode == false {
     if event in uiNotDrawnEvents == false {
-        __uiRedrawElement(ui, elem)
+        __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
     }
     // }
 }
@@ -302,7 +720,7 @@ _uiElementRecusriveRemove(elem uiElement*, ui ui*, forceRemove bool) bool {
                 if elem.elements[i].hashChanged() == false && elem.elements[i].manualDrawingMode == false {
                     pos = elem.elements[i].getPosition()
                     size = elem.elements[i].getSize()
-                    ui.drawRectImage(pos, size, elem.elements[i].maskedBuffer)
+                    _uiDrawElementBackground(pos, size, elem.elements[i])
                 } else {
                     hasRemoved = true
                 }
@@ -321,7 +739,7 @@ _uiElementRecusriveRemove(elem uiElement*, ui ui*, forceRemove bool) bool {
     }
 
     if hasRemoved && toRemove == false {
-        __uiRedrawElement(ui, elem)
+        __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
     }
 
     return toRemove
@@ -331,7 +749,7 @@ _uiElementRecusriveResetHover(elem uiElement*, ui ui*) {
     wasHovered = elem.hovered
     elem.hovered = false
     if wasHovered {
-        __uiRedrawElement(ui, elem)
+        __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
         __uiDispatchEvent(ui, elem, uiEventElementHoverOut)
     }
     
@@ -396,7 +814,7 @@ _uiElementRecusriveCollide(elem uiElement*, pos [int,int]) uiElement* {
                 return elem
             }
 
-            i=0; for i < len(elem.elements), i++ {
+            i=len(elem.elements) - 1; for i != -1, i-- {
                 ce = _uiElementRecusriveCollide(elem.elements[i], pos)
                 if ce != null && ce.focusable {
                     return ce
@@ -407,7 +825,7 @@ _uiElementRecusriveCollide(elem uiElement*, pos [int,int]) uiElement* {
     return null
 }
 
-__ui_filterIsElemScrollable(elem uiElement*) bool {
+__ui_filterIsElemScrollableV(elem uiElement*) bool {
     size = elem.getSize()
     
     innerSize = elem.getInnerSize()
@@ -415,12 +833,20 @@ __ui_filterIsElemScrollable(elem uiElement*) bool {
     return innerSize[1] > size[1]
 }
 
+__ui_filterIsElemScrollableH(elem uiElement*) bool {
+    size = elem.getSize()
+    
+    innerSize = elem.getInnerSize()
+
+    return innerSize[0] > size[0]
+}
+
 _uiElementRecusriveCollideFiltered(elem uiElement*, pos [int,int], filter function(uiElement*) bool) uiElement* {
     elemPos = elem.getPosition()
     elemSize = elem.getSize()
     if pos[0] >= elemPos[0] && pos[0] < elemPos[0] + elemSize[0] {
         if pos[1] >= elemPos[1] && pos[1] < elemPos[1] + elemSize[1] {
-            i=0; for i < len(elem.elements), i++ {
+            i=len(elem.elements) - 1; for i != -1, i-- {
                 ce = _uiElementRecusriveCollideFiltered(elem.elements[i], pos, filter)
                 if ce != null && filter(ce) {
                     return ce
@@ -437,7 +863,7 @@ _uiElementRecusriveCollideFiltered(elem uiElement*, pos [int,int], filter functi
 __uiSetElementOnFocus(ui ui*, elem uiElement*) {
     if ui.focusedElement != null {
         ui.focusedElement.clicked = false
-        __uiRedrawElement(ui, ui.focusedElement)
+        __uiRedrawElement(ui, ui.focusedElement, __uiElementDrawTypeFull)
         ui.focusedElement.focused = false
         __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
         ui.focusedElement = null
@@ -446,7 +872,7 @@ __uiSetElementOnFocus(ui ui*, elem uiElement*) {
     ui.focusedElement.focused = true
     __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusIn)
     elem.clicked = true
-    __uiRedrawElement(ui, elem)
+    __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
 }
 
 __uiForceDrawElement(ui ui*, elem uiElement*) {
@@ -458,44 +884,48 @@ __uiForceDrawElement(ui ui*, elem uiElement*) {
 
             currBox = elem.parent
             for currBox != null, currBox = currBox.parent {
-                size = currBox.getSize()
-                pos = currBox.getPosition()
+                bSize = currBox.getSize()
+                bPos = currBox.getPosition()
+
+                if elem.absolutePosition == false {
+                    bPos[0] += currBox.innerMargin[0]
+                    bPos[1] += currBox.innerMargin[1]
+                    bSize[0] -= (currBox.innerMargin[0] + currBox.innerMargin[2])
+                    bSize[1] -= (currBox.innerMargin[1] + currBox.innerMargin[3])
+                }
 
                 if scissor[2] + scissor[3] == 0 {
-                    scissor[0] = pos[0]
-                    scissor[1] = pos[1]
-                    scissor[2] = size[0]
-                    scissor[3] = size[1]
+                    scissor[0] = bPos[0]
+                    scissor[1] = bPos[1]
+                    scissor[2] = bPos[0] + bSize[0]
+                    scissor[3] = bPos[1] + bSize[1]
                     continue
                 }
 
-                if pos[0] > scissor[0] {
-                    scissor[0] = pos[0]
+                if bPos[0] > scissor[0] {
+                    scissor[0] = bPos[0]
                 }
 
-                if pos[1] > scissor[1] {
-                    scissor[1] = pos[1]
+                if bPos[1] > scissor[1] {
+                    scissor[1] = bPos[1]
                 }
 
-                if size[0] < scissor[2] {
-                    scissor[2] = size[0]
+                if bPos[0] + bSize[0] < scissor[2] {
+                    scissor[2] = bPos[0] + bSize[0]
                 }
 
-                if size[1] < scissor[3] {
-                    scissor[3] = size[1]
+                if bPos[1] + bSize[1] < scissor[3] {
+                    scissor[3] = bPos[1] + bSize[1]
                 }
             }
 
-            ui.setScissor([scissor[0], scissor[1]], [scissor[2], scissor[3]])
+            ui.setScissor([scissor[0], scissor[1]], [scissor[2] - scissor[0], scissor[3] - scissor[1]])
         } else {
             ui.disableScissor()
         }
         
         fn(elem, ui)
-        if elem.hashChanged() {
-            elem.captureMaskedBuffer()
-        }
-
+        elem.hashChanged()
         ui.scissor = os
     }
 
@@ -506,6 +936,16 @@ __uiForceDrawElement(ui ui*, elem uiElement*) {
 
 __uiHandleEvents(ui ui*, event uint32) {
     ui.animationsMutex.lock()
+
+    if ui.ctxWindow.isRunning && (event == windowEventClose || event == windowEventMouseDown || event == windowEventKeyDown || event == windowEventFocusOut || event == windowEventResize) {
+        ui.ctxWindow.close()
+    } else if ui.ctxWindow.choice != -1 && ui.ctxWindow.isRunning == false {
+        cb = ui.ctxWindow.list[ui.ctxWindow.choice].callback
+        cb(&ui.ctxWindow.list[ui.ctxWindow.choice], ui.ctxWindow.elem)
+        __uiRedrawElement(ui, ui.ctxWindow.elem, __uiElementDrawTypeFull)
+        ui.ctxWindow.choice = -1
+    }
+
     if event == windowEventInitialize || event == windowEventDraw {
         if event == windowEventInitialize {
             ui.alreadyDrawn = false
@@ -529,7 +969,7 @@ __uiHandleEvents(ui ui*, event uint32) {
                 if ui.elements[i].hashChanged() == false && ui.elements[i].manualDrawingMode == false {
                     pos = ui.elements[i].getPosition()
                     size = ui.elements[i].getSize()
-                    ui.drawRectImage(pos, size, ui.elements[i].maskedBuffer)
+                    _uiDrawElementBackground(pos, size, ui.elements[i])
                 } else {
                     ui.alreadyDrawn = false
                 }
@@ -555,7 +995,7 @@ __uiHandleEvents(ui ui*, event uint32) {
             
             if anim.processed {
                 absTime = anim.freq / 1000 + anim.time
-                __uiRedrawElement(ui, anim.elem)
+                __uiRedrawElement(ui, anim.elem, __uiElementDrawTypeFull)
                 delete(ui.animations, i)
             }
         }
@@ -578,7 +1018,7 @@ __uiHandleEvents(ui ui*, event uint32) {
                 totalTime = (getTimeUnix() - ui.frameStart)
                 ms = totalTime / 1000000
                 fps = 1000000000 / totalTime
-                println("frame:\t"+intToStr(ms)+"ms\t"+intToStr(fps)+"fps")
+                print("\rframe:\t"+intToStr(ms)+"ms  \t"+intToStr(fps)+"fps   ")
 
             }
         }
@@ -607,10 +1047,10 @@ __uiHandleEvents(ui ui*, event uint32) {
         if nb == 0 || cursorChanged == false {
             ui.setCursor("left_ptr")
         }
-    }else if event == windowEventMouseDown {
+    } else if event == windowEventMouseDown {
         pos = ui.getCursorPosition()
         clickedBtn = ui.getEventButton()
-        if clickedBtn == MOUSE_LEFT_BUTTON {
+        if clickedBtn <= MOUSE_RIGHT_BUTTON {
             i=0; for i < len(ui.elements), i++ {
                 elem = _uiElementRecusriveCollide(ui.elements[i], pos)
                 if elem != null {
@@ -619,9 +1059,10 @@ __uiHandleEvents(ui ui*, event uint32) {
                     break
                 }
             }
-        } else if clickedBtn == MOUSE_SCROLL_DOWN {
+        }
+        if clickedBtn == MOUSE_SCROLL_DOWN {
             i=0; for i < len(ui.elements), i++ {
-                elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemScrollable)
+                elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemScrollableV)
                 if elem != null {
                     elem.offsets[1] += 10
                     size = elem.getSize()
@@ -629,19 +1070,45 @@ __uiHandleEvents(ui ui*, event uint32) {
                     if elem.offsets[1] + size[1] > innerSize[1] {
                         elem.offsets[1] = innerSize[1] - size[1]
                     }
-                    __uiRedrawElement(ui, elem)
+                    __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
                     break
                 }
             }
         } else if clickedBtn == MOUSE_SCROLL_UP {
             i=0; for i < len(ui.elements), i++ {
-                elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemScrollable)
+                elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemScrollableV)
                 if elem != null {
                     elem.offsets[1] -= 10
                     if elem.offsets[1] < 0 {
                         elem.offsets[1] = 0
                     }
-                    __uiRedrawElement(ui, elem)
+                    __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
+                    break
+                }
+            }
+        } else if clickedBtn == MOUSE_SCROLL_RIGHT {
+            i=0; for i < len(ui.elements), i++ {
+                elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemScrollableH)
+                if elem != null {
+                    elem.offsets[0] += 10
+                    size = elem.getSize()
+                    innerSize = elem.getInnerSize()
+                    if elem.offsets[0] + size[0] > innerSize[0] {
+                        elem.offsets[0] = innerSize[0] - size[0]
+                    }
+                    __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
+                    break
+                }
+            }
+        } else if clickedBtn == MOUSE_SCROLL_LEFT {
+            i=0; for i < len(ui.elements), i++ {
+                elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemScrollableH)
+                if elem != null {
+                    elem.offsets[0] -= 10
+                    if elem.offsets[0] < 0 {
+                        elem.offsets[0] = 0
+                    }
+                    __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
                     break
                 }
             }
@@ -656,7 +1123,7 @@ __uiHandleEvents(ui ui*, event uint32) {
                     if elem != null {
                         if elem != ui.focusedElement {
                             ui.focusedElement.clicked = false
-                            __uiRedrawElement(ui, ui.focusedElement)
+                            __uiRedrawElement(ui, ui.focusedElement, __uiElementDrawTypeFull)
                             ui.focusedElement.focused = false
                             __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
                             ui.focusedElement = null
@@ -669,7 +1136,7 @@ __uiHandleEvents(ui ui*, event uint32) {
                 }
                 if i == len(ui.elements) && ui.focusedElement != null {
                     ui.focusedElement.clicked = false
-                    __uiRedrawElement(ui, ui.focusedElement)
+                    __uiRedrawElement(ui, ui.focusedElement, __uiElementDrawTypeFull)
                     ui.focusedElement.focused = false
                     __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
                     ui.focusedElement = null
@@ -683,4 +1150,21 @@ __uiHandleEvents(ui ui*, event uint32) {
         ui.needsRedraw = false
     }
     ui.animationsMutex.unlock()
+}
+
+__uiConstructElementTreeRecursively(elem uiElement*) {
+    i=0; for i < len(elem.elements), i++ {
+        elem.elements[i].parent = elem
+        elem.elements[i].window = elem.window
+        __uiConstructElementTreeRecursively(elem.elements[i])
+    }
+}
+
+__uiComposeElementTreeRecursively(elem uiElement*) {
+    i=0; for i < len(elem.elements), i++ {
+        elem.elements[i].parent = elem
+        elem.elements[i].window = elem.window
+        __uiComposeElementTreeRecursively(elem.elements[i])
+        __uiForceDrawElement(elem.window, elem)
+    }
 }

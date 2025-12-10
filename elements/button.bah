@@ -14,6 +14,7 @@ struct uiButton extend uiElement {
     showTime: uint
     bgColor: rgbColor
     fgColor: rgbColor
+    radius: int = -1
 
     events(evnt uint32) {
         clickFn = this.onclick
@@ -104,25 +105,12 @@ struct uiButton extend uiElement {
                 fgColor = this.fgColor
             }
         }
-        //  else if this.hovered == false {
-        //     this.trackColor.a = 0
-        //     this.trackWidth = 4
-        // } else {
-        //     this.trackColor.a = 255
-        //     this.trackWidth = 8
-        // }
 
-
-        // if this.clicked {
-        //     bgColor = BUTTON_BACKGROUND_CLICKED_COLOR
-        //     textColor = BUTTON_CLICKED_TEXT_COLOR
-        // } else if this.hovered {
-        //     bgColor = BUTTON_BACKGROUND_HOVERED_COLOR
-        // } else {
-
-        // }
-
-        w.drawRoundedRect(pos, size, 8, bgColor)
+        if this.radius == 0 {
+            w.drawRect(pos, size, bgColor)
+        } else {
+            w.drawRoundedRect(pos, size, this.radius, bgColor)
+        }
         w.drawText(w.font, this.text, fgColor, [pos[0] + this.padding[0], pos[1] + this.size[1] / 2 + this.fontSize / 2 + 2])
     }
 
@@ -132,15 +120,19 @@ struct uiButton extend uiElement {
 
         this.bgColor = BUTTON_BACKGROUND_COLOR
         this.fgColor = BUTTON_TEXT_COLOR
-
+        
         this.cursor = "hand1"
 
         if this.fontSize == 0 {
             this.fontSize = 8
         }
 
+        if this.radius == -1 {
+            this.radius = 8
+        }
+
         if this.padding[0] == 0 {
-            this.padding = [8, 8]
+            this.padding = [12, 12, 12, 12]
         }
 
     }

@@ -1,6 +1,6 @@
 #import "iostream.bah"
 #import "string.bah"
-#import "json.bah"
+#import "channel.bah"
 
 #import "./libs/xcb.bah"
 #import "./libs/shm.bah"
@@ -18,6 +18,9 @@ const windowEventMouseDown = 4
 const windowEventMouseUp = 5
 const windowEventKeyDown = 6
 const windowEventKeyUp = 7
+const windowEventFocusIn = 8
+const windowEventFocusOut = 9
+const windowEventResize = 10
 
 const __graphicsDrawRequestTypeRect = 0
 const __graphicsDrawRequestTypeCircle = 1
@@ -30,6 +33,20 @@ struct __graphicsDrawRequest {
     to: [int,int]
     color: rgbColor*
     type: byte
+}
+
+xcb_getAtom(connection ptr, name str) uint32 {
+    cookie = xcb_intern_atom(connection, 0, len(name), cStr(name))
+    reply = xcb_intern_atom_reply(connection, cookie, null)
+
+    if reply == null {
+        println("error getting X atom: "+name)
+        return 0
+    }
+
+    atom = reply.atom
+    free(reply)
+    return atom
 }
 
 struct window {
@@ -53,6 +70,10 @@ struct window {
     isExposed: bool
     isRunning: bool
     hasDrawn: bool
+
+    tmpClipboard: str
+    clipboardChan: channel*
+    tmpClipboardAtoms: [uint32, uint32]
     
     callEventFunction(event uint32) {
         eventFn = this.events
@@ -110,6 +131,38 @@ struct window {
         return [<uint>reply.win_x, <uint>reply.win_y]
     }
 
+    setClipboard(s str) {
+        clipboard = xcb_getAtom(this.connection, "CLIPBOARD")
+        xcb_set_selection_owner(this.connection, this.window, clipboard, 0)
+        this.tmpClipboard = s
+        xcb_flush(this.connection)
+    }
+
+    getClipboard(callback function(window*, str, ptr), data ptr) {
+        clipboard = xcb_getAtom(this.connection, "CLIPBOARD")
+        utf8 = xcb_getAtom(this.connection, "UTF8_STRING")
+        prop = xcb_getAtom(this.connection, "XSEL_DATA")
+
+        this.tmpClipboardAtoms = [prop, utf8]
+
+        xcb_convert_selection(
+            this.connection,
+            this.window,
+            clipboard,
+            utf8,
+            prop,
+            0
+        )
+        xcb_flush(this.connection)
+
+        waitOnResp = function(w window*, cb function(window*, str, ptr), data ptr) {
+            resp = <str>w.clipboardChan.receive()
+            cb(w, resp, data)
+        }
+
+        async waitOnResp(this, callback, data)
+    }
+
     setCursor(name str) {
         if len(name) == 0 {
             name = "left_ptr"
@@ -142,12 +195,6 @@ struct window {
         xcb_flush(this.connection)
     }
 
-    clear(color rgbColor) {
-        this.hasDrawn = true
-        n = <uint32>color
-        memset(this.frameBuffer, n, this.width * this.height * 4)
-    }
-
     setScissor(pos [int,int], size [int, int]) {
         this.scissor = [true, pos[0], pos[1], pos[0] + size[0], pos[1] + size[1]]
     }
@@ -163,14 +210,8 @@ struct window {
             return
         }
 
-        if this.scissor[0] {
-            if pos[0] < this.scissor[1] || pos[0] >= this.scissor[3] {
-                return
-            }
-
-            if pos[1] < this.scissor[2] || pos[1] >= this.scissor[4] {
-                return
-            }
+        if this.scissor[0] && (pos[0] < this.scissor[1] || pos[0] >= this.scissor[3] || pos[1] < this.scissor[2] || pos[1] >= this.scissor[4]) {
+            return
         }
 
         if color.a != 255 {
@@ -184,10 +225,6 @@ struct window {
 
         v = (<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16)
         *(<uint32*>(<uint>this.frameBuffer + offset)) = v
-
-        // *(<byte*>(<uint>this.frameBuffer + offset)) = color.b
-        // *(<byte*>(<uint>this.frameBuffer + offset + 1)) = color.g
-        // *(<byte*>(<uint>this.frameBuffer + offset + 2)) = color.r
     }
 
     currentGraphicsRequest: __graphicsDrawRequest
@@ -239,12 +276,16 @@ struct window {
             this.haveFrameMut.lock()
             for this.haveFrameBool == false {
                 this.haveFrame.wait(this.haveFrameMut)
+
+                if this.isRunning == false {
+                    return
+                }
             }
             this.haveFrameBool = false
             this.haveFrameMut.unlock()
             
             if this.isRunning == false {
-                break
+                return
             }
 
             this.__threadedDrawer(m)
@@ -317,6 +358,24 @@ struct window {
         this.hasDrawn = true
         max = [pos[0] + size[0], pos[1] + size[1]]
 
+        if this.scissor[0] {
+            if pos[0] < this.scissor[1] {
+                pos[0] = this.scissor[1]
+            }
+
+            if pos[1] < this.scissor[2] {
+                pos[1] = this.scissor[2]
+            }
+
+            if max[0] > this.scissor[3] {
+                max[0] = this.scissor[3]
+            }
+
+            if max[1] > this.scissor[4] {
+                max[1] = this.scissor[4]
+            }
+        }
+
         if size[0] * size[1] > 100000 {
             this.__drawRequest(__graphicsDrawRequest{
                 from: pos
@@ -346,6 +405,24 @@ struct window {
         n = 0
         max = [pos[0] + size[0], pos[1] + size[1]]
         this.hasDrawn = true
+
+        if this.scissor[0] {
+            if pos[0] < this.scissor[1] {
+                pos[0] = this.scissor[1]
+            }
+
+            if pos[1] < this.scissor[2] {
+                pos[1] = this.scissor[2]
+            }
+
+            if max[0] > this.scissor[3] {
+                max[0] = this.scissor[3]
+            }
+
+            if max[1] > this.scissor[4] {
+                max[1] = this.scissor[4]
+            }
+        }
 
         if size[0] * size[1] > 100000 {
             this.__drawRequest(__graphicsDrawRequest{
@@ -386,11 +463,33 @@ struct window {
         }
         this.hasDrawn = true
         fradi = <float>radi
-        y=pos[1] - radi; for y < pos[1] + radi, y++ {
+
+        rect = [pos[0] - radi, pos[1] - radi, pos[0] + radi, pos[1] + radi]
+
+        if this.scissor[0] {
+            if rect[0] < this.scissor[1] {
+                rect[0] = this.scissor[1]
+            }
+
+            if rect[1] < this.scissor[2] {
+                rect[1] = this.scissor[2]
+            }
+
+            if rect[2] > this.scissor[3] {
+                rect[2] = this.scissor[3]
+            }
+
+            if rect[3] > this.scissor[4] {
+                rect[3] = this.scissor[4]
+            }
+        }
+
+
+        y = rect[1]; for y < rect[3], y++ {
             if y >= this.height || y < 0 {
                 continue
             }
-            x = pos[0] - radi; for x < pos[0] + radi, x++ {
+            x = rect[0]; for x < rect[2], x++ {
                 if x >= this.width || x < 0 {
                     continue
                 }
@@ -413,7 +512,7 @@ struct window {
         }
     }
 
-    drawRoundedRect(pos [int, int], size [uint, uint], radi uint, color rgbColor) {        
+    drawRoundedRect(pos [int, int], size [uint, uint], radi uint, color rgbColor) {
         if color.a == 0 {
             return
         }
@@ -434,7 +533,6 @@ struct window {
                 continue
             }
             x = pos[0]; for x < pos[0] + size[0], x++ {
-                offset = (y * this.width + x) * 4
                 if x >= this.width || x < 0 {
                     continue
                 }
@@ -589,15 +687,31 @@ struct window {
         // this.drawCircle([pos[0] + size[0] - radi, pos[1] + size[1] - radi], radi, color)
     }
 
-    drawText(fnt font, text str, color rgbColor, pos [int, int]) {
+    drawText(fnt font, text str, color rgbColor, pos [int, int]) [int,int] {
         fnt.currX = pos[0]
         fnt.currY = pos[1]
         this.hasDrawn = true
         i=0; for i < len(text), i++ {
 
-            if this.scissor[0] && fnt.currY - fnt.fontSize >= this.scissor[4] {
-                break
+            if this.scissor[0] {
+                if fnt.currY - fnt.fontSize >= this.scissor[4] {
+                    break
+                }
+
+                if fnt.currX >= this.scissor[3] {
+                    i++
+                    for i < len(text), i++ {
+                        if text[i] == <char>10 {
+                            break
+                        }
+                    }
+
+                    if i == len(text) {
+                        break
+                    }
+                }
             }
+
 
             codePoint = <uint32>text[i]
 
@@ -623,6 +737,16 @@ struct window {
 
             fnt.writeChar(codePoint, color, this.setPixel, this)
         }
+
+        return [fnt.currX, fnt.currY]
+    }
+
+    drawChar(fnt font, c uint32, color rgbColor, pos [int,int]) [int,int] {
+        fnt.currX = pos[0]
+        fnt.currY = pos[1]
+        this.hasDrawn = true
+        fnt.writeChar(c, color, this.setPixel, this)
+        return [fnt.currX, fnt.currY]
     }
 
     drawByteArr(fnt font, text []byte, from uint, to uint, color rgbColor, pos [int, int]) {
@@ -631,6 +755,25 @@ struct window {
         this.hasDrawn = true
         i=from; for i < to, i++ {
             codePoint = <uint32>text[i]
+
+            if this.scissor[0] {
+                if fnt.currY - fnt.fontSize >= this.scissor[4] {
+                    break
+                }
+
+                if fnt.currX >= this.scissor[3] {
+                    i++
+                    for i < len(text), i++ {
+                        if text[i] == <char>10 {
+                            break
+                        }
+                    }
+
+                    if i == len(text) {
+                        break
+                    }
+                }
+            }
 
             if text[i] == <char>10 {
                 fnt.currX = pos[0]
@@ -747,10 +890,36 @@ struct window {
         return res
     }
 
+    toScreenCoord(pos [int,int]) [int,int] {
+        cookie = xcb_translate_coordinates(this.connection,
+        this.window,
+        this.screen.root,
+        pos[0], pos[1])
+
+        reply = xcb_translate_coordinates_reply(this.connection, cookie, null)
+
+        res = [<int>reply.dst_x, <int>reply.dst_y]
+        free(reply)
+        return res
+    }
+
+
+    clear(color rgbColor) {
+        if this.scissor[0] {
+            this.drawRect([this.scissor[1], this.scissor[2]], [this.scissor[3] - this.scissor[1], this.scissor[4] - this.scissor[2]], color)
+
+            return
+        }
+        this.hasDrawn = true
+        n = <uint32>color
+        memset(this.frameBuffer, n, this.width * this.height * 4)
+    }
+
     launch(width uint, height uint, title str) {
 
         this.haveFrame.init()
         this.haveFrameMut.init()
+        this.clipboardChan = channel()
 
         this.isRunning = true
 
@@ -783,18 +952,18 @@ struct window {
         value_mask = XCB_CW_BACK_PIXMAP | XCB_CW_EVENT_MASK
 
         value_list = [
-            XCB_BACK_PIXMAP_NONE, XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_MOTION | XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_STRUCTURE_NOTIFY
+            XCB_BACK_PIXMAP_NONE, XCB_EVENT_MASK_EXPOSURE | XCB_EVENT_MASK_KEY_PRESS | XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_KEY_RELEASE | XCB_EVENT_MASK_BUTTON_PRESS | XCB_EVENT_MASK_BUTTON_RELEASE | XCB_EVENT_MASK_POINTER_MOTION | XCB_EVENT_MASK_BUTTON_MOTION | XCB_EVENT_MASK_FOCUS_CHANGE | XCB_EVENT_MASK_STRUCTURE_NOTIFY
         ]
 
         xcb_create_window(
             this.connection,
-            0,          // profondeur (default)
-            this.window,                        // ID de la fenêtre
-            this.screen.root,                  // fenêtre parente
-            0, 0, width, height,                // position et taille
-            10,                            // bordure
-            XCB_WINDOW_CLASS_INPUT_OUTPUT, // type
-            this.screen.root_visual,           // visual
+            0,
+            this.window,
+            this.screen.root,
+            0, 0, width, height,
+            10,
+            XCB_WINDOW_CLASS_INPUT_OUTPUT,
+            this.screen.root_visual,
             value_mask, &value_list
         )
 
@@ -865,14 +1034,13 @@ struct window {
                 shmdt(this.frameBuffer)
                 shmctl(shminfo.shmid, 0, null)
 
-                // nouvelle taille
                 size = this.width * this.height * 4;
                 shminfo.shmid = shmget(0, size, 896)
                 this.frameBuffer = shmat(shminfo.shmid, null, 0)
                 shminfo.shmseg = xcb_generate_id(this.connection)
 
-                // nouveau segment
                 xcb_shm_attach(this.connection, shminfo.shmseg, shminfo.shmid, 0)
+                this.callEventFunction(windowEventResize)
                 this.callEventFunction(windowEventDraw)
             } else if eventType == 12 {
                 if this.isExposed == false {
@@ -898,8 +1066,8 @@ struct window {
                 )
 
                 xcb_flush(this.connection)
-                c = xcb_get_input_focus(this.connection)
-                xcb_get_input_focus_reply(this.connection, c, null)
+                // c = xcb_get_input_focus(this.connection)
+                // xcb_get_input_focus_reply(this.connection, c, null)
             } else if eventType == 6 {
                 this.callEventFunction(windowEventMouseMove)
             } else if eventType == 4 {
@@ -938,6 +1106,56 @@ struct window {
                 this.callEventFunction(windowEventKeyUp)
             } else if eventType == 33 {
                 break
+            } else if eventType == 30 {
+                req = <xcb_selection_request_event_t*>event
+
+                notify = xcb_selection_notify_event_t {
+                    response_type: 31
+                    time: req.time
+                    requestor: req.requestor
+                    selection: req.selection
+                    target: req.target
+                    property: req.property
+                }
+
+                if req.property == 0 {
+                    notify.property = 0
+                } else {
+                    xcb_change_property(
+                        this.connection,
+                        XCB_PROP_MODE_REPLACE,
+                        req.requestor,
+                        req.property,
+                        req.target,
+                        8,
+                        len(this.tmpClipboard),
+                        cStr(this.tmpClipboard)
+                    )
+                }
+                xcb_send_event(this.connection, 0, req.requestor, 0, <ptr>&notify)
+                xcb_flush(this.connection)
+            } else if eventType == 31 {
+                cookie = xcb_get_property(
+                    this.connection, 0,
+                    this.window,
+                    this.tmpClipboardAtoms[0],
+                    this.tmpClipboardAtoms[1], 0, 100000
+                )
+                prop = xcb_get_property_reply(this.connection, cookie, null)
+
+                if prop != null {
+                    l = xcb_get_property_value_length(prop)
+                    res = memoryAllocSTR(l + 5)
+                    *(<uint32*>res) = l
+                    memcpy(<ptr>(<uint>res + 4), xcb_get_property_value(prop), l)
+                    free(prop)
+                    xcb_delete_property(this.connection, this.window, this.tmpClipboardAtoms[0])
+                    this.clipboardChan.send(res)
+                }
+            } else if eventType == 9 {
+                this.callEventFunction(windowEventFocusIn)
+            } else if eventType == 10 {
+                this.callEventFunction(windowEventFocusOut)
             }
             //  else {
             //     println("unkown event: "+intToStr(eventType))
@@ -958,6 +1176,7 @@ struct window {
 
         this.haveFrame.destroy()
         this.haveFrameMut.destroy()
+        this.clipboardChan.destroy()
     }
 
 }

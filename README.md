@@ -8,13 +8,22 @@ As such, the ui library is made to be really optimized on what it draws/redraws.
 
 The window object supports alpha blending, text drawing, antialiased primitive shapes drawing and IO events.
 
+## Try it out:
+```bash
+git clone https://github.com/ithirzty/bah-graphics
+cd bah-graphics
+./examples/chat.bah
+```
+
 > Futher documentation soon.
 
 There are two libraries inside of this library.
 
 1. [Creating a raw window.](#window-only)
 2. [Creating a window with UI.](#window-and-ui)
-3. [Technical notes](#notes)
+3. [Documentation](#documentations)
+4. [Examples](#examples)
+5. [Technical notes](#notes)
 
 ## Window only
 
@@ -75,63 +84,27 @@ If you do not want to do anything from scratch inside your window, you can use t
 ```bah
 #import "ui.bah"
 
-//Will contain the name of the user.
-//Initialized in main().
-userInput uiTextInput
-
-//Function called on button click.
-printHelloWorld(btn uiButton*) {
-
-    //If the user did not specified its name:
-    if len(userInput.value) == 0 {
-        //We make the input placeholder text red.
-        INPUT_PLACEHOLDER_TEXT_COLOR = RED
-        //Because no event happened on the input, it is not automatically redrawn.
-        //We need to either redraw it or redraw the whole window (simpler).
-        btn.window.redraw()
-        return
-    }
-
-    //Greet the user in the console.
-    println("Hello "+arrToStr(userInput.value)+".")
-
-    //Close the window.
-    btn.window.close()
-}
-
 main(args []str) int {
     //Creating the ui object.
     //Note that ui extends window so you can call every method of a window on the ui object. 
     ui = ui {}
 
-    //Adding a text input asking for user's name.
-    userInput = uiTextInput {
-        //placeholder
-        text: "Your name"
-        //position as uiPos
-        //This sets the position to 50%;50% of the window (centered).
-        //In addition tot that, basis center makes the center of the element its position basis.
-        //This means that the input will be centered to the screen
-        pos: [percents(50).basis(uiBasisCenter), percents(50).basis(uiBasisCenter)]
-    }
+    //Add a button
+    ui.addElement(new uiButton {
+        text: "Press me to exit"
 
-    //We add the text input to the UI.
-    ui.addElement(&userInput)
+        //Place it 50% on both axis, position based on its center.
+        //By default, its position would be top left corner based.
+        pos: [
+            percents(50).basis(uiBasisCenter),
+            percents(50).basis(uiBasisCenter)
+        ]
 
-    //Adding a button that will greet the user and close the window.
-    btn = uiButton {
-        //button text
-        text: "Print"
-        //Setting its position as centered (same as the text input).
-        pos: [percents(50).basis(uiBasisCenter), percents(50).basis(uiBasisCenter)]
-        //But to avoid overlap, we shift the button down by 30 pixels. 
-        margin: [pixels(0), pixels(30)]
-        //We define its onlick function (that will be called on click).
-        onclick: printHelloWorld
-    }
-    
-    //We add the button to the UI.
-    ui.addElement(&btn)
+        //When the button is clicked, it will execute this.
+        onclick: function(btn uiButton*) {
+            btn.window.close()
+        }
+    })
 
     //Launching the window with a width of 400, a height of 300 and a title.
     ui.launch(400, 300, "Test UI")
@@ -141,6 +114,223 @@ main(args []str) int {
     return 0
 }
 ```
+
+## Documentations
+
+This is the documentation for both ui.bah and graphics.bah.
+
+**NOTE: if you use ui.bah, you should not care about the window structure's mechanism, go directly to [The ui structure](#the-ui-structure) documentation.**
+
+### The window structure
+
+The window structure is mandatory to create a graphical window.
+It works by capturing the thread once you call .launch() and will enter an event loop.
+Then, you shall set window.events to your event callbacks (draw calls, mouse event, keyboard event...).
+
+Fields:
+- `.width` (size of the window),
+- `.height` (size of the window),
+- `.isRunning` boolean set to true while the window is openned.
+
+Methods:
+- `.isKeyModifier(keyMod uint32) bool` returns true if a key modifier (Key_CTRL, Key_SHIFT, Key_ALT, Key_ALT_GR) is currently pressed.
+- `.getEventKey() byte` returns the keyboard key code (not useful in most cases).
+- `.getEventChar() uint32` returns the unicode codepoint of the key associated with the event, (special chars are: Char_backspace,
+Char_delete,
+Char_arr_left,
+Char_arr_right,
+Char_arr_up,
+Char_arr_down,
+Char_left_shift,
+Char_right_shift,
+Char_enter,
+Char_Left_CTRL,
+Char_Right_CTRL,
+Char_tab,
+Char_shit_tab,
+Char_caps_lock).
+- `.getEventButton() byte` returns the button number (MOUSE_LEFT_BUTTON,
+MOUSE_MIDDLE_BUTTON,
+MOUSE_RIGHT_BUTTON,
+MOUSE_SCROLL_DOWN,
+MOUSE_SCROLL_UP,
+MOUSE_SCROLL_LEFT,
+MOUSE_SCROLL_RIGHT).
+- `.getCursorPosition() [int, int]` returns the coordinates of the mouse cursor. These are window coordinates where [0,0] is top left.
+- `.setClipboard(s str)` sets the contents of the clipboard.
+- `.getClipboard(callback function(window*, str, ptr), data ptr)` fetches the contents of the clipboard then calls the callback(window, clipboard contents, user data).
+- `.setCursor(name str)` sets the cursor icon. Uses X cursor names.
+- `.redraw()` triggers a windowEventDraw.
+- `.close()` closes the window.
+- `.setScissor(pos [int,int], size [int, int])` enables scissoring of the window, making it possible to only draw inside its rectangle.
+- `.disableScissor()` disables scissoring.
+- `.setPixel(pos [int,int], color rgbColor)` sets a single pixel to a color.
+- `.getRect(pos [int, int], size [uint, uint], buff []rgbColor)` fills a given buffer with the pixels of a rectangle on the screen.
+- `.drawRect(pos [int, int], size [uint, uint], color rgbColor)` draws a rectangle.
+- `.drawRectImage(pos [int, int], size [uint, uint], buff []rgbColor)` draws a rectangle with a given image buffer instad of a single color.
+- `.drawCircle(pos [int, int], radi uint, color rgbColor)` draws a circle.
+- `.drawRoundedRect(pos [int, int], size [uint, uint], radi uint, color rgbColor)` draws a rectangle with a given border radius.
+- `.drawText(fnt font, text str, color rgbColor, pos [int, int]) [int,int]` draws unicode text using the specified [font].
+- `.drawChar(fnt font, c uint32, color rgbColor, pos [int,int]) [int,int]` draws a single character.
+- `.drawByteArr(fnt font, text []byte, from uint, to uint, color rgbColor, pos [int, int])` draws given range of text from an array of bytes.
+- `.measureText(fnt font, text str) [uint, uint]` returns the dimensions in pixels of a text.
+- `.measureByteArr(fnt font, text []byte, from uint, to uint) [uint, uint]` returns the dimensions in pixels of a given range of text.
+- `.toScreenCoord(pos [int,int]) [int,int]` converts window coordinates to screen coordinates. 
+- `.clear(color rgbColor)` clears the window with a given gray scale color.
+- `.launch(width uint, height uint, title str)` launches the window, note that this function will exit when the window has been closed.
+
+
+### Fonts
+Functions:
+- `getSystemUIfont() font` returns the default system UI font.
+
+Fields:
+- `.currX` and `.currY` are the current location.
+- `.fontSize` is the current font size (should not be set directly).
+
+Methods:
+- `.load(path str) bool` loads a TTF font from a file path.
+- `.setSize(s uint)` sets the font size.
+- `.writeChar(c uint32, color rgbColor, setPixel function(ptr, [int,int], rgbColor), window ptr)` writes a single char to a window with a given setPixel function.
+- `.measureChar(c uint32)` advances .currX and .currY but does not draw.
+
+### Colors
+Fields:
+`.r`, `.g`, `.b`, `.a` represents the red, green, blue and opacity composant of a color in a range from 0 to 255. By default, `.a` is set to 255.
+
+Methods:
+- `.lum(l byte) rgbColor` returns a color with an applied brughtness dimming l [0;255].
+- `.mult(l byte) rgbColor` returns a color with every component multiplied by l [0;255].
+- `.toLab() [float,float,float]` converts rgb to lab color space.
+- `.fromLab(c [float,float,float])` sets the current color from a lab color space
+- `.interpolate(c rgbColor, x int) rgbColor` interpolates between two colors.
+
+### The ui structure
+The ui structure extends [the window structure](#the-window-structure). Every field and method can be reused.
+
+Additional fields:
+- `.font` the current UI font, is set to the default system UI font. 
+- `.elements` the array containing every root [elements](#ui-elements) of the window. Should not be set directly but can be read.
+- `.focusedElement` the currently focused element.
+
+Additional methods:
+- `.addElement(elem uiElement*)` adds an element at the root level of the window.
+- `.setFocus(elem uiElement*)` sets focus on a given element.
+- `.find(id str) uiElement*` finds an element with the given id.
+
+
+### UI elements
+Every element drawn on the screen is based on the uiElement structure.
+An element can contain children that shall be drawn only inside of it.
+
+There are base elements that you can use to build your interface. You can also create more from scratch using the base uiElement structure:
+
+Fields:
+- `.pos: [uiPos,uiPos]` its position.
+- `.margin: [uiPos,uiPos]` offsets the position of the element.
+- `.size: [int,int]` the size of the element. Note that drawing outside of the rectangle defined by .pos and .size is illegal.
+- `.padding: [uint,uint,uint,uint]` the space between the border and the contents of the element [left, top, right, bottom].
+- `.innerMargin: [uint,uint,uint,uint]` the scissor box offset of the element.
+- `.offsets: [int,int]` offsets every elements inside of this element (scrolling).
+- `.fontSize: uint` its font size.
+- `.cursor: str` its cursor.
+- `.absolutePosition: bool` weither or not the element should be affected by scrolling and padding its parent.
+- `.id: str` an optional id to be able to .find() the element.
+- `.elements: []uiElement*` all of its children elements. Should not be set directly, use .addElement() instead.
+- `.parent: uiElement*` the parent element. If null, it is a root element.
+- `.window: window*` the current window/ui.
+- `.contextItems: []uiContextItem` a list of context item. These are the shortcut shown in context menu when right clicking on an element.
+ A uiContextItem has `.ctrl`, `.shift`, `.alt` booleans and a `.key` to define the shortcut that should trigger it. It also has a `.name` that is shown in the context menu and a `.callback: function(uiContextItem*, ptr)` called when triggered.
+- `.focusable: bool = true` sets if an element should be focusable or not. An element that is not focusable cannot have contextItems.
+- `.manualDrawingMode: bool = false` use if you know what you are doing.
+- `.hovered`, `.clicked`, `.focused` are boolean that describe the state of the element when drawing it. These should not be set.
+- `._events` and `._draw` shall be set to your .draw() and .events() method when making new element types inside of yout ._init() method.
+
+Methods:
+- `.find(id str) uiElement*` finds an element inside of another element.
+- `.getSize() [int,int]` returns the size of an element.
+- `.getMargin() [int,int]` returns the calculated margins of an element.
+- `.getPosition() [int,int]` returns the calculated position of an element.
+- `.getInnerSize() [uint,uint]` returns the size of the space occupied by its children. 
+- `.remove()` removes an element.
+- `.addElement(elem uiElement*)` adds an element as child.
+- `.redrawIn(ms uint)` schedules a redraw in x miliseconds (for animation).
+- `.redraw()` immediate redraw
+
+Functions:
+- `pixels(px int) uiPos` returns a position structure of x pixels.
+- `percents(pc int) uiPos` returns a position structure of x percents. Note that a basis can then be applied on the position with `.basis(uiBasisCenter or uiBasisEnd)` that defines if the position should be calculated at the top left, center or bottom right of the element.
+
+
+#### uiText
+A text that dinamically grows in size and can be selectable (focusable) or not.
+
+Fields:
+- `.text: str` the text to display. Should not be changed directly once it is drawn. Use .setText() instead.
+- `.color: rgbColor` text color.
+- `.bgColor: rgbColor` background color, by default transparent.
+
+Methods:
+- `.getSelection() str` returns the current text selection.
+- `.setText(s str)` changes the text and redraws the element.
+
+Globals:
+UI_TEXT_COLOR = rgbColor{0, 0, 0}
+UI_TEXT_SELECTION_COLOR = rgbColor{120, 120, 255}
+
+
+#### uiTextInput
+A text selection input.
+
+Fields:
+- `.text: str` the placeholder text to show when it has no value.
+- `.onsubmit: function(uiTextInput*)` callback called on enter key press.
+- `.value: []byte` the value.
+- `.carret: uint` the position from the start of the text of the carret (cursor).
+
+Globals:
+INPUT_BACKGROUND_COLOR = rgbColor{220, 220, 220}
+INPUT_FOCUSED_BACKGROUND_COLOR = rgbColor{220, 220, 220}
+INPUT_HOVERED_BACKGROUND_COLOR = rgbColor{191, 191, 255}
+INPUT_PLACEHOLDER_TEXT_COLOR = rgbColor{60,60,60}
+INPUT_TEXT_COLOR = rgbColor{0,0,0}
+INPUT_TEXT_SELECTION_COLOR = rgbColor{120, 120, 255}
+
+
+#### uiButton
+A clickable button.
+
+Fields:
+- `.text: str` the text of the button.
+- `.onclick: function(uiButton*)` callback called on click / enter key press.
+- `.value: []byte` the value.
+- `.radius: uint` the border radius of the button.
+
+Globals:
+BUTTON_BACKGROUND_COLOR = rgbColor{220, 220, 220}
+BUTTON_BACKGROUND_HOVERED_COLOR = rgbColor{191, 191, 255}
+BUTTON_BACKGROUND_CLICKED_COLOR = rgbColor{120, 120, 255}
+BUTTON_TEXT_COLOR = rgbColor{0,0,0}
+BUTTON_CLICKED_TEXT_COLOR = rgbColor{255,255,255}
+
+
+#### uiBox
+A container element that can be overflowed and scrolled.
+
+Fields:
+- `.backdrop: function(uiBox*, ui*)` callback called before drawing its children. This is used for drawing a backdrop inside the box or changing its size...
+
+
+#### uiVerticalArray / uiHorizontalArray
+A container that cannot be overflowed as it grows dynamically.
+It displays its children as an array on a single axis.
+
+Fields:
+- `.spacing: int` spacing between elements in pixels.
+- `.dynamicSize: bool = true` the other axis (not the one on which children are spread) grows dynamicaly by default as it is set to true. If set to false, you will have to set manualy its size. 
+
+## Examples
+You can find examples in the [example directory](/examples/).
 
 ## Notes
 
