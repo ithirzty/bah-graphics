@@ -194,6 +194,8 @@ setPath(path str, isNewEntry bool) {
         return
     }
 
+    ui = <ui*>fileList.window //Getting current UI/window pointer
+
     currentPath = absPath(path) //Sets currentPath as the absolute path
     pathInput.value = strToArr(currentPath) //sets the top path text input's value to the new path
     pathInput.redraw() //Redraws it
@@ -251,6 +253,8 @@ setPath(path str, isNewEntry bool) {
             color: WHITE
             focusable: false
         })
+
+        ui.setFocus(ui.find("fileContainer"))
         return
     }
 
@@ -269,7 +273,10 @@ setPath(path str, isNewEntry bool) {
         fileList.addElementNoRedraw(constructFileElement(files[i], fullPath, isFolder(fullPath)))
     }
 
-    fileList.redraw() //redraw the whole file list
+    //Could redraw the entire list: fileList.redraw()
+    //But instead, set focus on its parent as it will not only redraw the list but also
+    //make it possible to use keyboard shortcuts without having to click the background of the file box
+    ui.setFocus(ui.find("fileContainer"))
 }
 
 main(args []str) int {
@@ -390,6 +397,7 @@ main(args []str) int {
                 }
             },
             new uiBox { //The file list part of the window
+                id: "fileContainer"
                 backdrop: function(bx uiBox*, ui ui*) {
                     //Draw its background darker than the rest (.lum(50/255))
                     ui.drawRect(bx.getPosition(), bx.getSize(), backgroundColor.lum(50))
@@ -406,6 +414,26 @@ main(args []str) int {
 
                         callback: function(itm uiContextItem*, el uiElement*) {
                             setPath(currentPath, false)
+                        }
+                    },
+                    uiContextItem {
+                        name: "Go back"
+                        key: Char_arr_left
+                        ctrl: false
+                        alt: true
+
+                        callback: function(itm uiContextItem*, el uiElement*) {
+                            goBack()
+                        }
+                    },
+                    uiContextItem {
+                        name: "Go Forward"
+                        key: Char_arr_right
+                        ctrl: false
+                        alt: true
+
+                        callback: function(itm uiContextItem*, el uiElement*) {
+                            goForward()
                         }
                     }
                 }

@@ -27,7 +27,7 @@ const __graphicsDrawRequestTypeRect = 0
 const __graphicsDrawRequestTypeCircle = 1
 const __graphicsDrawRequestTypeRectImg = 2
 
-const __graphicsNbDrawers = 1 // CAN ONLY BE ONE FOR NOW (so 2 threads in total)
+const __graphicsNbDrawers = 2 // Max: 8
 
 struct __graphicsDrawRequest {
     from: [int,int]
@@ -228,10 +228,33 @@ struct window {
         *(<uint32*>(<uint>this.frameBuffer + offset)) = v
     }
 
+    __unsafeFastSetPixel(offset uint, l uint, color rgbColor) {
+        l += offset
+        if color.a != 255 {
+            da = <float><uint>color.a / 255.0
+            ida = 1.0 - da
+
+            for offset < l, offset++ {
+                color.b = <uint>(<float><uint>color.b * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset))     * ida)
+                color.g = <uint>(<float><uint>color.g * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset + 1)) * ida)
+                color.r = <uint>(<float><uint>color.r * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset + 2)) * ida)
+                v = (<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16)
+                *(<uint32*>(<uint>this.frameBuffer + offset)) = v
+            }
+
+            return
+        }
+
+        v = (<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16)
+        for offset < l, offset++ {
+            *(<uint32*>(<uint>this.frameBuffer + offset * 4)) = v
+        }
+    }
+
     currentGraphicsRequest: __graphicsDrawRequest
     haveFrame: mutexCondition
     haveFrameMut: mutex
-    haveFrameBool: bool
+    haveFrameBool: int
     frameDone: byte
 
     __threadedDrawer(m uint) {
@@ -242,47 +265,30 @@ struct window {
             localFrom = req.from[1] + m * nbLines
             localTo = localFrom + nbLines
             y = localFrom
-            for y < localTo, y ++ {
-                x = req.from[0]
-                for x < req.to[0], x++ {
-                    this.setPixel([x,y], *req.color)
-                }
+            x = req.from[0]
+            l = req.to[0] - x
+            c = *req.color
+            if m == __graphicsNbDrawers {
+                localTo = req.to[1]
             }
-        } else if req.type == __graphicsDrawRequestTypeRectImg {
-            nbLines = ((req.to[1] - req.from[1]) / (__graphicsNbDrawers + 1))
-            localFrom = req.from[1] + m * nbLines
-            localTo = localFrom + nbLines
-            y = localFrom
-            buff = <[]rgbColor>req.color
-            width = req.to[0] - req.from[0]
             for y < localTo, y++ {
-                n = y * width
-                x = req.from[0]
-                for x < req.to[0], x++ {
-                    if n >= len(buff) {
-                        break
-                    }
-                    if n < 0 {
-                        continue
-                    }
-                    this.setPixel([x,y], buff[n])
-                    n++
-                }
-            }            
+                this.__unsafeFastSetPixel(y * this.width + x, l, c)
+            }
         }
     }
 
     __drawThreadworker(m uint) {
+        myHaveFrame = <byte*>(<uint>&this.haveFrameBool + m)
         for true {
             this.haveFrameMut.lock()
-            for this.haveFrameBool == false {
+            for *myHaveFrame == <byte>0 {
                 this.haveFrame.wait(this.haveFrameMut)
 
                 if this.isRunning == false {
                     return
                 }
             }
-            this.haveFrameBool = false
+            *myHaveFrame = <byte>0
             this.haveFrameMut.unlock()
             
             if this.isRunning == false {
@@ -299,7 +305,7 @@ struct window {
         this.haveFrameMut.lock()
         atomic_store(&this.frameDone, 0)
         this.currentGraphicsRequest = req
-        this.haveFrameBool = true
+        this.haveFrameBool = ~0
         this.haveFrame.broadcast()
         this.haveFrameMut.unlock()
 
@@ -377,6 +383,26 @@ struct window {
             }
         }
 
+        if pos[0] < 0 {
+            pos[0] = 0
+        }
+
+        if pos[1] < 0 {
+            pos[1] = 0
+        }
+
+        if max[0] > this.width {
+            max[0] = this.width
+        }
+
+        if max[1] > this.height {
+            max[1] = this.height
+        }
+
+        if max[0] == pos[0] || max[1] == pos[1] {
+            return
+        }
+
         if size[0] * size[1] > 100000 {
             this.__drawRequest(__graphicsDrawRequest{
                 from: pos
@@ -388,17 +414,9 @@ struct window {
         }
 
 
+        l = max[0] - pos[0]
         y=pos[1]; for y < max[1], y++ {
-            if y >= this.height || y < 0 {
-                continue
-            }
-            x = pos[0]; for x < max[0], x++ {
-                if x >= this.width || x < 0 {
-                    continue
-                }
-                
-                this.setPixel([x,y], color)
-            }
+            this.__unsafeFastSetPixel(y * this.width + pos[0], l, color)
         }
     }
 
@@ -426,15 +444,15 @@ struct window {
             }
         }
 
-        if size[0] * size[1] > 100000 {
-            this.__drawRequest(__graphicsDrawRequest{
-                from: pos
-                to: max
-                color: <ptr>buff
-                type: __graphicsDrawRequestTypeRectImg
-            })
-            return
-        }
+        // if size[0] * size[1] > 100000 {
+            // this.__drawRequest(__graphicsDrawRequest{
+            //     from: pos
+            //     to: max
+            //     color: <ptr>buff
+            //     type: __graphicsDrawRequestTypeRectImg
+            // })
+            // return
+        // }
 
 
         y=pos[1]; for y < max[1], y++ {
@@ -706,7 +724,24 @@ struct window {
         fnt.currX = pos[0]
         fnt.currY = pos[1]
         this.hasDrawn = true
-        i=0; for i < len(text), i++ {
+
+        i=0
+
+        if this.scissor[0] && fnt.currY < this.scissor[2] {
+            for i < len(text), i++ {
+
+                if text[i] == <char>10 {
+                    fnt.currY += fnt.fontSize + fnt.fontSize / 2
+                    i++
+                }
+
+                if fnt.currY >= this.scissor[2] {
+                    break
+                }
+            }
+        }
+
+        for i < len(text), i++ {
 
             if this.scissor[0] {
                 if fnt.currY - fnt.fontSize >= this.scissor[4] {
