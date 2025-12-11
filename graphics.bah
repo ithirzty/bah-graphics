@@ -26,14 +26,19 @@ const windowEventResize = 10
 const __graphicsDrawRequestTypeRect = 0
 const __graphicsDrawRequestTypeCircle = 1
 const __graphicsDrawRequestTypeRectImg = 2
+const __graphicsDrawRequestTypeClear = 3
 
 const __graphicsNbDrawers = 2 // Max: 8
 
 struct __graphicsDrawRequest {
     from: [int,int]
     to: [int,int]
-    color: rgbColor*
+    ogSize: [int,int]
+    color: rgbColor
     type: byte
+    n: int
+    buff: ptr
+    done: bool
 }
 
 xcb_getAtom(connection ptr, name str) uint32 {
@@ -228,6 +233,22 @@ struct window {
         *(<uint32*>(<uint>this.frameBuffer + offset)) = v
     }
 
+    setPixelUnsafe(pos [int,int], color rgbColor) {
+        offset = (pos[1] * this.width + pos[0]) * 4
+
+        if color.a != 255 {
+            da = <float><uint>color.a / 255.0
+            ida = 1.0 - da
+
+            color.b = <uint>(<float><uint>color.b * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset))     * ida)
+            color.g = <uint>(<float><uint>color.g * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset + 1)) * ida)
+            color.r = <uint>(<float><uint>color.r * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset + 2)) * ida)
+        }
+
+        v = (<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16)
+        *(<uint32*>(<uint>this.frameBuffer + offset)) = v
+    }
+
     __unsafeFastSetPixel(offset uint, l uint, color rgbColor) {
         l += offset
         if color.a != 255 {
@@ -255,7 +276,7 @@ struct window {
     haveFrame: mutexCondition
     haveFrameMut: mutex
     haveFrameBool: int
-    frameDone: byte
+    frameDone: byte = 1
 
     __threadedDrawer(m uint) {
         req = &this.currentGraphicsRequest
@@ -267,14 +288,35 @@ struct window {
             y = localFrom
             x = req.from[0]
             l = req.to[0] - x
-            c = *req.color
+            c = req.color
             if m == __graphicsNbDrawers {
                 localTo = req.to[1]
             }
             for y < localTo, y++ {
                 this.__unsafeFastSetPixel(y * this.width + x, l, c)
             }
+        } else if req.type == __graphicsDrawRequestTypeClear {
+            nbLines = (this.height / (__graphicsNbDrawers + 1))
+            localFrom = m * nbLines
+            localTo = localFrom + nbLines
+            c = <uint32>req.color
+            if m == __graphicsNbDrawers {
+                localTo = req.to[1]
+            }
+            memset(<ptr>(<uint>this.frameBuffer + localFrom * this.width * 4), c, (nbLines * this.width) * 4)
+        } else if req.type == __graphicsDrawRequestTypeRectImg {
+            n = req.n
+            buff = <[]rgbColor>req.buff
+            y=req.from[1]; for y < req.to[1], y++ {
+                i = 0
+                x = req.from[0]; for x < req.to[0], x++ {
+                    this.setPixelUnsafe([x,y], buff[n + i])
+                    i++
+                }
+                n += req.ogSize[0]
+            }
         }
+
     }
 
     __drawThreadworker(m uint) {
@@ -288,7 +330,16 @@ struct window {
                     return
                 }
             }
+
             *myHaveFrame = <byte>0
+            if this.currentGraphicsRequest.type == __graphicsDrawRequestTypeRectImg {
+                this.__threadedDrawer(0)
+                this.haveFrameBool = 0
+                atomic_store(&this.frameDone, 1)
+                this.haveFrameMut.unlock()
+                continue
+            }
+
             this.haveFrameMut.unlock()
             
             if this.isRunning == false {
@@ -302,10 +353,21 @@ struct window {
     }
 
     __drawRequest(req __graphicsDrawRequest) {
+
+        for atomic_load(&this.frameDone) == 0 {
+            sched_yield()
+        }
+
         this.haveFrameMut.lock()
-        atomic_store(&this.frameDone, 0)
         this.currentGraphicsRequest = req
         this.haveFrameBool = ~0
+        atomic_store(&this.frameDone, 0)
+        if req.type == __graphicsDrawRequestTypeRectImg {
+            this.haveFrame.send()
+            this.haveFrameMut.unlock()
+            return
+        }
+
         this.haveFrame.broadcast()
         this.haveFrameMut.unlock()
 
@@ -359,7 +421,7 @@ struct window {
     }
 
     drawRect(pos [int, int], size [int, int], color rgbColor) {
-        if color.a == 0 || size[0] < 0 || size[1] < 0 {
+        if this.isExposed == false || color.a == 0 || size[0] < 0 || size[1] < 0 {
             return
         }
         this.hasDrawn = true
@@ -407,7 +469,7 @@ struct window {
             this.__drawRequest(__graphicsDrawRequest{
                 from: pos
                 to: max
-                color: &color
+                color: color
                 type: __graphicsDrawRequestTypeRect
             })
             return
@@ -420,9 +482,13 @@ struct window {
         }
     }
 
-    drawRectImage(pos [int, int], size [uint, uint], buff []rgbColor) {        
+    drawRectImage(pos [int, int], size [int, int], buff []rgbColor) {        
+        if this.isExposed == false {
+            return
+        }
         n = 0
         max = [pos[0] + size[0], pos[1] + size[1]]
+
         this.hasDrawn = true
 
         if this.scissor[0] {
@@ -444,41 +510,50 @@ struct window {
             }
         }
 
-        // if size[0] * size[1] > 100000 {
-            // this.__drawRequest(__graphicsDrawRequest{
-            //     from: pos
-            //     to: max
-            //     color: <ptr>buff
-            //     type: __graphicsDrawRequestTypeRectImg
-            // })
-            // return
-        // }
-
-
-        y=pos[1]; for y < max[1], y++ {
-            if y >= this.height || y < 0 {
-                continue
-            }
-            x = pos[0]; for x < max[0], x++ {
-                if x >= this.width || x < 0 {
-                    continue
-                }
-
-                if n >= len(buff) {
-                    break
-                }
-                if n < 0 {
-                    continue
-                }
-                
-                this.setPixel([x,y], buff[n])
-                n++
-            }
+        if pos[0] < 0 {
+            pos[0] = 0
         }
+
+        if pos[1] < 0 {
+            pos[1] = 0
+        }
+
+        if max[0] > this.width {
+            max[0] = this.width
+        }
+
+        if max[1] > this.height {
+            max[1] = this.height
+        }
+
+        if max[0] == pos[0] || max[1] == pos[1] {
+            return
+        }
+
+
+        this.__drawRequest(__graphicsDrawRequest{
+            from: pos
+            to: max
+            n: n
+            ogSize: size
+            buff: <ptr>buff
+            type: __graphicsDrawRequestTypeRectImg
+        })
+
+
+        //Old single threaded code
+        // y=pos[1]; for y < max[1], y++ {
+        //     i = 0
+        //     x = pos[0]; for x < max[0], x++ {
+        //         this.setPixelUnsafe([x,y], buff[n + i])
+        //         i++
+        //     }
+        //     n += size[0]
+        // }
     }
 
     drawCircle(pos [int, int], radi uint, color rgbColor) {
-        if color.a == 0 {
+        if this.isExposed == false || color.a == 0 {
             return
         }
         this.hasDrawn = true
@@ -533,7 +608,7 @@ struct window {
     }
 
     drawRoundedRect(pos [int, int], size [uint, uint], radi uint, color rgbColor) {
-        if color.a == 0 {
+        if this.isExposed == false || color.a == 0 {
             return
         }
         this.hasDrawn = true
@@ -721,6 +796,9 @@ struct window {
     }
 
     drawText(fnt font, text str, color rgbColor, pos [int, int]) [int,int] {
+        if this.isExposed == false {
+            return [0,0]
+        }
         fnt.currX = pos[0]
         fnt.currY = pos[1]
         this.hasDrawn = true
@@ -792,6 +870,9 @@ struct window {
     }
 
     drawChar(fnt font, c uint32, color rgbColor, pos [int,int]) [int,int] {
+        if this.isExposed == false {
+            return [0,0]
+        }
         fnt.currX = pos[0]
         fnt.currY = pos[1]
         this.hasDrawn = true
@@ -800,6 +881,9 @@ struct window {
     }
 
     drawByteArr(fnt font, text []byte, from uint, to uint, color rgbColor, pos [int, int]) {
+        if this.isExposed == false {
+            return
+        }
         fnt.currX = pos[0]
         fnt.currY = pos[1]
         this.hasDrawn = true
@@ -957,27 +1041,29 @@ struct window {
     clear(color rgbColor) {
         if this.scissor[0] {
             this.drawRect([this.scissor[1], this.scissor[2]], [this.scissor[3] - this.scissor[1], this.scissor[4] - this.scissor[2]], color)
-
             return
         }
-        this.hasDrawn = true
-        n = <uint32>color
-        memset(this.frameBuffer, n, this.width * this.height * 4)
+
+        this.__drawRequest(__graphicsDrawRequest{
+            color: color
+            type: __graphicsDrawRequestTypeClear
+        })
+
+
+        //Old single threaded code
+        // n = <uint32>color
+        // memset(this.frameBuffer, n, this.width * this.height * 4)
     }
 
     launch(width uint, height uint, title str) {
-
         this.haveFrame.init()
         this.haveFrameMut.init()
         this.clipboardChan = channel()
 
         this.isRunning = true
 
-        threadWrkrFn = this.__drawThreadworker
-
         i=1; for i <= __graphicsNbDrawers, i++ {
-            async threadWrkrFn(this, i)
-
+            async this.__drawThreadworker(i)
         }
 
         this.width = width
@@ -1084,14 +1170,13 @@ struct window {
                 shmdt(this.frameBuffer)
                 shmctl(shminfo.shmid, 0, null)
 
-                size = this.width * this.height * 4;
+                size = this.width * this.height * 4
                 shminfo.shmid = shmget(0, size, 896)
                 this.frameBuffer = shmat(shminfo.shmid, null, 0)
                 shminfo.shmseg = xcb_generate_id(this.connection)
 
                 xcb_shm_attach(this.connection, shminfo.shmseg, shminfo.shmid, 0)
                 this.callEventFunction(windowEventResize)
-                this.callEventFunction(windowEventDraw)
             } else if eventType == 12 {
                 if this.isExposed == false {
                     this.callEventFunction(windowEventInitialize)
@@ -1100,6 +1185,10 @@ struct window {
 
                 this.hasDrawn = false
                 this.callEventFunction(windowEventDraw)
+
+                for atomic_load(&this.frameDone) == 0 {
+                    sched_yield()
+                }
 
                 xcb_shm_put_image(
                     this.connection,
@@ -1207,9 +1296,6 @@ struct window {
             } else if eventType == 10 {
                 this.callEventFunction(windowEventFocusOut)
             }
-            //  else {
-            //     println("unkown event: "+intToStr(eventType))
-            // }
 
             free(event)
         }
