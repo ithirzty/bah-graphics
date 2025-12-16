@@ -50,12 +50,22 @@ struct uiBoxScrollbar extend uiElement {
                 }
             }
         } else if evnt == uiEventElementHoverIn {
-            this.showTime = getTimeUnix()
+            if this.thumbDrag[2] == false {
+                this.showTime = getTimeUnix()
+            }
         } else if evnt == uiEventElementHoverOut {
-            this.thumbDrag[2] = false
             this.cursor = null
             this.window.setCursor(this.cursor)
-            this.showTime = getTimeUnix()
+            if this.thumbDrag[2] == false {
+                this.showTime = getTimeUnix()
+                ui = <ui*>this.window
+                ui.setFocus(null)
+            }
+        } else if evnt == uiEventElementFocusOut {
+            if this.thumbDrag[2] {
+                this.showTime = getTimeUnix()
+            }
+            this.thumbDrag[2] = false
         } else if evnt == uiEventElementClicked {
             if this.thumbDrag[2] == false {
                 parentSize = this.parent.getSize()
@@ -112,7 +122,7 @@ struct uiBoxScrollbar extend uiElement {
 
         }
 
-        if this.thumbDrag[2] {
+        if this.thumbDrag[2] && this.cursor != "grabbing" {
             this.cursor = "grabbing"
             this.window.setCursor(this.cursor)
         } else {
@@ -147,14 +157,14 @@ struct uiBoxScrollbar extend uiElement {
 
         thumbColor = SCROLLBAR_THUMB_COLOR
 
-        if this.hovered {
+        if this.hovered || this.focused {
             thumbColor.a = 255
         } else {
             thumbColor.a = 180
         }
 
         if now - this.showTime < 120000000 {
-            if this.hovered {
+            if this.hovered || this.focused {
                 this.trackColor.a = ((now - this.showTime) * 255) / 120000000
                 this.trackWidth = 4 + ((now - this.showTime) * 4) / 120000000
             } else {
@@ -162,7 +172,7 @@ struct uiBoxScrollbar extend uiElement {
                 this.trackWidth = 8 - (((now - this.showTime) * 4) / 120000000)
             }
             this.redrawIn(40)
-        } else if this.hovered == false {
+        } else if this.hovered == false && this.focused == false {
             this.trackColor.a = 0
             this.trackWidth = 4
         } else {
@@ -229,6 +239,7 @@ struct uiBox extend uiElement {
             if this.scrollBars[1] != null {
                 this.scrollBars[1].remove()
                 this.scrollBars[1] = null
+                this.offsets[1] = 0
             }
         }
 
@@ -245,6 +256,7 @@ struct uiBox extend uiElement {
             if this.scrollBars[0] != null {
                 this.scrollBars[0].remove()
                 this.scrollBars[0] = null
+                this.offsets[0] = 0
             }
         }
     }

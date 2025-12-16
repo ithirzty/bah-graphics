@@ -58,7 +58,7 @@ struct uiVerticalSeparator extend uiElement {
             if ui.getEventButton() == MOUSE_LEFT_BUTTON {
                 this.isDraggingSep = false
             }
-        } else if event == uiEventElementHoverOut {
+        } else if event == uiEventElementHoverOut || event == uiEventElementFocusOut {
             if this.isHoveringSep {
                 this.cursor = null
             }

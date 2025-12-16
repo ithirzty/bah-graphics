@@ -1,0 +1,198 @@
+#!/bin/bah -linkAndRun
+
+//This example illustrates a simple user interface of a texting app.
+//To do so, the screen is split in two as two root elements:
+//one for conaining the messages and one for the text input.
+
+#import "iostream.bah"
+#import "path.bah"
+
+#import "../ui.bah"
+
+//See example/explorer.bah
+struct uiBoxFolder extend uiBox {
+    isFolder: bool //is the current file a folder or not
+}
+
+//images used for the file element
+folderImg image
+fileImg image
+
+fileElem uiBoxFolder*
+
+//This element is the grey area where a file can be droped
+struct uiFileTarget extend uiBox {
+    isDragging: bool //is a file being dragged over this element, to know what text to render 
+
+    events(event uint32) {
+        txt = <uiText*>this.elements[0]
+
+        //if a file is being dragged over the element
+        if event == uiEventElementFileDrag {
+            if this.isDragging == false {
+                this.isDragging = true
+                //set the text
+                txt.setText("Drop file here!")
+            }
+            return
+        }
+            
+        //if a file has been droped on the element
+        if event == uiEventElementFileDrop {
+            txt.setText("Now drag this file.")
+            //fetch the path of the file that has been dropped
+            filePath = this.window.getEventFiles()[0]
+
+            //Construct a fileElem (same element as in the explorer.bah example)
+            fileElem.isFolder = isFolder(filePath)
+            fileElem.fileURI = filePath
+
+            fileNameElem = <uiText*>(fileElem.elements[0])
+
+            //removes the folder from the filepath and keep only file name
+            i = len(filePath) - 1; for i > 0, i-- {
+                if filePath[i] == '/' {
+                    i++
+                    break
+                }
+            }
+            fileName = filePath[i:]
+
+            fileNameElem.setText(fileName)
+            
+            fileElem.redraw() //to also redraw the image
+        } else if this.isDragging { //if a file was being dragged but has not been droped
+            txt.setText("Drag a file here.")
+        }
+
+        this.isDragging = false //any other event means the file is not being dragged anymore
+
+        //pass all other events to the default uiBox event handler
+        bx = <uiBox*>this
+        bx.events(event)        
+    }
+
+    _init() {
+        //call the default uiBox initializer
+        //this is called when a struct of this type is being declared
+        bx = <uiBox*>this
+        bx._init()
+
+        this._events = this.events //register the new events function
+        this.dragTarget = true //allow files to be drag and droped on this element
+        this.focusable = true //also needed for a file top be drag and droped
+    }
+}
+
+main(args []str) int {
+
+    ui = ui{} //declare the ui struct
+
+    //If the exec is not launched from the examples folder,
+    //we need to find the asset folder location as it is in the folder of the executable.
+    execPath = absPath(args[0])
+    i=len(execPath)-1; for i > 0, i-- {
+        if execPath[i] == '/' {
+            break
+        }
+    }
+    execPath = execPath[:i]
+    
+    //Load the images
+    folderImg = image{}
+    if folderImg.load(execPath+"/assets/folder_64.png") == false {
+        panic("could not find folder image asset")
+    }
+    
+    fileImg = image{}
+    if fileImg.load(execPath+"/assets/file_64.png") == false {
+        panic("could not find file image asset")
+    }
+
+    //Add the file target element
+    ui.addElement(new uiFileTarget {
+
+        //its backdrop function is called on every draw call
+        backdrop: function(ft uiFileTarget*, ui ui*) {
+            //draw a grey rounded rectangle as backdrop
+            pos = ft.getPosition()
+            ui.drawRoundedRect(pos, ft.size, 16, rgbColor{50, 50, 50})
+
+        }
+        size: [300, 300] //300px per 300px
+
+        pos: [
+            percents(50).basis(uiBasisCenter), //centered horizontaly
+            percents(50).basis(uiBasisCenter)  //centered verticaly
+            //uiBasisCenter means the position is calculated from the center of the element
+            //percents(50) means at 50% of the parent element's size
+        ]
+
+        //Declare some children elements
+        elements: []uiElement* {
+            //this is the text that is shown below the file.
+            new uiText {
+                text: "Drag a file here."
+                fontSize: 14
+                focusable: false //by default, text is focusable which make it selectable
+                color: WHITE
+
+                pos: [
+                    percents(50).basis(uiBasisCenter),
+                    percents(100).basis(uiBasisEnd) //at the target bottom
+                ]
+            },
+            new uiBoxFolder { //this is the same file element as in explorer.bah
+                id: "fileElem"
+
+                size: [120, 100]
+                pos: [
+                    percents(50).basis(uiBasisCenter),
+                    percents(50).basis(uiBasisCenter)
+                ]
+                scrollable: false //disable scrolling on text overflow
+                cursor: "grab" //sets the cursor to a hand able of grabbing it
+
+                backdrop: function(bx uiBoxFolder*, ui ui*) {
+                    pos = bx.getPosition()
+                    //Draw the background if the element is hovered / focused
+                    if bx.focused {
+                        ui.drawRoundedRect(pos, bx.size, 8, rgbColor{255, 255, 255, 50})
+                    } else if bx.hovered {
+                        ui.drawRoundedRect(pos, bx.size, 8, rgbColor{255, 255, 255, 10})
+                    }
+
+                    //Draw the correct image
+                    if bx.isFolder {
+                        ui.drawRectImage([pos[0] + 28, pos[1] + 10], [64, 64], folderImg.buf)
+                    } else {
+                        ui.drawRectImage([pos[0] + 28, pos[1] + 10], [64, 64], fileImg.buf)
+                    }
+                }
+
+                elements: []uiElement* {
+                    new uiText { //add the name of the file / folder
+                        focusable: false
+                        color: WHITE
+                        text: ""
+                        pos: [
+                            percents(50).basis(uiBasisCenter), //centered horizontally
+                            percents(100).basis(uiBasisEnd)    //at the bottom most coordinate of the element
+                        ]
+                        margin: [
+                            pixels(0),
+                            pixels(-8) //shift the element 8 pixels up (could also be done with padding)
+                        ]
+                    }
+                }
+            }
+        }
+    })
+
+    fileElem = ui.find("fileElem")
+    fileElem.focusable = true //make the file element focusable to make it draggable
+    
+    ui.launch(500, 400, "Dragndrop UI test") //launch the window
+
+    return 0
+}

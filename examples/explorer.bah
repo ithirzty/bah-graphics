@@ -107,6 +107,35 @@ constructFileElement(file str, fullPath str, isFolder bool) uiBoxFolder* {
             
             //This was a single click, register its timestamp in case this is the beginning of a double click.
             lastElementClick = [bx, now]
+
+        } else if event == uiEventElementFileDrop { //when a file is drag-and-droped on the element
+            if absPath(bx.window.getEventFiles()[0]) != bx.fileURI {
+                //move the file to the folder that the element represents
+                command("mv \""+bx.window.getEventFiles()[0]+"\" \""+bx.fileURI+"\"").runBytes()
+                
+                //if the droped file is inside the current folder, remove its element
+                if strHasPrefix(bx.window.getEventFiles()[0], currentPath) {
+                    i=0; for i < len(fileList.elements), i++ {
+                        fileEl = <uiBoxFolder*>fileList.elements[i]
+                        if fileEl.fileURI == bx.window.getEventFiles()[0] {
+                            fileEl.remove()
+                            break
+                        }
+                    }
+                }
+
+                fileList.redraw()
+            }
+        } else if event == uiEventElementFileDropOutside { //when the element is drag-and-droped to another window
+            //reload the current folder contents in 1 second
+            //this is because if the other app moves the file for instance, we need to reload the view
+            refreshFunc = function() {
+                sleep(1)
+                setPath(currentPath, false)
+                fileList.window.redraw()
+            }
+            //call this lambda in a new thread to not block sending the filepath to the other window
+            async refreshFunc()
         }
 
         bx.events(event) //call the default uiBox event loop
@@ -124,6 +153,8 @@ constructFileElement(file str, fullPath str, isFolder bool) uiBoxFolder* {
         isFolder: isFolder
         path: fullPath
         contextItems: fileContextItems
+        fileURI: fullPath //set to allow for dragging files to other windows
+        dragTarget: isFolder //if the element is a folder, allow files to be drag-and-droped on it
 
         backdrop: function(bx uiBoxFolder*, ui ui*) {
             pos = bx.getPosition()
@@ -302,6 +333,8 @@ main(args []str) int {
     if fileImg.load(execPath+"/assets/file_64.png") == false {
         panic("could not find file image asset")
     }
+
+    ui.setIcon(folderImg) //sets the window icon to a folder image
     
     //This uiBox is the navigation bar at the top of the window.
     ui.addElement(new uiBox {
@@ -372,7 +405,7 @@ main(args []str) int {
                 backdrop: function(bx uiBox*, ui ui*) {
                     ui.drawRect(bx.getPosition(), bx.getSize(), backgroundColor)
                     //Sets the list container size (uiBox is scrollable if overflowed)
-                    bx.elements[1].size = [bx.size[0] - 20, bx.size[1] - 50]
+                    bx.elements[1].size = [bx.size[0] - 20, bx.size[1] - 40]
                 }
 
                 elements: []uiElement* {
@@ -398,6 +431,7 @@ main(args []str) int {
             },
             new uiBox { //The file list part of the window
                 id: "fileContainer"
+                dragTarget: true
                 backdrop: function(bx uiBox*, ui ui*) {
                     //Draw its background darker than the rest (.lum(50/255))
                     ui.drawRect(bx.getPosition(), bx.getSize(), backgroundColor.lum(50))
@@ -455,10 +489,26 @@ main(args []str) int {
     fileList = ui.find("fileListContainer")
     historyList = ui.find("historyContainer")
 
+    fileContainer = ui.find("fileContainer")
+
+    //if a file is drag-and-droped on the file list, execute the command to move the file to the current open folder
+    fileContainer._events = function(bx uiBox*, event uint32) {
+        if event == uiEventElementFileDrop {
+            //in case of file drop, bx.window.getEventFiles() returns the list of all files droped
+            command("mv \""+bx.window.getEventFiles()[0]+"\" \""+currentPath+"\"").runBytes()
+            setPath(currentPath, false)
+        } else {
+            bx.events(event)
+        }
+
+    }
+
     fileList.parent.focusable = true //set the fileList focusable to be able to use the shortcuts (.contextElements)
 
     setPath("/home/"+cStrToBah(getenv("USER")), true) //set the default path to /home/user
     
+    ui.setMinSize(650, 300) //sets window minimum size
+
     ui.launch(1000, 501, "File explorer") //finaly, launch the window!
 
     return 0

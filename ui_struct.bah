@@ -2,14 +2,17 @@
 
 #import "./graphics.bah"
 
-const uiEventElementAdded      = 1024
-const uiEventElementHoverIn    = 1025
-const uiEventElementHoverOut   = 1026
-const uiEventElementClicked    = 1027
-const uiEventElementFocusIn    = 1028
-const uiEventElementFocusOut   = 1029
-const uiEventElementHovered    = 1030
-const uiEventElementMouseDown  = 1031
+const uiEventElementAdded           = 1024
+const uiEventElementHoverIn         = 1025
+const uiEventElementHoverOut        = 1026
+const uiEventElementClicked         = 1027
+const uiEventElementFocusIn         = 1028
+const uiEventElementFocusOut        = 1029
+const uiEventElementHovered         = 1030
+const uiEventElementMouseDown       = 1031
+const uiEventElementFileDrag        = 1032
+const uiEventElementFileDrop        = 1033
+const uiEventElementFileDropOutside = 1034
 
 const uiNotDrawnEvents = []uint{
     uiEventElementHovered
@@ -31,12 +34,10 @@ struct uiAnimation {
     processed: bool
 }
 
-struct contextMenuWindow extend window {
-    parent: window*
+struct uiBorderlessWindow extend window {
     font: font
-    list: []uiContextItem
-    elem: uiElement*
-    choice: int = -1
+    parent: window*
+    lastEvent: xcb_generic_event_t*
 
     launch(x uint, y uint, width uint, height uint) {
         this.haveFrame.init()
@@ -120,6 +121,17 @@ struct contextMenuWindow extend window {
         gc = xcb_generate_id(this.connection)
         values = [0]
         xcb_create_gc(this.connection, gc, this.window, XCB_GC_GRAPHICS_EXPOSURES, &values)
+
+        xdnd_version = 5
+
+        xcb_change_property(this.connection,
+            XCB_PROP_MODE_REPLACE,
+            this.window,
+            xcb_getAtom(this.connection, "XdndAware"),
+            XCB_ATOM_CARDINAL,
+            32,
+            1,
+            &xdnd_version)
 
         this.isExposed = false
         for true, event = xcb_wait_for_event(this.connection) {
@@ -216,12 +228,13 @@ struct contextMenuWindow extend window {
                     this.keyModifiers = this.keyModifiers & ~0x08
                 }
                 this.callEventFunction(windowEventKeyUp)
-            } else if eventType == 33 {
+            } else if eventType == 33 && ((<xcb_client_message_event_t*>event).type) == 68 {
+                free(event)
                 break
+            } else {
+                this.lastEvent = event
+                this.callEventFunction(1024)
             }
-            //  else {
-            //     println("unkown event: "+intToStr(eventType))
-            // }
 
             free(event)
         }
@@ -243,6 +256,20 @@ struct contextMenuWindow extend window {
     }
 }
 
+struct contextMenuWindow extend uiBorderlessWindow {
+    list: []uiContextItem
+    choice: int = -1
+    elem: uiElement*
+}
+
+struct fileDragWindow extend uiBorderlessWindow {
+    offsets: [int,int]
+    elem: uiElement*
+    image: []rgbColor
+    fileUri: str
+    oldTarget: int = -1
+}
+
 struct ui extend window {
     font: font
     elements: []uiElement*
@@ -258,10 +285,12 @@ struct ui extend window {
     alreadyDrawn: bool
     needsRedraw: bool
     isPartialRedraw: bool
+    draggingStage: byte
 
     _oldDimensions: [int,int]
 
     ctxWindow: contextMenuWindow*
+    fileDragWindow: fileDragWindow*
 
     _init() {
         this.font = getSystemUIfont()
@@ -488,23 +517,40 @@ __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
                 return
             }
 
-            if drawType == __uiElementDrawTypeFull && currElem.parent != null {
-                i=0; for i < len(currElem.parent.elements), i++ {
-                    if currElem.parent.elements[i] == currElem {
-                        i++
-                        break
-                    }
-                }
+            currBox = currElem
+            //Checking recursively if there is an element on top. If it is the case,
+            //redraw their common parent entirely.
+            for currBox != null, currBox = currBox.parent {
+                if drawType == __uiElementDrawTypeFull && currBox.parent != null {
+                    i=0; for i < len(currBox.parent.elements), i++ {
+                        if currBox.parent.elements[i] == currBox {
+                            i++
+                            break
+                        }
 
-                for i < len(currElem.parent.elements), i++ {
-                    nextElem = currElem.parent.elements[i]
-                    nextPos = nextElem.getPosition()
-                    nextMax = nextElem.getSize()
-                    nextMax[0] += nextPos[0]
-                    nextMax[1] += nextPos[1]
-                    if nextPos[0] < pos[0] + size[0] && nextPos[1] < pos[1] + size[1] && nextMax[0] > pos[0] && nextMax[1] > pos[1] {
-                        __uiRedrawElement(ui, currElem.parent, __uiElementDrawTypeFull)
-                        return
+                        if currBox.parent.elements[i].absolutePosition {
+                            nextElem = currBox.parent.elements[i]
+                            nextPos = nextElem.getPosition()
+                            nextMax = nextElem.getSize()
+                            nextMax[0] += nextPos[0]
+                            nextMax[1] += nextPos[1]
+                            if nextPos[0] < pos[0] + size[0] && nextPos[1] < pos[1] + size[1] && nextMax[0] > pos[0] && nextMax[1] > pos[1] {
+                                __uiRedrawElement(ui, currBox.parent, __uiElementDrawTypeFull)
+                                return
+                            }
+                        }
+                    }
+
+                    for i < len(currBox.parent.elements), i++ {
+                        nextElem = currBox.parent.elements[i]
+                        nextPos = nextElem.getPosition()
+                        nextMax = nextElem.getSize()
+                        nextMax[0] += nextPos[0]
+                        nextMax[1] += nextPos[1]
+                        if nextPos[0] < pos[0] + size[0] && nextPos[1] < pos[1] + size[1] && nextMax[0] > pos[0] && nextMax[1] > pos[1] {
+                            __uiRedrawElement(ui, currBox.parent, __uiElementDrawTypeFull)
+                            return
+                        }
                     }
                 }
             }
@@ -569,11 +615,9 @@ __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
                     }
                 }
                 _uiDrawElementBackground(pos, size, currElem)
-                // ui.drawRectImage(pos, size, currElem.maskedBuffer)
             }
 
             drawFn(currElem, ui)
-            // __uiPropagateUpdateElementMask(ui, currElem)
 
 
             max = len(currElem.elements)
@@ -855,6 +899,10 @@ __ui_filterIsElemScrollableH(elem uiElement*) bool {
     return innerSize[0] > size[0]
 }
 
+__ui_filterIsElemDragTarget(elem uiElement*) bool {
+    return elem.dragTarget && elem.focusable
+}
+
 _uiElementRecusriveCollideFiltered(elem uiElement*, pos [int,int], filter function(uiElement*) bool) uiElement* {
     elemPos = elem.getPosition()
     elemSize = elem.getSize()
@@ -876,17 +924,23 @@ _uiElementRecusriveCollideFiltered(elem uiElement*, pos [int,int], filter functi
 
 __uiSetElementOnFocus(ui ui*, elem uiElement*) {
     if ui.focusedElement != null {
+        if elem == ui.focusedElement {
+            return
+        }
+
         ui.focusedElement.clicked = false
         __uiRedrawElement(ui, ui.focusedElement, __uiElementDrawTypeFull)
         ui.focusedElement.focused = false
         __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
         ui.focusedElement = null
     }
-    ui.focusedElement = elem
-    ui.focusedElement.focused = true
-    __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusIn)
-    elem.clicked = true
-    __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
+    if elem != null {
+        ui.focusedElement = elem
+        ui.focusedElement.focused = true
+        __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusIn)
+        elem.clicked = true
+        __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
+    }
 }
 
 __uiForceDrawElement(ui ui*, elem uiElement*) {
@@ -946,6 +1000,94 @@ __uiForceDrawElement(ui ui*, elem uiElement*) {
     i=0; for i < len(elem.elements), i++ {
         __uiForceDrawElement(ui, elem.elements[i])
     }
+}
+__uiStartFileDrag(ui ui*, uri str, elem uiElement*) {
+    curs = ui.getCursorPosition()
+    screenPosCurs = ui.toScreenCoord(curs)
+    pos = elem.getPosition()
+
+    os = ui.scissor
+    scissor = [0,0,0,0]
+
+    currBox = elem
+    for currBox != null, currBox = currBox.parent {
+        bSize = currBox.getSize()
+        bPos = currBox.getPosition()
+
+        if elem.absolutePosition == false {
+            bPos[0] += currBox.innerMargin[0]
+            bPos[1] += currBox.innerMargin[1]
+            bSize[0] -= (currBox.innerMargin[0] + currBox.innerMargin[2])
+            bSize[1] -= (currBox.innerMargin[1] + currBox.innerMargin[3])
+        }
+
+        if scissor[2] + scissor[3] == 0 {
+            scissor[0] = bPos[0]
+            scissor[1] = bPos[1]
+            scissor[2] = bPos[0] + bSize[0]
+            scissor[3] = bPos[1] + bSize[1]
+            continue
+        }
+
+        if bPos[0] > scissor[0] {
+            scissor[0] = bPos[0]
+        }
+
+        if bPos[1] > scissor[1] {
+            scissor[1] = bPos[1]
+        }
+
+        if bPos[0] + bSize[0] < scissor[2] {
+            scissor[2] = bPos[0] + bSize[0]
+        }
+
+        if bPos[1] + bSize[1] < scissor[3] {
+            scissor[3] = bPos[1] + bSize[1]
+        }
+    }
+
+    ui.setScissor([scissor[0], scissor[1]], [scissor[2] - scissor[0], scissor[3] - scissor[1]])
+    
+    ui.clear(BLACK)
+    __uiForceDrawElement(ui, elem)
+
+    for atomic_load(&ui.frameDone) == 0 {
+        sched_yield()
+    }
+
+    imgBuf = []rgbColor
+    ui.getRect([ui.scissor[1], ui.scissor[2]], [ui.scissor[3] - ui.scissor[1], ui.scissor[4] - ui.scissor[2]], imgBuf)
+    ui.scissor = os
+
+    bdlWindow = new fileDragWindow {
+        parent: ui
+        image: imgBuf
+        elem: elem
+        offsets: [
+            curs[0] - scissor[0],
+            curs[1] - scissor[1]
+        ]
+    }
+    
+
+    bdlWindow.events = function(w fileDragWindow*, event uint32) {
+        if event == windowEventInitialize {
+            w.setOpacity(0.8)
+
+            xcb_shape_mask(w.connection, XCB_SHAPE_SO_SET, 2, w.window, 0, 0, 0)
+            xcb_flush(w.connection)
+        } else if event == windowEventDraw {
+            w.drawRectImage([0, 0], [w.width, w.height], w.image)
+            for atomic_load(&w.frameDone) == 0 {
+                sched_yield()
+            }
+        }
+    }
+
+    ui.fileDragWindow = bdlWindow
+    
+    async bdlWindow.launch(screenPosCurs[0] - bdlWindow.offsets[0], screenPosCurs[1] - bdlWindow.offsets[1], elem.size[0], elem.size[1])
+
 }
 
 __uiHandleEvents(ui ui*, event uint32) {
@@ -1045,6 +1187,193 @@ __uiHandleEvents(ui ui*, event uint32) {
         }
     } else if event == windowEventMouseMove {
         pos = ui.getCursorPosition()
+
+        if ui.draggingStage == 1 {
+            ui.draggingStage = 2
+            i=0; for i < len(ui.elements), i++ {
+                elem = _uiElementRecusriveCollide(ui.elements[i], pos)
+                if elem != null {
+                    __uiSetElementOnFocus(ui, elem)
+                    if len(elem.fileURI) != 0 {
+                        clear(ui.tmpFilesDragged)
+                        ui.tmpFilesDragged[0] = elem.fileURI
+                        ui.setCursor("grabbing")
+                        __uiStartFileDrag(ui, elem.fileURI, elem)
+
+                        xcb_set_selection_owner(
+                            ui.connection,
+                            ui.window,
+                            ui.atoms.XdndSelection,
+                            0
+                        )
+
+                        typesList = [ui.atoms.text_uri_list, ui.atoms.text_x_moz_url]
+
+                        xcb_change_property(
+                            ui.connection,
+                            XCB_PROP_MODE_REPLACE,
+                            ui.window,
+                            ui.atoms.XdndTypeList,
+                            XCB_ATOM_ATOM,
+                            32,
+                            2,
+                            &typesList
+                        )
+
+                        actions = [
+                            ui.atoms.XdndActionCopy,
+                            ui.atoms.XdndActionMove
+                        ]
+                        
+
+                        xcb_change_property(
+                            ui.connection,
+                            XCB_PROP_MODE_REPLACE,
+                            ui.window,
+                            ui.atoms.XdndActionList,
+                            XCB_ATOM_ATOM,
+                            32,
+                            2,
+                            &actions
+                        )
+
+                        ui.setDragFileURI(elem.fileURI)                        
+                    }
+                    break
+                }
+            }
+
+        } else if ui.draggingStage == 2 {
+            if ui.fileDragWindow != null && ui.fileDragWindow.isExposed {
+                cpos = ui.fileDragWindow.getCursorPosition()
+                cpos = ui.fileDragWindow.toScreenCoord(cpos)
+                ui.fileDragWindow.moveTo(cpos[0] - ui.fileDragWindow.width / 2, cpos[1] + 10)
+                w = ui.fileDragWindow
+
+                localPos = ui.getCursorPosition()
+                if localPos[0] > 0 && localPos[0] < ui.width && localPos[1] > 0 && localPos[1] < ui.height {
+                    elem uiElement*
+                    i=0; for i < len(ui.elements), i++ {
+                        pos = ui.getCursorPosition()
+                        elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemDragTarget)
+                        if elem != null {
+                            __uiSetElementOnFocus(ui, elem)
+                            __uiDispatchEvent(ui, elem, uiEventElementFileDrag)
+                            break
+                        }
+                    }
+
+                    if elem == null && ui.focusedElement != null {
+                        ui.focusedElement.clicked = false
+                        __uiRedrawElement(ui, ui.focusedElement, __uiElementDrawTypeFull)
+                        ui.focusedElement.focused = false
+                        __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
+                        ui.focusedElement = null
+                    }
+                }
+
+                //get window under the pointer
+                ck = xcb_query_pointer(ui.connection, ui.screen.root)
+                rep = xcb_query_pointer_reply(ui.connection, ck, null)
+                target = rep.child
+
+                for target != 0 {
+                    //if the window in xdndaware (support dnd), break
+                    propCookie = xcb_get_property(
+                        ui.connection,
+                        0,
+                        target,
+                        ui.atoms.XdndAware,
+                        XCB_GET_PROPERTY_TYPE_ANY,
+                        0, 1
+                    )
+                    propRep = xcb_get_property_reply(ui.connection, propCookie, null)
+
+                    if propRep == null {
+                        target = 0
+                        break
+                    }                    
+                    if propRep.format == 32 {
+                        free(propRep)
+                        break
+                    }
+                    free(propRep)
+
+                    //if it is not xdndaware, we may be on a wm frame, fetch its child
+                    treeCookie = xcb_query_tree(ui.connection, target)
+                    treeRep = xcb_query_tree_reply(ui.connection, treeCookie, null)
+
+                    if treeRep == null {
+                        target = 0
+                        break
+                    }
+
+                    children = xcb_query_tree_children(treeRep)
+                    nchildren = xcb_query_tree_children_length(treeRep)
+                    if nchildren == 0 {
+                        target = 0
+                    } else {
+                        target = *children
+                    }
+                    free(treeRep)
+                }
+
+                if w.oldTarget != 0 && w.oldTarget != target {
+                    ev = xcb_client_message_event_t {
+                        response_type: 33
+                        format: 32
+                        window: target
+                        type: ui.atoms.XdndLeave
+                    }
+
+                    *(<uint32*>(<uint>&ev.data)) = ui.window
+
+                    xcb_send_event(ui.connection, 0, w.oldTarget, XCB_EVENT_MASK_NO_EVENT, <ptr>&ev)
+                    xcb_flush(ui.connection)
+                }
+
+                if target != 0 && target != ui.window && target != w.window {
+                    if w.oldTarget != target {
+                        ev = xcb_client_message_event_t {
+                            response_type: 33
+                            format: 32
+                            window: target
+                            type: ui.atoms.XdndEnter
+                        }
+
+                        *(<uint32*>(<uint>&ev.data)) = ui.window
+                        *(<uint32*>(<uint>&ev.data + 4)) = <uint32>83886081
+                        *(<uint32*>(<uint>&ev.data + 8)) = ui.atoms.text_uri_list
+                        *(<uint32*>(<uint>&ev.data + 12)) = ui.atoms.text_x_moz_url
+
+                        xcb_send_event(ui.connection, 0, target, XCB_EVENT_MASK_NO_EVENT, <ptr>&ev)
+                        xcb_flush(ui.connection)
+                    } else {
+                        ev = xcb_client_message_event_t {
+                            response_type: 33
+                            format: 32
+                            window: target
+                            type: ui.atoms.XdndPosition
+                        }
+
+                        evpos = (<uint32>rep.root_x << 16) | <uint32>rep.root_y
+
+                        *(<uint32*>(<uint>ev.data)) = ui.window
+                        *(<uint32*>(<uint>ev.data + 8)) = <uint32>evpos
+                        *(<uint32*>(<uint>ev.data + 16)) = ui.atoms.XdndActionCopy
+
+                        cookie = xcb_send_event(ui.connection, 0, target, XCB_EVENT_MASK_NO_EVENT, <ptr>&ev)
+                        xcb_flush(ui.connection)
+                    }
+                }
+                w.oldTarget = target
+
+                free(rep)
+            } else {
+                __uiDispatchEvent(ui, ui.focusedElement, uiEventElementHovered)
+            }
+        }
+        
         nb = 0
         cursorChanged = false
         i=0; for i < len(ui.elements), i++ {
@@ -1061,7 +1390,9 @@ __uiHandleEvents(ui ui*, event uint32) {
         if nb == 0 || cursorChanged == false {
             ui.setCursor("left_ptr")
         }
+
     } else if event == windowEventMouseDown {
+        ui.draggingStage = 1
         pos = ui.getCursorPosition()
         clickedBtn = ui.getEventButton()
         if clickedBtn <= MOUSE_RIGHT_BUTTON {
@@ -1128,6 +1459,31 @@ __uiHandleEvents(ui ui*, event uint32) {
             }
         }
     } else if event == windowEventMouseUp {
+        ui.draggingStage = 0
+        if ui.fileDragWindow != null {
+            localPos = ui.getCursorPosition()
+            if localPos[0] > 0 && localPos[0] < ui.width && localPos[1] > 0 && localPos[1] < ui.height && ui.focusedElement != null {
+                __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFileDrop)
+            } else {
+                w = ui.fileDragWindow
+                if w.oldTarget != 0 {
+                    m = xcb_client_message_event_t {
+                        response_type: 33
+                        format: 32
+                        window: w.oldTarget
+                        type: ui.atoms.XdndDrop
+                    }
+                    *(<uint32*>(<uint>m.data)) = ui.window
+
+                    xcb_send_event(ui.connection, 0, w.oldTarget, XCB_EVENT_MASK_NO_EVENT, <ptr>&m);
+                    xcb_flush(ui.connection)
+                    __uiDispatchEvent(ui, ui.fileDragWindow.elem, uiEventElementFileDropOutside)
+                }
+            }
+            ui.fileDragWindow.close()
+            ui.fileDragWindow = null
+        }
+
         pos = ui.getCursorPosition()
         clickedBtn = ui.getEventButton()
         if clickedBtn == MOUSE_LEFT_BUTTON {
@@ -1157,6 +1513,27 @@ __uiHandleEvents(ui ui*, event uint32) {
                 }
             }
         }
+    } else if event == windowEventDrag {
+        elem uiElement*
+        i=0; for i < len(ui.elements), i++ {
+            pos = ui.getCursorPosition()
+            elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemDragTarget)
+            if elem != null {
+                __uiSetElementOnFocus(ui, elem)
+                __uiDispatchEvent(ui, elem, uiEventElementFileDrag)
+                break
+            }
+        }
+
+        if elem == null && ui.focusedElement != null {
+            ui.focusedElement.clicked = false
+            __uiRedrawElement(ui, ui.focusedElement, __uiElementDrawTypeFull)
+            ui.focusedElement.focused = false
+            __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
+            ui.focusedElement = null
+        }
+    } else if event == windowEventDrop && ui.focusedElement != null {
+        __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFileDrop)
     }
 
     if ui.needsRedraw {

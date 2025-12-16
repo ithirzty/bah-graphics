@@ -1,6 +1,7 @@
 #import "iostream.bah"
 #import "string.bah"
 #import "channel.bah"
+#import "http.bah"
 
 #import "./libs/xcb.bah"
 #import "./libs/shm.bah"
@@ -22,6 +23,9 @@ const windowEventKeyUp = 7
 const windowEventFocusIn = 8
 const windowEventFocusOut = 9
 const windowEventResize = 10
+const windowEventDragIn = 11
+const windowEventDrag = 12
+const windowEventDrop = 13
 
 const __graphicsDrawRequestTypeRect = 0
 const __graphicsDrawRequestTypeCircle = 1
@@ -38,7 +42,6 @@ struct __graphicsDrawRequest {
     type: byte
     n: int
     buff: ptr
-    done: bool
 }
 
 xcb_getAtom(connection ptr, name str) uint32 {
@@ -55,6 +58,28 @@ xcb_getAtom(connection ptr, name str) uint32 {
     return atom
 }
 
+struct xAtoms {
+    XdndEnter: uint32
+    XdndPosition: uint32
+    XdndStatus: uint32
+    XdndLeave: uint32
+    XdndDrop: uint32
+    XdndFinished: uint32
+    XdndSelection: uint32
+    XdndAware: uint32
+    XdndActionCopy: uint32
+    XdndActionMove: uint32
+    XdndTypeList: uint32
+    text_uri_list: uint32
+    text_x_moz_url: uint32
+    text_plain: uint32
+    PRIMARY: uint32
+    TARGETS: uint32
+    deleteWindow: uint32
+    XdndActionList: uint32
+    WMicon: uint32
+}
+
 struct window {
     connection: ptr
     screen: xcb_screen_t*
@@ -67,6 +92,8 @@ struct window {
     width: uint
     height: uint
     scissor: [bool,int,int,int,int]
+    minSize: [int, int] = [-1, -1]
+    maxSize: [int, int] = [-1, -1]
 
     lastKeyCode: byte
     lastMouseCode: byte
@@ -78,8 +105,19 @@ struct window {
     hasDrawn: bool
 
     tmpClipboard: str
+    tmpFileURI: str
     clipboardChan: channel*
     tmpClipboardAtoms: [uint32, uint32]
+    tmpFilesDragged: []str
+    tmpIconBuf: []uint32
+
+    currentGraphicsRequest: __graphicsDrawRequest
+    haveFrame: mutexCondition
+    haveFrameMut: mutex
+    haveFrameBool: int
+    frameDone: byte = 1
+    atoms: xAtoms
+
     
     callEventFunction(event uint32) {
         eventFn = this.events
@@ -130,6 +168,10 @@ struct window {
         return this.lastMouseCode
     }
 
+    getEventFiles() []str {
+        return this.tmpFilesDragged
+    }
+
     getCursorPosition() [int, int] {
         cookie = xcb_query_pointer(this.connection, this.window)
         reply = xcb_query_pointer_reply(this.connection, cookie, null)
@@ -142,6 +184,10 @@ struct window {
         xcb_set_selection_owner(this.connection, this.window, clipboard, 0)
         this.tmpClipboard = s
         xcb_flush(this.connection)
+    }
+
+    setDragFileURI(file str) {
+        this.tmpFileURI = "file://"+file+"\r\n"
     }
 
     getClipboard(callback function(window*, str, ptr), data ptr) {
@@ -178,6 +224,30 @@ struct window {
         xcb_change_window_attributes(this.connection, this.window, XCB_CW_CURSOR, &cursor)
     }
 
+    moveTo(x uint, y uint) {
+        values = [<uint32>x, <uint32>y]
+        xcb_configure_window(
+            this.connection,
+            this.window,
+            XCB_CONFIG_WINDOW_X | XCB_CONFIG_WINDOW_Y,
+            &values
+        )
+    }
+
+    setOpacity(level float) {
+        opacity = <uint32>(0.7 * <float>0xFFFFFFFF)
+        xcb_change_property(
+            this.connection,
+            XCB_PROP_MODE_REPLACE,
+            this.window,
+            xcb_getAtom(this.connection, "_NET_WM_WINDOW_OPACITY"),
+            XCB_ATOM_CARDINAL,
+            32,
+            1,
+            &opacity
+        );
+    }
+
     redraw() {
         xcb_clear_area(this.connection, 1, this.window, 0, 0, 0, 0)
         xcb_flush(this.connection)
@@ -207,6 +277,22 @@ struct window {
 
     disableScissor() {
         this.scissor[0] = false
+    }
+
+    _overlapCheck(pos [int,int], size [int,int]) {
+        if atomic_load(&this.frameDone) != 0 {
+            return
+        }
+
+        to = this.currentGraphicsRequest.to
+        from = this.currentGraphicsRequest.from
+
+        if pos[0] < to[0] && pos[1] < to[1] && pos[0] + size[0] > from[0]  && pos[1] + size[1] > from[1] {
+            for atomic_load(&this.frameDone) == 0 {
+                sched_yield()
+            }
+        }
+
     }
 
     setPixel(pos [int,int], color rgbColor) {
@@ -256,11 +342,13 @@ struct window {
             ida = 1.0 - da
 
             for offset < l, offset++ {
-                color.b = <uint>(<float><uint>color.b * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset))     * ida)
-                color.g = <uint>(<float><uint>color.g * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset + 1)) * ida)
-                color.r = <uint>(<float><uint>color.r * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset + 2)) * ida)
-                v = (<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16)
-                *(<uint32*>(<uint>this.frameBuffer + offset)) = v
+                pOffset = 4 * offset
+                pColor rgbColor
+                pColor.b = <uint>(<float><uint>color.b * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + pOffset))     * ida)
+                pColor.g = <uint>(<float><uint>color.g * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + pOffset + 1)) * ida)
+                pColor.r = <uint>(<float><uint>color.r * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + pOffset + 2)) * ida)
+                v = (<uint32>pColor.b) | (<uint32>pColor.g << 8) | (<uint32>pColor.r << 16)
+                *(<uint32*>(<uint>this.frameBuffer + pOffset)) = v
             }
 
             return
@@ -271,12 +359,6 @@ struct window {
             *(<uint32*>(<uint>this.frameBuffer + offset * 4)) = v
         }
     }
-
-    currentGraphicsRequest: __graphicsDrawRequest
-    haveFrame: mutexCondition
-    haveFrameMut: mutex
-    haveFrameBool: int
-    frameDone: byte = 1
 
     __threadedDrawer(m uint) {
         req = &this.currentGraphicsRequest
@@ -424,6 +506,7 @@ struct window {
         if this.isExposed == false || color.a == 0 || size[0] < 0 || size[1] < 0 {
             return
         }
+
         this.hasDrawn = true
         max = [pos[0] + size[0], pos[1] + size[1]]
 
@@ -461,9 +544,11 @@ struct window {
             max[1] = this.height
         }
 
-        if max[0] == pos[0] || max[1] == pos[1] {
+        if max[0] <= pos[0] || max[1] <= pos[1] {
             return
         }
+
+        this._overlapCheck(pos, [max[0] - pos[0], max[1] - pos[1]])
 
         if size[0] * size[1] > 100000 {
             this.__drawRequest(__graphicsDrawRequest{
@@ -486,6 +571,7 @@ struct window {
         if this.isExposed == false {
             return
         }
+
         n = 0
         max = [pos[0] + size[0], pos[1] + size[1]]
 
@@ -493,6 +579,7 @@ struct window {
 
         if this.scissor[0] {
             if pos[0] < this.scissor[1] {
+                n += this.scissor[1] - pos[0]
                 pos[0] = this.scissor[1]
             }
 
@@ -530,6 +617,8 @@ struct window {
             return
         }
 
+        this._overlapCheck(pos, [max[0] - pos[0], max[1] - pos[1]])
+
 
         this.__drawRequest(__graphicsDrawRequest{
             from: pos
@@ -556,6 +645,8 @@ struct window {
         if this.isExposed == false || color.a == 0 {
             return
         }
+
+
         this.hasDrawn = true
         fradi = <float>radi
 
@@ -579,6 +670,7 @@ struct window {
             }
         }
 
+        this._overlapCheck([rect[0], rect[1]], [rect[2] - rect[0], rect[3] - rect[1]])
 
         y = rect[1]; for y < rect[3], y++ {
             if y >= this.height || y < 0 {
@@ -611,6 +703,9 @@ struct window {
         if this.isExposed == false || color.a == 0 {
             return
         }
+
+        this._overlapCheck(pos, size)
+
         this.hasDrawn = true
 
         if radi * 2 > size[0] {
@@ -799,6 +894,7 @@ struct window {
         if this.isExposed == false {
             return [0,0]
         }
+
         fnt.currX = pos[0]
         fnt.currY = pos[1]
         this.hasDrawn = true
@@ -810,10 +906,10 @@ struct window {
 
                 if text[i] == <char>10 {
                     fnt.currY += fnt.fontSize + fnt.fontSize / 2
-                    i++
                 }
 
                 if fnt.currY >= this.scissor[2] {
+                    i++
                     break
                 }
             }
@@ -862,6 +958,8 @@ struct window {
                 }
             }
 
+            // TODO: this._overlapCheck()
+
 
             fnt.writeChar(codePoint, color, this.setPixel, this)
         }
@@ -873,6 +971,9 @@ struct window {
         if this.isExposed == false {
             return [0,0]
         }
+
+        // TODO: this._overlapCheck(pos, size)
+
         fnt.currX = pos[0]
         fnt.currY = pos[1]
         this.hasDrawn = true
@@ -884,6 +985,9 @@ struct window {
         if this.isExposed == false {
             return
         }
+
+        //TODO: this._overlapCheck(pos, size)
+
         fnt.currX = pos[0]
         fnt.currY = pos[1]
         this.hasDrawn = true
@@ -1037,6 +1141,97 @@ struct window {
         return res
     }
 
+    setIcon(img image) {
+        iconBuf = []uint32 {
+            img.width, img.height
+        }
+
+        i=0; for i < len(img.buf), i++ {
+            color = img.buf[i]
+            iconBuf[i + 2] = (<uint32>color.a << 24) | (<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16)
+        }
+
+        if this.isExposed == false {
+            this.tmpIconBuf = iconBuf
+            return
+        }
+
+        xcb_change_property(
+            this.connection,
+            XCB_PROP_MODE_REPLACE,
+            this.window,
+            this.atoms.WMicon,
+            XCB_ATOM_CARDINAL,
+            32,
+            len(iconBuf),
+            iconBuf
+        )
+    }
+
+    setMinSize(width uint, height uint) {
+        this.minSize = [width, height]
+        if this.isRunning == false {
+            return
+        }
+        hints = xcb_size_hints_t{}
+        // cookie = xcb_icccm_get_wm_normal_hints(this.connection, this.window)
+        // xcb_icccm_get_wm_normal_hints_reply(this.connection, cookie, &hints, null)
+
+        hints.flags = 1 << 4
+        hints.min_width = width
+        hints.min_height = height
+
+        xcb_icccm_set_wm_normal_hints(this.connection, this.window, &hints)
+    }
+    
+    setMaxSize(width uint, height uint) {
+        this.maxSize = [width, height]
+        if this.isRunning == false {
+            return
+        }
+        hints = xcb_size_hints_t{}
+        // cookie = xcb_icccm_get_wm_normal_hints(this.connection, this.window)
+        // xcb_icccm_get_wm_normal_hints_reply(this.connection, cookie, &hints, null)
+
+        hints.flags = 1 << 5
+        hints.max_width = width
+        hints.max_height = height
+
+        xcb_icccm_set_wm_normal_hints(this.connection, this.window, &hints)
+    }
+
+    setSize(width uint, height uint) {
+        this.width = width
+        this.height = height
+
+        if this.isRunning == false {
+            return
+        }
+
+        hints = xcb_size_hints_t{}
+        // cookie = xcb_icccm_get_wm_normal_hints(this.connection, this.window)
+        // xcb_icccm_get_wm_normal_hints_reply(this.connection, cookie, &hints, null)
+
+        hints.flags = 1 << 3
+        hints.width = width
+        hints.height = height
+
+        xcb_icccm_set_wm_normal_hints(this.connection, this.window, &hints)
+    }
+
+    setTitle(title str) {
+        xcb_change_property(
+            this.connection,
+            XCB_PROP_MODE_REPLACE,
+            this.window,
+            XCB_ATOM_WM_NAME,
+            XCB_ATOM_STRING,
+            8,
+            len(title),
+            cStr(title)
+        )
+    }
+
 
     clear(color rgbColor) {
         if this.scissor[0] {
@@ -1146,6 +1341,57 @@ struct window {
         values = [0]
         xcb_create_gc(this.connection, gc, this.window, XCB_GC_GRAPHICS_EXPOSURES, &values)
 
+        xdnd_version = 5
+        this.atoms.XdndEnter       = xcb_getAtom(this.connection, "XdndEnter")
+        this.atoms.XdndPosition    = xcb_getAtom(this.connection, "XdndPosition")
+        this.atoms.XdndStatus      = xcb_getAtom(this.connection, "XdndStatus")
+        this.atoms.XdndLeave       = xcb_getAtom(this.connection, "XdndLeave")
+        this.atoms.XdndDrop        = xcb_getAtom(this.connection, "XdndDrop")
+        this.atoms.XdndFinished    = xcb_getAtom(this.connection, "XdndFinished")
+        this.atoms.XdndSelection   = xcb_getAtom(this.connection, "XdndSelection")
+        this.atoms.XdndAware       = xcb_getAtom(this.connection, "XdndAware")
+        this.atoms.XdndActionCopy  = xcb_getAtom(this.connection, "XdndActionCopy")
+        this.atoms.XdndActionMove  = xcb_getAtom(this.connection, "XdndActionMove")
+        this.atoms.XdndTypeList    = xcb_getAtom(this.connection, "XdndTypeList")
+        this.atoms.text_uri_list   = xcb_getAtom(this.connection, "text/uri-list")
+        this.atoms.text_x_moz_url   = xcb_getAtom(this.connection, "text/x-moz-url")
+        this.atoms.text_plain   = xcb_getAtom(this.connection, "text/plain")
+        this.atoms.PRIMARY         = xcb_getAtom(this.connection, "PRIMARY")
+        this.atoms.TARGETS         = xcb_getAtom(this.connection, "TARGETS")
+        this.atoms.deleteWindow = xcb_getAtom(this.connection, "WM_DELETE_WINDOW")
+        this.atoms.XdndActionList = xcb_getAtom(this.connection, "XdndActionList")
+        this.atoms.WMicon = xcb_getAtom(this.connection, "_NET_WM_ICON")
+
+        xcb_change_property(this.connection,
+            XCB_PROP_MODE_REPLACE,
+            this.window,
+            this.atoms.XdndAware,
+            XCB_ATOM_CARDINAL,
+            32,
+            1,
+        &xdnd_version)
+        
+        if len(this.tmpIconBuf) != 0 {
+            xcb_change_property(
+                this.connection,
+                XCB_PROP_MODE_REPLACE,
+                this.window,
+                this.atoms.WMicon,
+                XCB_ATOM_CARDINAL,
+                32,
+                len(this.tmpIconBuf),
+                cArr(this.tmpIconBuf)
+            )
+        }
+
+        if this.minSize[0] != -1 {
+            this.setMinSize(this.minSize[0], this.minSize[1])
+        }
+
+        if this.maxSize[0] != -1 {
+            this.setMaxSize(this.maxSize[0], this.maxSize[1])
+        }
+
         this.isExposed = false
         for true, event = xcb_wait_for_event(this.connection) {
             if event == null {
@@ -1155,6 +1401,7 @@ struct window {
                 }
                 continue
             }
+
 
             eventType = event.response_type & 0x7F
 
@@ -1244,10 +1491,52 @@ struct window {
                 }
                 this.callEventFunction(windowEventKeyUp)
             } else if eventType == 33 {
-                break
+                cm = <xcb_client_message_event_t*>event
+
+                if cm.type == this.atoms.deleteWindow {
+                    this.callEventFunction(windowEventClose)
+                    free(event)
+                    break
+                }
+                
+                if cm.type == this.atoms.XdndEnter {
+                    this.callEventFunction(windowEventDragIn)
+                } else if cm.type == this.atoms.XdndPosition {
+                    this.callEventFunction(windowEventDrag)
+
+                    
+                    m = xcb_client_message_event_t {
+                        response_type: 33
+                        format: 32
+                        window: *(<uint32*>&cm.data)
+                        type: this.atoms.XdndStatus
+                    }
+
+                    *(<uint32*>(<uint>m.data)) = this.window
+                    *(<uint32*>(<uint>m.data + 4)) = 1
+                    *(<uint32*>(<uint>m.data + 12)) = this.atoms.XdndActionCopy
+
+
+
+                    xcb_send_event(this.connection, 0, *(<uint32*>&cm.data), XCB_EVENT_MASK_NO_EVENT, <ptr>&m)
+                    xcb_flush(this.connection)
+                } else if cm.type == this.atoms.XdndDrop {
+                    xcb_convert_selection(
+                        this.connection,
+                        this.window,
+                        this.atoms.XdndSelection,
+                        this.atoms.text_uri_list,
+                        this.atoms.XdndSelection,
+                        *(<uint32*>(<uint>cm.data + 8))
+                    )
+                    xcb_flush(this.connection)
+                } else if cm.type == this.atoms.XdndStatus {
+                    accept = *<uint32*>(<uint>cm.data + 4)
+                    action = *<uint32*>(<uint>cm.data + 16)
+                }
+
             } else if eventType == 30 {
                 req = <xcb_selection_request_event_t*>event
-
                 notify = xcb_selection_notify_event_t {
                     response_type: 31
                     time: req.time
@@ -1257,8 +1546,17 @@ struct window {
                     property: req.property
                 }
 
-                if req.property == 0 {
-                    notify.property = 0
+                if req.selection == this.atoms.XdndSelection {
+                    xcb_change_property(
+                        this.connection,
+                        XCB_PROP_MODE_REPLACE,
+                        req.requestor,
+                        req.property,
+                        req.target,
+                        8,
+                        len(this.tmpFileURI),
+                        cStr(this.tmpFileURI)
+                    )
                 } else {
                     xcb_change_property(
                         this.connection,
@@ -1271,26 +1569,59 @@ struct window {
                         cStr(this.tmpClipboard)
                     )
                 }
-                xcb_send_event(this.connection, 0, req.requestor, 0, <ptr>&notify)
+
+                xcb_send_event(this.connection, 0, req.requestor, XCB_EVENT_MASK_NO_EVENT, <ptr>&notify)
                 xcb_flush(this.connection)
             } else if eventType == 31 {
-                cookie = xcb_get_property(
-                    this.connection, 0,
-                    this.window,
-                    this.tmpClipboardAtoms[0],
-                    this.tmpClipboardAtoms[1], 0, 100000
-                )
-                prop = xcb_get_property_reply(this.connection, cookie, null)
+                sn = <xcb_selection_notify_event_t*>event
 
-                if prop != null {
-                    l = xcb_get_property_value_length(prop)
-                    res = memoryAllocSTR(l + 5)
-                    *(<uint32*>res) = l
-                    memcpy(<ptr>(<uint>res + 4), xcb_get_property_value(prop), l)
-                    free(prop)
-                    xcb_delete_property(this.connection, this.window, this.tmpClipboardAtoms[0])
-                    this.clipboardChan.send(res)
+                if sn.selection == this.atoms.XdndSelection {
+                    cookie = xcb_get_property(this.connection, 0,
+                    this.window,
+                    this.atoms.XdndSelection,
+                    this.atoms.text_uri_list,
+                    0, 65535)
+
+                    prop = xcb_get_property_reply(this.connection, cookie, null)
+                    
+                    if prop != null {
+                        l = xcb_get_property_value_length(prop)
+
+                        if l < 8 {
+                            free(prop)
+                            continue
+                        }
+
+                        l -= 8 //remove file:// and \r\n at the end
+
+                        data = memoryAllocSTR_NZ(l + 5)
+                        *(<uint32*>data) = l
+                        memcpy(<ptr>(<uint>data + 4), <ptr>(<uint>xcb_get_property_value(prop) + 7), l)
+                        free(prop)
+
+                        this.tmpFilesDragged = strSplit(urlDecode(data), "\r\n")
+                        this.callEventFunction(windowEventDrop)
+                    }
+                } else {
+                    cookie = xcb_get_property(
+                        this.connection, 0,
+                        this.window,
+                        this.tmpClipboardAtoms[0],
+                        this.tmpClipboardAtoms[1], 0, 100000
+                    )
+                    prop = xcb_get_property_reply(this.connection, cookie, null)
+
+                    if prop != null {
+                        l = xcb_get_property_value_length(prop)
+                        res = memoryAllocSTR(l + 5)
+                        *(<uint32*>res) = l
+                        memcpy(<ptr>(<uint>res + 4), xcb_get_property_value(prop), l)
+                        free(prop)
+                        xcb_delete_property(this.connection, this.window, this.tmpClipboardAtoms[0])
+                        this.clipboardChan.send(res)
+                    }
                 }
+
             } else if eventType == 9 {
                 this.callEventFunction(windowEventFocusIn)
             } else if eventType == 10 {

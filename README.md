@@ -163,10 +163,18 @@ MOUSE_SCROLL_DOWN,
 MOUSE_SCROLL_UP,
 MOUSE_SCROLL_LEFT,
 MOUSE_SCROLL_RIGHT).
+- `.getEventFiles() []str` returns the list of file that have been dropped on the window.
 - `.getCursorPosition() [int, int]` returns the coordinates of the mouse cursor. These are window coordinates where [0,0] is top left.
 - `.setClipboard(s str)` sets the contents of the clipboard.
 - `.getClipboard(callback function(window*, str, ptr), data ptr)` fetches the contents of the clipboard then calls the callback(window, clipboard contents, user data).
+- `.setDragFileURI(file str)` sets the file path to send to a window that asks it after a file drop
 - `.setCursor(name str)` sets the cursor icon. Uses X cursor names.
+- `.moveTo(x uint, y uint)` moves the window to a specified position.
+- `.setOpacity(level float)` changes the opacity of a running window.
+- `.setIcon(img image)` set the window icon.
+- `.setMinSize() and .setMaxSize(width uint, height uint)` set the min/max resizable size of the window.
+- `.setTitle(title str)` changes the title of a running window.
+- `.`
 - `.redraw()` triggers a windowEventDraw.
 - `.close()` closes the window.
 - `.setScissor(pos [int,int], size [int, int])` enables scissoring of the window, making it possible to only draw inside its rectangle.
@@ -186,6 +194,22 @@ MOUSE_SCROLL_RIGHT).
 - `.clear(color rgbColor)` clears the window with a given gray scale color.
 - `.launch(width uint, height uint, title str)` launches the window, note that this function will exit when the window has been closed.
 
+
+Globals:
+windowEventInitialize
+windowEventDraw
+windowEventMouseMove
+windowEventClose
+windowEventMouseDown
+windowEventMouseUp
+windowEventKeyDown
+windowEventKeyUp
+windowEventFocusIn
+windowEventFocusOut
+windowEventResize
+windowEventDragIn
+windowEventDrag
+windowEventDrop
 
 ### Fonts
 The font structure.
@@ -240,6 +264,18 @@ Additional methods:
 - `.setFocus(elem uiElement*)` sets focus on a given element.
 - `.find(id str) uiElement*` finds an element with the given id.
 
+Globals:
+uiEventElementAdded: element is added to the ui tree
+uiEventElementHoverIn: element is started to be hovered
+uiEventElementHoverOut: element is not hovered anymore
+uiEventElementHovered: the cursor is moving hover the element
+uiEventElementClicked: element is clicked
+uiEventElementFocusIn: element is starting to be in focus
+uiEventElementFocusOut: element is no longer in focus
+uiEventElementMouseDown: a mouse button is being pressed over the element
+uiEventElementFileDrag: a file is being dragged over the element
+uiEventElementFileDrop: a file has been droped on the element
+uiEventElementFileDropOutside: the element has been droped on another window
 
 ### UI elements
 Every element drawn on the screen is based on the uiElement structure.
@@ -264,6 +300,8 @@ Fields:
 - `.contextItems: []uiContextItem` a list of context item. These are the shortcut shown in context menu when right clicking on an element.
  A uiContextItem has `.ctrl`, `.shift`, `.alt` booleans and a `.key` to define the shortcut that should trigger it. It also has a `.name` that is shown in the context menu and a `.callback: function(uiContextItem*, ptr)` called when triggered.
 - `.focusable: bool = true` sets if an element should be focusable or not. An element that is not focusable cannot have contextItems.
+- `.dragTarget: bool` sets weither or not something (a file) can be draggeed on the element.
+- `.fileURI: str` if not null, this enables the element to be dragged out of the window or a .dragTarget=true element. This is the file path that will be passed to the other window.
 - `.manualDrawingMode: bool = false` use if you know what you are doing.
 - `.hovered`, `.clicked`, `.focused` are boolean that describe the state of the element when drawing it. These should not be set.
 - `._events` and `._draw` shall be set to your .draw() and .events() method when making new element types inside of yout ._init() method.

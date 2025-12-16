@@ -62,7 +62,11 @@ struct uiElement {
     fontSize: uint
     cursor: str
     absolutePosition: bool
+    focusable: bool = true
+    manualDrawingMode: bool = false
+    dragTarget: bool
     id: str
+    fileURI: str
 
     elements: []uiElement*
     parent: uiElement*
@@ -72,8 +76,6 @@ struct uiElement {
     maskHash: int
 
     toRemove: bool
-    focusable: bool = true
-    manualDrawingMode: bool = false
 
     hovered: bool
     clicked: bool

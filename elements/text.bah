@@ -19,11 +19,16 @@ struct uiText extend uiElement {
     _getTextPosition(cursorPos [int, int]) [int, int, int, int] {
         ui = <ui*>this.window
         pos = this.getPosition()
+
+        if cursorPos[0] > ui.width || cursorPos[1] > ui.height {
+            return [0, 0, 0, 0]
+        }
+
         relPos = [
-            cursorPos[0] - pos[0] - this.padding[0],
-            cursorPos[1] - pos[1] - this.padding[1]
+            cursorPos[0] - pos[0] - <int>this.padding[0],
+            cursorPos[1] - pos[1] - <int>this.padding[1]
         ]
-        
+
         lineNb = relPos[1] / (this.fontSize + this.fontSize / 2)
         
         arr = strAsArr(this.text)
@@ -45,14 +50,13 @@ struct uiText extend uiElement {
 
         currDim = 0
 
-        for i != currLine[1] - 1, i-- {
+        for i > currLine[1] - 1, i-- {
             currDim = this.window.measureByteArr(ui.font, <[]byte>&arr, currLine[1], i)[0]
 
             if <int>currDim <= relPos[0] {
                 break
             }
         }
-
 
         return [i, currLine[1], currLine[0], currDim]
     }
@@ -164,11 +168,6 @@ struct uiText extend uiElement {
 
             startPos = [selStart[0] + pos[0], selStart[1] + pos[1]]
 
-            if this.parent != null {
-                startPos[0] -= this.parent.offsets[0]
-                startPos[1] -= this.parent.offsets[1]
-            }
-
             startInd = selStart[2]
             i = selStart[2]; for i < selEnd[2], i++ {
                 if this.text[i] == <char>10 {
@@ -176,6 +175,10 @@ struct uiText extend uiElement {
                     w.drawRect(startPos, [currDim, this.fontSize + this.fontSize / 2], UI_TEXT_SELECTION_COLOR)
                     startPos = [pos[0], startPos[1] + this.fontSize + this.fontSize / 2]
                     startInd = i + 1
+                }
+
+                if this.window.scissor[0] && startPos[1] > this.window.scissor[4] {
+                    break
                 }
             }
 
@@ -225,11 +228,6 @@ struct uiText extend uiElement {
                 txt.selBeg[2] = 0
                 txt.selBeg[0] = 0
                 txt.selBeg[1] = 0
-
-                if txt.parent != null {
-                    txt.selBeg[0] += txt.parent.offsets[0]
-                    txt.selBeg[1] += txt.parent.offsets[1]
-                }
 
                 txt.selEnd[2] = len(txt.text)
             }
