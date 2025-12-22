@@ -26,6 +26,8 @@ const uiNotDrawnEvents = []uint{
 #define __uiSetElementOnFocus(ui window*, elem uiElement*)
 #define __uiAnimationHandler(ui window*)
 
+#define __uiRedrawElement_inner(ui window*, elem ptr, drawType int)
+
 struct uiAnimation {
     time: uint
     freq: uint
@@ -281,6 +283,7 @@ struct ui extend window {
 
     frameStart: uint
     isDrawing: bool
+    lastFrameTime: uint
 
     alreadyDrawn: bool
     needsRedraw: bool
@@ -318,14 +321,7 @@ struct ui extend window {
     }
 
     find(id str) uiElement* {
-        i=0; for i < len(this.elements), i++ {
-            f = this.elements[i].find(id)
-            if f != null {
-                return f
-            }
-        }
-        
-        return null
+        return __uiFindElement(this, id)
     }
 
     launch(width uint, height uint, title str) {
@@ -419,15 +415,16 @@ struct ui extend window {
     }
 }
 
-// __uiPropagateUpdateElementMask(ui ui*, currElem uiElement*) {
-//     i=0; for i < len(currElem.elements), i++ {
-//         pos = currElem.elements[i].getPosition()
-//         size = currElem.elements[i].getSize()
-//         if currElem.elements[i].manualDrawingMode == false {
-//             ui.getRect(pos, size, currElem.elements[i].maskedBuffer)
-//         }
-//     }
-// }
+__uiFindElement(ui ui*, id str) uiElement* {
+    i=0; for i < len(ui.elements), i++ {
+        f = ui.elements[i].find(id)
+        if f != null {
+            return f
+        }
+    }
+    
+    return null
+}
 
 _uiDrawElementBackground(pos [int,int], size [int,int], currElem uiElement*) {
     ui = <ui*>currElem.window
@@ -460,7 +457,7 @@ _uiDrawElementBackground(pos [int,int], size [int,int], currElem uiElement*) {
                 break
             }
         }
-        __uiRedrawElement(ui, currElem.parent, __uiElementDrawTypeBackground + i)
+        __uiRedrawElement_inner(ui, currElem.parent, __uiElementDrawTypeBackground + i)
     } else {
         ui.clear(WHITE)
     }
@@ -483,11 +480,7 @@ __uiIsOutsideScissor(ui ui*, pos [int,int], size [int,int]) bool {
     return false
 }
 
-__uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
-    if ui.isDrawing == false {
-        ui.frameStart = getTimeUnix()
-        ui.isDrawing = true
-    }
+__uiRedrawElement_inner(ui ui*, elem uiElement*, drawType int) {
     ui.needsRedraw = true
     currElem = elem
     for currElem != null, currElem = currElem.parent {
@@ -503,7 +496,7 @@ __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
             }
 
             if drawType == __uiElementDrawTypeFull {
-                __uiRedrawElement(ui, currElem.parent, __uiElementDrawTypeFull)
+                __uiRedrawElement_inner(ui, currElem.parent, __uiElementDrawTypeFull)
                 return
             }
         }
@@ -535,7 +528,7 @@ __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
                             nextMax[0] += nextPos[0]
                             nextMax[1] += nextPos[1]
                             if nextPos[0] < pos[0] + size[0] && nextPos[1] < pos[1] + size[1] && nextMax[0] > pos[0] && nextMax[1] > pos[1] {
-                                __uiRedrawElement(ui, currBox.parent, __uiElementDrawTypeFull)
+                                __uiRedrawElement_inner(ui, currBox.parent, __uiElementDrawTypeFull)
                                 return
                             }
                         }
@@ -548,7 +541,7 @@ __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
                         nextMax[0] += nextPos[0]
                         nextMax[1] += nextPos[1]
                         if nextPos[0] < pos[0] + size[0] && nextPos[1] < pos[1] + size[1] && nextMax[0] > pos[0] && nextMax[1] > pos[1] {
-                            __uiRedrawElement(ui, currBox.parent, __uiElementDrawTypeFull)
+                            __uiRedrawElement_inner(ui, currBox.parent, __uiElementDrawTypeFull)
                             return
                         }
                     }
@@ -625,12 +618,12 @@ __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
                 max = drawType - __uiElementDrawTypeBackground
                 i=0; for i < max, i++ {
                     el = currElem.elements[i]
-                    __uiRedrawElement(ui, el, __uiElementDrawTypeBackground + len(el.elements))
+                    __uiRedrawElement_inner(ui, el, __uiElementDrawTypeBackground + len(el.elements))
                 }
             } else {
                 i=0; for i < max, i++ {
                     el = currElem.elements[i]
-                    __uiRedrawElement(ui, el, __uiElementDrawTypeChildren)
+                    __uiRedrawElement_inner(ui, el, __uiElementDrawTypeChildren)
                 }
             }
             ui.scissor = os
@@ -644,6 +637,26 @@ __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
 
 }
 
+__uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
+    now = getTimeUnix()
+
+    if drawType == __uiElementDrawTypeFull {
+        if now - elem.lastDraw < 16000000 {
+            __uiRedrawElementDelayed(ui, elem, (16000000 - (now - elem.lastDraw)) / 1000000)
+            return
+        }
+
+        elem.lastDraw = now
+    }
+
+    if ui.isDrawing == false {
+        ui.frameStart = now
+        ui.isDrawing = true
+    }
+
+    __uiRedrawElement_inner(ui, elem, drawType)
+}
+
 __uiRedrawElementDelayed(ui ui*, elem uiElement*, ms uint) {
     now = getTimeUnix() / 1000000
     i=0; for i < len(ui.animations), i++ {
@@ -653,7 +666,6 @@ __uiRedrawElementDelayed(ui ui*, elem uiElement*, ms uint) {
             return
         }
     }
-
     ui.animations[len(ui.animations)] = uiAnimation {
         time: now
         freq: ms
@@ -664,7 +676,7 @@ __uiRedrawElementDelayed(ui ui*, elem uiElement*, ms uint) {
 }
 
 __uiAnimationHandler(ui ui*) {
-    freq = 40
+    freq = 16
     for ui.isRunning {
         ui.animationsMutex.lock()
         // println("waiting: "+uintToStr(freq)+"ms")
@@ -675,8 +687,6 @@ __uiAnimationHandler(ui ui*) {
             usleep(freq * 1000)
             ui.animationsMutex.lock()
         }
-        
-
 
         if ui.needsRedraw {
             ui.animationsMutex.unlock()
@@ -684,7 +694,7 @@ __uiAnimationHandler(ui ui*) {
         }
 
         now = getTimeUnix() / 1000000
-        freq = 40
+        freq = 16
         found = false
         i=len(ui.animations) - 1; for i != -1, i-- {
             anim = &ui.animations[i]
@@ -695,7 +705,6 @@ __uiAnimationHandler(ui ui*) {
             if <int>(anim.freq + anim.time) - now <= 30 && anim.processed == false {
                 anim.processed = true
                 found = true
-                break
             }
         }
 
@@ -807,7 +816,6 @@ _uiElementRecusriveResetHover(elem uiElement*, ui ui*) {
     wasHovered = elem.hovered
     elem.hovered = false
     if wasHovered {
-        __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
         __uiDispatchEvent(ui, elem, uiEventElementHoverOut)
     }
     
@@ -929,7 +937,6 @@ __uiSetElementOnFocus(ui ui*, elem uiElement*) {
         }
 
         ui.focusedElement.clicked = false
-        __uiRedrawElement(ui, ui.focusedElement, __uiElementDrawTypeFull)
         ui.focusedElement.focused = false
         __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
         ui.focusedElement = null
@@ -939,7 +946,6 @@ __uiSetElementOnFocus(ui ui*, elem uiElement*) {
         ui.focusedElement.focused = true
         __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusIn)
         elem.clicked = true
-        __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
     }
 }
 
@@ -1085,8 +1091,10 @@ __uiStartFileDrag(ui ui*, uri str, elem uiElement*) {
     }
 
     ui.fileDragWindow = bdlWindow
+
+    elemSize = elem.getSize()
     
-    async bdlWindow.launch(screenPosCurs[0] - bdlWindow.offsets[0], screenPosCurs[1] - bdlWindow.offsets[1], elem.size[0], elem.size[1])
+    async bdlWindow.launch(screenPosCurs[0] - bdlWindow.offsets[0], screenPosCurs[1] - bdlWindow.offsets[1], elemSize[0], elemSize[1])
 
 }
 
@@ -1098,7 +1106,7 @@ __uiHandleEvents(ui ui*, event uint32) {
     } else if ui.ctxWindow.choice != -1 && ui.ctxWindow.isRunning == false {
         cb = ui.ctxWindow.list[ui.ctxWindow.choice].callback
         cb(&ui.ctxWindow.list[ui.ctxWindow.choice], ui.ctxWindow.elem)
-        __uiRedrawElement(ui, ui.ctxWindow.elem, __uiElementDrawTypeFull)
+        __uiRedrawElement_inner(ui, ui.ctxWindow.elem, __uiElementDrawTypeFull)
         ui.ctxWindow.choice = -1
     }
 
@@ -1148,10 +1156,11 @@ __uiHandleEvents(ui ui*, event uint32) {
         onrd = ui.needsRedraw
         i=len(ui.animations) - 1; for i != -1, i-- {
             anim = &ui.animations[i]
-            
             if anim.processed {
                 absTime = anim.freq / 1000 + anim.time
-                __uiRedrawElement(ui, anim.elem, __uiElementDrawTypeFull)
+                if anim.elem != null {
+                    __uiRedrawElement_inner(ui, anim.elem, __uiElementDrawTypeFull)
+                }
                 delete(ui.animations, i)
             }
         }
@@ -1171,9 +1180,11 @@ __uiHandleEvents(ui ui*, event uint32) {
         #debug {
             if ui.isDrawing {
                 ui.isDrawing = false
-                totalTime = (getTimeUnix() - ui.frameStart)
+                now = getTimeUnix()
+                totalTime = (now - ui.frameStart)
                 ms = totalTime / 1000000
                 fps = 1000000000 / totalTime
+                ui.lastFrameTime = now
                 print("\rframe:\t"+intToStr(ms)+"ms  \t"+intToStr(fps)+"fps   ")
 
             }
@@ -1191,8 +1202,8 @@ __uiHandleEvents(ui ui*, event uint32) {
         if ui.draggingStage == 1 {
             ui.draggingStage = 2
             i=0; for i < len(ui.elements), i++ {
-                elem = _uiElementRecusriveCollide(ui.elements[i], pos)
-                if elem != null {
+                if ui.focusedElement != null {
+                    elem = ui.focusedElement
                     __uiSetElementOnFocus(ui, elem)
                     if len(elem.fileURI) != 0 {
                         clear(ui.tmpFilesDragged)
@@ -1265,7 +1276,6 @@ __uiHandleEvents(ui ui*, event uint32) {
 
                     if elem == null && ui.focusedElement != null {
                         ui.focusedElement.clicked = false
-                        __uiRedrawElement(ui, ui.focusedElement, __uiElementDrawTypeFull)
                         ui.focusedElement.focused = false
                         __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
                         ui.focusedElement = null
@@ -1370,7 +1380,9 @@ __uiHandleEvents(ui ui*, event uint32) {
 
                 free(rep)
             } else {
-                __uiDispatchEvent(ui, ui.focusedElement, uiEventElementHovered)
+                if ui.focusedElement != null {
+                    __uiDispatchEvent(ui, ui.focusedElement, uiEventElementHovered)
+                }
             }
         }
         
@@ -1493,7 +1505,6 @@ __uiHandleEvents(ui ui*, event uint32) {
                     if elem != null {
                         if elem != ui.focusedElement {
                             ui.focusedElement.clicked = false
-                            __uiRedrawElement(ui, ui.focusedElement, __uiElementDrawTypeFull)
                             ui.focusedElement.focused = false
                             __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
                             ui.focusedElement = null
@@ -1506,7 +1517,6 @@ __uiHandleEvents(ui ui*, event uint32) {
                 }
                 if i == len(ui.elements) && ui.focusedElement != null {
                     ui.focusedElement.clicked = false
-                    __uiRedrawElement(ui, ui.focusedElement, __uiElementDrawTypeFull)
                     ui.focusedElement.focused = false
                     __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
                     ui.focusedElement = null
@@ -1527,7 +1537,6 @@ __uiHandleEvents(ui ui*, event uint32) {
 
         if elem == null && ui.focusedElement != null {
             ui.focusedElement.clicked = false
-            __uiRedrawElement(ui, ui.focusedElement, __uiElementDrawTypeFull)
             ui.focusedElement.focused = false
             __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
             ui.focusedElement = null
@@ -1537,8 +1546,8 @@ __uiHandleEvents(ui ui*, event uint32) {
     }
 
     if ui.needsRedraw {
-        ui.redraw()
         ui.needsRedraw = false
+        ui.redraw()
     }
     ui.animationsMutex.unlock()
 }

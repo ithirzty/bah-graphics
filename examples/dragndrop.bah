@@ -116,10 +116,10 @@ main(args []str) int {
         backdrop: function(ft uiFileTarget*, ui ui*) {
             //draw a grey rounded rectangle as backdrop
             pos = ft.getPosition()
-            ui.drawRoundedRect(pos, ft.size, 16, rgbColor{50, 50, 50})
+            ui.drawRoundedRect(pos, ft.getSize(), 16, rgbColor{50, 50, 50})
 
         }
-        size: [300, 300] //300px per 300px
+        size: [pixels(300), pixels(300)] //300px per 300px
 
         pos: [
             percents(50).basis(uiBasisCenter), //centered horizontaly
@@ -144,8 +144,7 @@ main(args []str) int {
             },
             new uiBoxFolder { //this is the same file element as in explorer.bah
                 id: "fileElem"
-
-                size: [120, 100]
+                size: [pixels(120), pixels(100)]
                 pos: [
                     percents(50).basis(uiBasisCenter),
                     percents(50).basis(uiBasisCenter)
@@ -157,9 +156,9 @@ main(args []str) int {
                     pos = bx.getPosition()
                     //Draw the background if the element is hovered / focused
                     if bx.focused {
-                        ui.drawRoundedRect(pos, bx.size, 8, rgbColor{255, 255, 255, 50})
+                        ui.drawRoundedRect(pos, bx.getSize(), 8, rgbColor{255, 255, 255, 50})
                     } else if bx.hovered {
-                        ui.drawRoundedRect(pos, bx.size, 8, rgbColor{255, 255, 255, 10})
+                        ui.drawRoundedRect(pos, bx.getSize(), 8, rgbColor{255, 255, 255, 10})
                     }
 
                     //Draw the correct image
@@ -177,11 +176,7 @@ main(args []str) int {
                         text: ""
                         pos: [
                             percents(50).basis(uiBasisCenter), //centered horizontally
-                            percents(100).basis(uiBasisEnd)    //at the bottom most coordinate of the element
-                        ]
-                        margin: [
-                            pixels(0),
-                            pixels(-8) //shift the element 8 pixels up (could also be done with padding)
+                            percents(100).basis(uiBasisEnd) - pixels(8)    //at the bottom most coordinate of the element
                         ]
                     }
                 }

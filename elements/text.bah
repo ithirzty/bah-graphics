@@ -4,6 +4,7 @@
 
 UI_TEXT_COLOR = rgbColor{0, 0, 0}
 UI_TEXT_SELECTION_COLOR = rgbColor{120, 120, 255}
+UI_TEXT_SELECTION_COLOR_FOCUSED_OUT = rgbColor{120, 120, 120}
 
 struct uiText extend uiElement {
     text: str = ""
@@ -87,50 +88,56 @@ struct uiText extend uiElement {
         ui = <ui*>this.window
         cursorPos = this.window.getCursorPosition()
 
-
-        if ui.getEventButton() == MOUSE_LEFT_BUTTON {
-            if evnt == uiEventElementMouseDown {
-                this.isSel = true
-                // this.cursor = "xterm"
-                // this.window.setCursor("xterm")
-                textPos = this._getTextPosition(cursorPos)
-                this.selBeg = [
-                    textPos[3],
-                    textPos[2] * (this.fontSize + this.fontSize / 2),
-                    textPos[0]
-                ]
+        if evnt == uiEventElementFocusOut {
+            if this.isSel {
+                this.isSel = false
+            } else {
                 this.selEnd = this.selBeg
-                this.redraw()
-            } else if this.isSel {
-                textPos = this._getTextPosition(cursorPos)
-                if evnt == uiEventElementClicked {
-                    // this.cursor = "null"
-                    // this.window.setCursor(this.cursor)
-                    this.isSel = false
-                } else if evnt == uiEventElementHoverOut {
-                    this.selEnd = this.selBeg
-                    this.isSel = false
-                } else {
-                    this.selEnd = [
+            }
+        } else {
+            if ui.getEventButton() == MOUSE_LEFT_BUTTON {
+                if evnt == uiEventElementMouseDown {
+                    this.isSel = true
+                    // this.cursor = "xterm"
+                    // this.window.setCursor("xterm")
+                    textPos = this._getTextPosition(cursorPos)
+                    this.selBeg = [
                         textPos[3],
                         textPos[2] * (this.fontSize + this.fontSize / 2),
                         textPos[0]
                     ]
+                    this.selEnd = this.selBeg
                     this.redraw()
+                } else if this.isSel {
+                    textPos = this._getTextPosition(cursorPos)
+                    if evnt == uiEventElementClicked {
+                        // this.cursor = "null"
+                        // this.window.setCursor(this.cursor)
+                        this.isSel = false
+                    } else {
+                        this.selEnd = [
+                            textPos[3],
+                            textPos[2] * (this.fontSize + this.fontSize / 2),
+                            textPos[0]
+                        ]
+                        this.redraw()
+                    }
                 }
-            } else if evnt == uiEventElementFocusOut {
-                this.selEnd = this.selBeg
             }
         }
+
+
     }
 
     setText(s str) {
         this.text = s
         ui = <ui*>this.window
         ui.font.setSize(this.fontSize)
-        this.size = this.window.measureText(ui.font, this.text)
-        this.size[0] += this.padding[0] * 2
-        this.size[1] += this.padding[1] * 2
+        txtSize = this.window.measureText(ui.font, this.text)
+        this.size = [
+            pixels(txtSize[0] + this.padding[0] * 2),
+            pixels(txtSize[1] + this.padding[1] * 2)
+        ]
         this.selBeg[2] = 0
         this.selEnd[2] = 0
         this.redraw()
@@ -141,13 +148,17 @@ struct uiText extend uiElement {
 
         pos = this.getPosition()
 
-        if this.size[0] == 0 || this.size[1] == 0 {
-            this.size = w.measureText(w.font, this.text)
-            this.size[0] += this.padding[0] * 2
-            this.size[1] += this.padding[1] * 2
+        if isPosNull(this.size[0]) || isPosNull(this.size[1]) {
+            txtSize = this.window.measureText(w.font, this.text)
+            this.size = [
+                pixels(txtSize[0] + this.padding[0] * 2),
+                pixels(txtSize[1] + this.padding[1] * 2)
+            ]
         }
+        
+        size = this.getSize()
 
-        w.drawRect(pos, this.size, this.bgColor)
+        w.drawRect(pos, size, this.bgColor)
 
         selDist = this.selBeg[2] - this.selEnd[2]
         if selDist < 0 {
@@ -168,11 +179,16 @@ struct uiText extend uiElement {
 
             startPos = [selStart[0] + pos[0], selStart[1] + pos[1]]
 
+            selColor = UI_TEXT_SELECTION_COLOR
+            if this.focused == false {
+                selColor = UI_TEXT_SELECTION_COLOR_FOCUSED_OUT
+            }
+
             startInd = selStart[2]
             i = selStart[2]; for i < selEnd[2], i++ {
                 if this.text[i] == <char>10 {
                     currDim = this.window.measureByteArr(w.font, <[]byte>&arr, startInd, i)[0]
-                    w.drawRect(startPos, [currDim, this.fontSize + this.fontSize / 2], UI_TEXT_SELECTION_COLOR)
+                    w.drawRect(startPos, [currDim, this.fontSize + this.fontSize / 2], selColor)
                     startPos = [pos[0], startPos[1] + this.fontSize + this.fontSize / 2]
                     startInd = i + 1
                 }
@@ -183,7 +199,7 @@ struct uiText extend uiElement {
             }
 
             currDim = this.window.measureByteArr(w.font, <[]byte>&arr, startInd, i)[0]
-            w.drawRect(startPos, [currDim, this.fontSize + this.fontSize / 2], UI_TEXT_SELECTION_COLOR)
+            w.drawRect(startPos, [currDim, this.fontSize + this.fontSize / 2], selColor)
 
         }
 

@@ -146,7 +146,7 @@ constructFileElement(file str, fullPath str, isFolder bool) uiBoxFolder* {
 
     //Create the file element
     fileBox = new uiBoxFolder {
-        size: [120, 100]
+        size: [pixels(120), pixels(100)]
         scrollable: false
         cursor: "hand1"
         focusable: true
@@ -160,9 +160,9 @@ constructFileElement(file str, fullPath str, isFolder bool) uiBoxFolder* {
             pos = bx.getPosition()
             //Draw the background if the element is hovered / focused
             if bx.focused {
-                ui.drawRoundedRect(pos, bx.size, 8, rgbColor{255, 255, 255, 50})
+                ui.drawRoundedRect(pos, bx.getSize(), 8, rgbColor{255, 255, 255, 50})
             } else if bx.hovered {
-                ui.drawRoundedRect(pos, bx.size, 8, rgbColor{255, 255, 255, 10})
+                ui.drawRoundedRect(pos, bx.getSize(), 8, rgbColor{255, 255, 255, 10})
             }
 
             //Draw the correct image
@@ -180,11 +180,7 @@ constructFileElement(file str, fullPath str, isFolder bool) uiBoxFolder* {
                 text: file
                 pos: [
                     percents(50).basis(uiBasisCenter), //centered horizontally
-                    percents(100).basis(uiBasisEnd)    //at the bottom most coordinate of the element
-                ]
-                margin: [
-                    pixels(0),
-                    pixels(-8) //shift the element 8 pixels up (could also be done with padding)
+                    percents(100).basis(uiBasisEnd) - pixels(8)    //at the bottom most coordinate of the element
                 ]
             }
         }
@@ -340,32 +336,37 @@ main(args []str) int {
     ui.addElement(new uiBox {
         padding: [10, 10, 10, 10]
         scrollable: false
+        size: [
+            percents(100), pixels(pathBarHeight)
+        ]
         backdrop: function(bx uiBox*, ui ui*) {
-            //set its width to the window width
-            bx.size = [ui.width, pathBarHeight]
-            //set the path input to its width minus the width of the buttons on the right
-            pathInput.size[0] = bx.size[0] - bx.padding[0] - bx.padding[2] - bx.elements[1].size[0] - 10
             pos = bx.getPosition()
+            size = bx.getSize()
             //draw a background
-            ui.drawRect(pos, [bx.size[0], bx.size[1] - 1], backgroundColor)
+            ui.drawRect(pos, [size[0], size[1] - 1], backgroundColor)
             //draw a thin separation (bottom border) 
-            ui.drawRect([pos[0], pos[1] + bx.size[1] - 1], [bx.size[0], 1], UI_SEPARATOR_COLOR)
+            ui.drawRect([pos[0], pos[1] + size[1] - 1], [size[0], 1], UI_SEPARATOR_COLOR)
         }
 
         elements: []uiElement* {
             new uiTextInput { //the path input
                 id: "pathInput"
                 text: "Folder path"
+                size: [
+                    percents(100) - (sizeOfElementById("historyBtns") + pixels(10)),
+                    nullPos
+                ]
 
                 onsubmit: function(inp uiTextInput*) {
                     setPath(arrToStr(inp.value), true)
                 }
             },
             new uiHorizontalArray {
+                id: "historyBtns"
                 spacing: 10 //10px spacing between buttons
                 pos: [
                     percents(100).basis(uiBasisEnd), //make it stick to the right of the box
-                    pixels(10) //10px from the top
+                    pixels(0) //10px from the top
                 ]
                 elements: []uiElement* { //the two history buttons
                     new uiButton {
@@ -393,11 +394,15 @@ main(args []str) int {
         separation: 200 //by default the history list width is 200px
         minSep: 200 //the history list width cannot be smaller than 200px
         maxSep: 500 //or larger than 500px
+        size: [
+            percents(100),
+            percents(100) - pixels(pathBarHeight)
+        ]
 
-        backdrop: function(sep uiVerticalSeparator*, ui ui*) {
-            //Fill the whole window except the navigation bar space
-            sep.size = [ui.width, ui.height - pathBarHeight]
-        }
+        // backdrop: function(sep uiVerticalSeparator*, ui ui*) {
+        //     //Fill the whole window except the navigation bar space
+        //     sep.size = [ui.width, ui.height - pathBarHeight]
+        // }
 
         elements: []uiElement* {
             new uiBox { //The history list part of the window
@@ -405,7 +410,7 @@ main(args []str) int {
                 backdrop: function(bx uiBox*, ui ui*) {
                     ui.drawRect(bx.getPosition(), bx.getSize(), backgroundColor)
                     //Sets the list container size (uiBox is scrollable if overflowed)
-                    bx.elements[1].size = [bx.size[0] - 20, bx.size[1] - 40]
+                    // bx.elements[1].size = [bx.size[0] - 20, bx.size[1] - 40]
                 }
 
                 elements: []uiElement* {
@@ -418,6 +423,10 @@ main(args []str) int {
                     new uiBox { //container
                         pos: [
                             pixels(0), pixels(30) //offset because of the title
+                        ]
+                        size: [
+                            percents(100),
+                            percents(100) - pixels(30)
                         ]
 
                         elements: []uiElement* {
@@ -436,7 +445,7 @@ main(args []str) int {
                     //Draw its background darker than the rest (.lum(50/255))
                     ui.drawRect(bx.getPosition(), bx.getSize(), backgroundColor.lum(50))
 
-                    bx.elements[0].size[0] = bx.size[0] //sets the width of the uiVerticalGridArray that contains the file elements
+                    // bx.elements[0].size[0] = bx.size[0] //sets the width of the uiVerticalGridArray that contains the file elements
                     //This is because it is a vertical grid so it grows verticaly but needs a width as a guideline.
                 }
 
@@ -477,6 +486,10 @@ main(args []str) int {
                         id: "fileListContainer"
                         spacing: 20
                         padding: [10, 10, 10, 10]
+                        size: [
+                            percents(100),
+                            nullPos
+                        ]
                     }
                 }
             }

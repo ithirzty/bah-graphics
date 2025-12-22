@@ -27,13 +27,14 @@ generateMessage(s str, author str) uiBox* {
             xPos, pixels(0)
         ]
         backdrop: function(bx uiBox*, w ui*) {
-            bx.size = bx.getInnerSize()
+            innerSize = bx.getInnerSize()
+            bx.size = [pixels(innerSize[0]), pixels(innerSize[1])]
             //Changes the background color depending on the author.
             color = rgbColor{0, 200, 80}
             if ((<uiText*>bx.elements[0].elements[1]).text) != "You" {
                 color = rgbColor{0, 180, 200}
             }
-            w.drawRoundedRect(bx.getPosition(), bx.size, 8, color)
+            w.drawRoundedRect(bx.getPosition(), bx.getSize(), 8, color)
         }
 
         elements: []uiElement* {
@@ -65,14 +66,15 @@ main(args []str) int {
     //The messages container
     ui.addElement(
         new uiBox { //Using a box as it is scrollable.
+            size: [
+                percents(100),
+                percents(100) - pixels(50)
+            ]
             backdrop: function(bx uiBox*, ui ui*) {
                 //Make sure its makes the full width of the window but 50 pixels short in height for the input below.
-                bx.size = [ui.width, ui.height - 50]
                 pos = bx.getPosition()
 
-                bx.elements[0].size[0] = bx.size[0] //sets the width of the messages vertical array
-
-                ui.drawRect(pos, bx.size, rgbColor{220, 220, 220})
+                ui.drawRect(pos, bx.getSize(), rgbColor{220, 220, 220})
             }
 
             elements: []uiElement* {
@@ -81,6 +83,10 @@ main(args []str) int {
                     dynamicSize: false //As we set its width (line 73) we do not want it to grow on that axis
                     padding: [10, 10, 10, 10]
                     spacing: 20
+                    size: [
+                        percents(100),
+                        nullPos
+                    ]
                     elements: []uiElement* {
                         generateMessage("Hi, how are you?", "Alois") // Generate a first message
                     }
@@ -98,19 +104,19 @@ main(args []str) int {
                 pixels(0), percents(100).basis(uiBasisEnd) //bottom of the screen
             ]
             size: [
-                ui.width,
-                50
+                percents(100),
+                pixels(50)
             ]
-            backdrop: function(bx uiBox*, ui ui*) {
-                bx.size[0] = ui.width //resize it on every draw in case the window size changed
-                bx.elements[0].size[0] = ui.width - (30 + bx.elements[1].size[0]) //set the width of the text input element
-            }
 
             elements: []uiElement* {
                 new uiTextInput {
                     pos: [
                         pixels(10),
                         pixels(10)
+                    ]
+                    size: [
+                        percents(100) - (pixels(30) + sizeOfElementById("sendBtn")),
+                        nullPos
                     ]
                     text: "Text message"
                     onsubmit: function(inp uiTextInput*) {
@@ -119,13 +125,10 @@ main(args []str) int {
                     }
                 },
                 new uiButton {
+                    id: "sendBtn"
                     pos: [
-                        percents(100).basis(uiBasisEnd),
+                        percents(100).basis(uiBasisEnd) - pixels(10), //shift it 10 pixel to the left
                         pixels(10)
-                    ]
-
-                    margin: [
-                        pixels(-10), pixels(0) //shift it 10px left
                     ]
 
                     text: "Send"
@@ -137,23 +140,26 @@ main(args []str) int {
                         if len(inp.value) == 0 {
                             return
                         }
+                        containerSize = msgContainer.getSize()
+                        parentContainerSize = msgContainer.parent.getSize()
 
                         shouldScroll = false
-                        if msgContainer.parent.offsets[1] >= msgContainer.size[1] - msgContainer.parent.size[1] {
+                        if msgContainer.parent.offsets[1] >= containerSize[1] - parentContainerSize[1] {
                             shouldScroll = true
                         }
 
                         //Add messages to the message container
                         msgContainer.addElement(generateMessage(arrToStr(inp.value), "You"))
-                        msgContainer.addElement(generateMessage("This is interesting.", "Alois"))
 
                         if shouldScroll {
+                            containerSize = msgContainer.getSize()
+                            parentContainerSize = msgContainer.parent.getSize()
                             //Scroll the message continer if necessary
-                            msgContainer.parent.offsets[1] = msgContainer.size[1] - msgContainer.parent.size[1]
+                            msgContainer.parent.offsets[1] = containerSize[1] - parentContainerSize[1]
                             if msgContainer.parent.offsets[1] < 0 {
                                 msgContainer.parent.offsets[1] = 0
                             }
-                            msgContainer.redraw()
+                            msgContainer.parent.redraw()
                         }
                         
                         //Clear the input value

@@ -1,0 +1,255 @@
+#import "iostream.bah"
+#import "string.bah"
+
+#import "./libs/alsa.bah"
+
+const AUDIO_FILE_BUFFER_TIME = 2
+
+#define memcmp(a ptr, b ptr, s uint) int
+
+struct WAVHeader {
+	riff: buffer:4
+	file_size: uint32
+	wave: buffer:8
+	fmt_size: uint32
+	audio_format: uint16
+	num_channels: uint16
+	sample_rate: uint32
+	byte_rate: uint32
+	block_align: uint16
+	bits_per_sample: uint16
+    data: buffer:4
+    dataSize: uint32
+}
+
+struct audio {
+    path: str
+    currentTime: uint
+    buf: []byte
+    playState: int32
+    pcm: ptr
+    condVar: mutexCondition
+    dataStart: uint
+    mut: mutex
+    fm: fileMap
+    isReady: bool
+    header: WAVHeader
+
+    isEmpty() bool {
+        return this.isReady == false
+    }
+
+    load(file str) bool {
+        fm = fileMap{}
+        this.isReady = false
+        buf = fm.open(file)
+
+        if fm.isValid() == false {
+            this.buf = null
+            return false
+        }
+
+        header = *<WAVHeader*>cArr(buf)
+
+        if header.audio_format != 1 {
+            println("invalid format...")
+            fm.close()
+            this.buf = null
+            return false
+        }
+
+        i = sizeof(WAVHeader) - 8
+        this.dataStart = 0
+
+        chunkId byte*
+        for i+8 < len(buf) {
+            chunkId = <byte*>(<uint>cArr(buf) + i)
+            chunkSize = *<uint32*>(<uint>cArr(buf) + i + 4)
+
+            if memcmp(chunkId, cStr("data"), 4) == 0 {
+                header.dataSize = chunkSize
+                this.dataStart = i + 8
+                break
+            }
+            i += 8 + chunkSize
+            if chunkSize & 1 != 0 {
+                i++
+            }
+        }
+
+        this.header = header
+
+        if this.dataStart == 0 {
+            fm.close()
+            return false
+        }
+
+        this.buf = buf
+        this.fm = fm
+        this.currentTime = 0
+        this.playState = 1
+
+        this.condVar.init()
+        this.mut.init()
+
+        this.isReady = true
+
+        return true        
+    }
+
+    pause() {
+        if this.isReady == false {
+            return
+        }
+        this.mut.lock()
+        this.playState = 0
+        snd_pcm_pause(this.pcm, 1)
+        this.mut.unlock()
+    }
+
+    resume() {
+        if this.isReady == false {
+            return
+        }
+        this.mut.lock()
+        this.playState = 1
+        snd_pcm_pause(this.pcm, 0)
+        this.condVar.send()
+        this.mut.unlock()
+    }
+
+    stop() {
+        if this.isReady == false {
+            return
+        }
+        this.mut.lock()
+        if this.playState == 3 {
+            this.mut.unlock()
+            return
+        }
+        if this.playState != 2 {
+            this.playState = 2
+            snd_pcm_pause(this.pcm, 1)
+        }
+
+        for this.playState != 3 {
+            this.condVar.wait(this.mut)
+        }
+        this.mut.unlock()
+    }
+
+    hasEnded() bool {
+        if this.isReady == false {
+            return false
+        }
+        this.mut.lock()
+        v = this.playState >= 2
+        this.mut.unlock()
+        return v
+    }
+
+    play() {
+        if this.isReady == false {
+            println("audio: trying to play invalid file.")
+            backtrace(0)
+            return
+        }
+
+       
+        pcm ptr
+        snd_pcm_open(&pcm, "default", SND_PCM_STREAM_PLAYBACK, 0)
+        snd_pcm_set_params(pcm, SND_PCM_FORMAT_FLOAT_LE, SND_PCM_ACCESS_RW_INTERLEAVED, this.header.num_channels, this.header.sample_rate, 1, 500000)
+        this.pcm = pcm
+
+
+        threadFeed = function(a audio*, pcm ptr) {
+
+            numSamples = a.header.dataSize / (a.header.bits_per_sample / 8)
+            buf = []float32
+            bufSize = AUDIO_FILE_BUFFER_TIME * a.header.num_channels * a.header.sample_rate
+            allocateArray(buf, bufSize)
+            raw = <uint>cArr(a.buf) + a.dataStart
+
+            
+            for true {
+                a.mut.lock()
+                for a.playState == 0 {
+                    a.condVar.wait(a.mut)
+                }
+                if a.playState == 2 {
+                    a.mut.unlock()
+                    break
+                }
+                i = a.currentTime
+                a.mut.unlock()
+                j = 0
+                if a.header.bits_per_sample == 16 {
+                    for i < numSamples, i++ {
+                        s = *<int16*>(raw + i * 2)
+                        
+                        buf[j] = <float32><int32>s / <float32>32768.0
+
+                        j++
+                        if j >= bufSize {
+                            break
+                        }
+                    }
+                } else if a.header.bits_per_sample == 24 {
+                    for i < numSamples, i++ {
+                        s = *<int32*>(raw + i * 3) & 0x00FFFFFF
+
+                        if s & 0x800000 != 0 {
+                            s = s | ~0x00FFFFFF
+                        }
+                        
+                        buf[j] = <float32>s / <float32>8388608.0
+
+                        j++
+                        if j >= bufSize {
+                            break
+                        }
+                    }
+                } else {
+                    break
+                }
+
+                if j == 0 {
+                    break
+                }
+
+                v = snd_pcm_writei(pcm, cArr(buf), j / a.header.num_channels)
+
+                a.mut.lock()
+                if i == numSamples || a.playState == 2 {
+                    a.playState = 2
+                    a.pcm = null
+                    a.mut.unlock()
+                    break
+                }
+                a.currentTime += v * a.header.num_channels
+                a.mut.unlock()
+            }
+            snd_pcm_drain(pcm)
+            snd_pcm_close(pcm)
+            a.mut.lock()
+            a.playState = 3
+            a.condVar.send()
+            a.mut.unlock()
+        }
+
+        async threadFeed(this, pcm)
+    }
+
+    close() {
+        if this.isReady == false {
+            return
+        }
+        this.stop()
+        this.isReady = false
+        this.fm.close()
+        this.buf = null
+
+        this.condVar.destroy()
+        this.mut.destroy()
+    }
+}

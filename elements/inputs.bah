@@ -293,7 +293,7 @@ struct uiTextInput extend uiElement {
         fullTextLength = w.measureByteArr(w.font, this.value, 0, len(this.value))[0]
         carretTextLength = w.measureByteArr(w.font, this.value, 0, this.carret)[0]
 
-        availableWidth = this.size[0] - this.padding[0] * 2
+        availableWidth = size[0] - this.padding[0] * 2
 
         textMin = 0
         textMax = len(this.value)
@@ -341,13 +341,13 @@ struct uiTextInput extend uiElement {
             textSizesSelectionFrom = w.measureByteArr(w.font, this.value, textMin, self)[0]
             textSizesSelectionTo = w.measureByteArr(w.font, this.value, self, selt)[0]
 
-            w.drawRect([pos[0] + this.padding[0] + textSizesSelectionFrom, pos[1] + this.size[1] / 2 - this.fontSize], [textSizesSelectionTo, this.fontSize * 2], INPUT_TEXT_SELECTION_COLOR)
+            w.drawRect([pos[0] + this.padding[0] + textSizesSelectionFrom, pos[1] + size[1] / 2 - this.fontSize], [textSizesSelectionTo, this.fontSize * 2], INPUT_TEXT_SELECTION_COLOR)
         }
 
         if len(this.value) == 0 {
-            w.drawText(w.font, this.text, INPUT_PLACEHOLDER_TEXT_COLOR, [pos[0] + this.padding[0], pos[1] + this.size[1] / 2 + this.fontSize / 2 + 2])
+            w.drawText(w.font, this.text, INPUT_PLACEHOLDER_TEXT_COLOR, [pos[0] + this.padding[0], pos[1] + size[1] / 2 + this.fontSize / 2 + 2])
         } else {
-            w.drawByteArr(w.font, this.value, textMin, textMax, INPUT_TEXT_COLOR, [pos[0] + this.padding[0], pos[1] + this.size[1] / 2 + this.fontSize / 2 + 2])
+            w.drawByteArr(w.font, this.value, textMin, textMax, INPUT_TEXT_COLOR, [pos[0] + this.padding[0], pos[1] + size[1] / 2 + this.fontSize / 2 + 2])
         }
 
         if this.focused {
@@ -355,7 +355,7 @@ struct uiTextInput extend uiElement {
 
             if now - this.lastAction < 250 || now / 500 % 2 == 0 {
                 textSizeToCarret = w.measureByteArr(w.font, this.value, textMin, this.carret)[0]
-                w.drawRect([pos[0] + this.padding[0] + textSizeToCarret, pos[1] + this.size[1] / 2 - this.fontSize], [1, this.fontSize * 2], BLACK)
+                w.drawRect([pos[0] + this.padding[0] + textSizeToCarret, pos[1] + size[1] / 2 - this.fontSize], [1, this.fontSize * 2], BLACK)
             }
 
             this.redrawIn(250) //for carret animation
@@ -374,8 +374,12 @@ struct uiTextInput extend uiElement {
             this.padding = [8, 12, 8, 12]
         }
 
-        if this.size[0] == 0 {
-            this.size = [300, this.fontSize + this.padding[1] * 2]
+        if isPosNull(this.size[0]) {
+            this.size[0] = pixels(300)
+        }
+
+        if isPosNull(this.size[1]) {
+            this.size[1] = pixels(this.fontSize + this.padding[1] * 2)
         }
 
         this.bgColor = INPUT_BACKGROUND_COLOR

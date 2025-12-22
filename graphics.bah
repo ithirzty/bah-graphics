@@ -1452,8 +1452,8 @@ struct window {
                 )
 
                 xcb_flush(this.connection)
-                // c = xcb_get_input_focus(this.connection)
-                // xcb_get_input_focus_reply(this.connection, c, null)
+                c = xcb_get_input_focus(this.connection)
+                xcb_get_input_focus_reply(this.connection, c, null)
             } else if eventType == 6 {
                 this.callEventFunction(windowEventMouseMove)
             } else if eventType == 4 {
@@ -1592,14 +1592,14 @@ struct window {
                             continue
                         }
 
-                        l -= 8 //remove file:// and \r\n at the end
+                        // l -= 8 //remove file:// and \r\n at the end
 
                         data = memoryAllocSTR_NZ(l + 5)
                         *(<uint32*>data) = l
                         memcpy(<ptr>(<uint>data + 4), <ptr>(<uint>xcb_get_property_value(prop) + 7), l)
                         free(prop)
 
-                        this.tmpFilesDragged = strSplit(urlDecode(data), "\r\n")
+                        this.tmpFilesDragged = strSplit(urlDecode(data), "\r\nfile://")
                         this.callEventFunction(windowEventDrop)
                     }
                 } else {

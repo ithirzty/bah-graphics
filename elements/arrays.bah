@@ -18,9 +18,9 @@ struct uiVerticalArray extend uiElement {
 
         innerSize = this.getInnerSize()
 
-        this.size[1] = innerSize[1]
+        this.size[1] = pixels(innerSize[1])
         if this.dynamicSize {
-            this.size[0] = innerSize[0]
+            this.size[0] = pixels(innerSize[0])
         }
     }
 
@@ -46,9 +46,9 @@ struct uiHorizontalArray extend uiElement {
 
         innerSize = this.getInnerSize()
 
-        this.size[0] = innerSize[0]
+        this.size[0] = pixels(innerSize[0])
         if this.dynamicSize {
-            this.size[1] = innerSize[1]
+            this.size[1] = pixels(innerSize[1])
         }
     }
 
@@ -63,6 +63,7 @@ struct uiVerticalGridArray extend uiElement {
 
     draw(w ui*) {
         sizeAcc = [this.padding[0], this.padding[1]]
+        thisSize = this.getSize()
 
         maxHeight = 0
 
@@ -78,7 +79,7 @@ struct uiVerticalGridArray extend uiElement {
             }
             sizeAcc[0] += size[0] + this.spacing
 
-            if sizeAcc[0] + size[0] + this.padding[2] + this.padding[0] >= this.size[0] {
+            if sizeAcc[0] + size[0] + this.padding[2] + this.padding[0] >= thisSize[0] {
                 sizeAcc[0] = this.padding[0]
                 sizeAcc[1] += maxHeight + this.spacing
                 maxHeight = 0
@@ -87,7 +88,7 @@ struct uiVerticalGridArray extend uiElement {
         }
 
         innerSize = this.getInnerSize()
-        this.size[1] = innerSize[1]
+        this.size[1] = pixels(innerSize[1])
     }
 
     _init() {

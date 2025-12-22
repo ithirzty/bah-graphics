@@ -8,8 +8,14 @@ const __uiElementDrawTypeBackground = 2
 #define __uiRedrawElement(ui window*, elem ptr, drawType int)
 #define __uiRedrawElementDelayed(ui window*, elem ptr, ms uint)
 
-const _uiPosFlagPx = 1
-const _uiPosFlagPc = 2
+const _uiPosFlagPx     = 1
+const _uiPosFlagPc     = 2
+const _uiPosFlagOpAdd  = 4
+const _uiPosFlagOpSub  = 8
+const _uiPosFlagOpMult = 16
+const _uiPosFlagOpDiv  = 32
+const _uiPosFlagRef    = 64
+const _uiPosFlagRefID  = 128
 
 const uiBasisCenter = 1024
 const uiBasisEnd    = 2048
@@ -17,12 +23,37 @@ const uiBasisEnd    = 2048
 struct uiPos {
     ammount: int32
     flags: int32
+    children: [ptr,ptr]
 
     basis(bs int32) uiPos {
         this.flags = this.flags | bs
         return *this
     }
+
+    add(x uiPos) uiPos {
+        a = new uiPos
+        *a = *this
+        b = new uiPos
+        *b = x
+        return uiPos {
+            flags: _uiPosFlagOpAdd
+            children: [a, b]
+        }
+    }
+
+    sub(x uiPos) uiPos {
+        a = new uiPos
+        *a = *this
+        b = new uiPos
+        *b = x
+        return uiPos {
+            flags: _uiPosFlagOpSub
+            children: [a, b]
+        }
+    }
 }
+
+const nullPos = uiPos{0}
 
 pixels(px int) uiPos {
     return uiPos {
@@ -36,6 +67,24 @@ percents(pc int) uiPos {
         ammount: pc
         flags: _uiPosFlagPc
     }
+}
+
+sizeOfElement(elem ptr) uiPos {
+    return uiPos {
+        flags: _uiPosFlagRef
+        children: [elem, null]
+    }
+}
+
+sizeOfElementById(id str) uiPos {
+    return uiPos {
+        flags: _uiPosFlagRefID
+        children: [id, null]
+    }
+}
+
+isPosNull(vec uiPos) bool {
+    return vec.flags == 0
 }
 
 #define __uiCalculateElemPosVec(elem ptr, posVec [uiPos,uiPos], absPos bool) [int,int]
@@ -54,8 +103,7 @@ struct uiContextItem {
 
 struct uiElement {
     pos: [uiPos,uiPos]
-    margin: [uiPos,uiPos]
-    size: [int,int]
+    size: [uiPos,uiPos]
     padding: [uint,uint,uint,uint]
     innerMargin: [uint,uint,uint,uint]
     offsets: [int,int]
@@ -67,6 +115,7 @@ struct uiElement {
     dragTarget: bool
     id: str
     fileURI: str
+    lastDraw: int
 
     elements: []uiElement*
     parent: uiElement*
@@ -100,20 +149,12 @@ struct uiElement {
     }
 
     getSize() [int,int] {
-        size = this.size
-        return size
-    }
-
-    getMargin() [int,int] {
-        return __uiCalculateElemPosVec(this, this.margin, false)
+        return __uiCalculateElemPosVec(this, this.size, false)
     }
 
     getPosition() [int,int] {
-        margin = __uiCalculateElemPosVec(this, this.margin, false)
         r = __uiCalculateElemPosVec(this, this.pos, true)
-        r[0] += margin[0]
-        r[1] += margin[1]
-
+        
         if this.parent != null {
             parentPos = this.parent.getPosition()
             r[0] += parentPos[0]
@@ -203,12 +244,47 @@ struct uiElement {
     }
 }
 
-__uiCalculateElemPosVec(this uiElement*, pos [uiPos,uiPos], absPos bool) [int,int] {
-    r = [0,0]
+#define __uiFindElement(ui window*, id str) uiElement*
 
-    if pos[0].flags & _uiPosFlagPx != 0 {
-        r[0] = pos[0].ammount
-    } else if pos[0].flags & _uiPosFlagPc != 0 {
+__uiCalculateElemPosX(this uiElement*, pos uiPos, absPos bool) int {
+    r = 0
+    if pos.flags & _uiPosFlagOpAdd != 0 {
+        if pos.children[0] != null && pos.children[1] != null {
+            a = __uiCalculateElemPosX(this, *<uiPos*>pos.children[0], absPos)
+            b = __uiCalculateElemPosX(this, *<uiPos*>pos.children[1], absPos)
+            r = a + b
+        }
+    } else if pos.flags & _uiPosFlagOpSub != 0 {
+        if pos.children[0] != null && pos.children[1] != null {
+            a = __uiCalculateElemPosX(this, *<uiPos*>pos.children[0], absPos)
+            b = __uiCalculateElemPosX(this, *<uiPos*>pos.children[1], absPos)
+            r = a - b
+        }
+    } else if pos.flags & _uiPosFlagOpMult != 0 {
+        if pos.children[0] != null && pos.children[1] != null {
+            a = __uiCalculateElemPosX(this, *<uiPos*>pos.children[0], absPos)
+            b = __uiCalculateElemPosX(this, *<uiPos*>pos.children[1], absPos)
+            r = a * b
+        }
+    } else if pos.flags & _uiPosFlagOpDiv != 0 {
+        if pos.children[0] != null && pos.children[1] != null {
+            a = __uiCalculateElemPosX(this, *<uiPos*>pos.children[0], absPos)
+            b = __uiCalculateElemPosX(this, *<uiPos*>pos.children[1], absPos)
+            r = a / b
+        }
+    } else if pos.flags & _uiPosFlagRefID != 0 {
+        elem = __uiFindElement(this.window, pos.children[0])
+        if elem != null {
+            r = elem.getSize()[0]
+        }
+    } else if pos.flags & _uiPosFlagRef != 0 {
+        elem = <uiElement*>pos.children[0]
+        if elem != null {
+            r = elem.getSize()[0]
+        }
+    } else if pos.flags & _uiPosFlagPx != 0 {
+        r = pos.ammount
+    } else if pos.flags & _uiPosFlagPc != 0 {
         parWidth = 0
         if this.parent != null {
             parWidth = this.parent.getSize()[0] - (this.parent.padding[0] + this.parent.padding[2])
@@ -216,17 +292,61 @@ __uiCalculateElemPosVec(this uiElement*, pos [uiPos,uiPos], absPos bool) [int,in
             parWidth = this.window.width
         }
 
-        r[0] = <int>(<float>parWidth * (<float><int>pos[0].ammount / 100.0))
+        r = <int>(<float>parWidth * (<float><int>pos.ammount / 100.0))
     }
 
     if this.parent != null && this.absolutePosition == false && absPos {
-        r[0] += this.parent.padding[0]
-        r[1] += this.parent.padding[1]
+        r += this.parent.padding[0]
     }
 
-    if pos[1].flags & _uiPosFlagPx != 0 {
-        r[1] = pos[1].ammount
-    } else if pos[1].flags & _uiPosFlagPc != 0 {
+    if pos.flags & uiBasisCenter != 0 {
+        r -= this.getSize()[0] / 2
+    } else if pos.flags & uiBasisEnd != 0 {
+        r -= this.getSize()[0]
+    }
+
+    return r
+}
+
+__uiCalculateElemPosY(this uiElement*, pos uiPos, absPos bool) int {
+    r = 0
+    if pos.flags & _uiPosFlagOpAdd != 0 {
+        if pos.children[0] != null && pos.children[1] != null {
+            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], absPos)
+            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], absPos)
+            r = a + b
+        }
+    } else if pos.flags & _uiPosFlagOpSub != 0 {
+        if pos.children[0] != null && pos.children[1] != null {
+            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], absPos)
+            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], absPos)
+            r = a - b
+        }
+    } else if pos.flags & _uiPosFlagOpMult != 0 {
+        if pos.children[0] != null && pos.children[1] != null {
+            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], absPos)
+            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], absPos)
+            r = a * b
+        }
+    } else if pos.flags & _uiPosFlagOpDiv != 0 {
+        if pos.children[0] != null && pos.children[1] != null {
+            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], absPos)
+            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], absPos)
+            r = a / b
+        }
+    } else if pos.flags & _uiPosFlagRefID != 0 {
+        elem = __uiFindElement(this.window, pos.children[0])
+        if elem != null {
+            r = elem.getSize()[1]
+        }
+    } else if pos.flags & _uiPosFlagRef != 0 {
+        elem = <uiElement*>pos.children[0]
+        if elem != null {
+            r = elem.getSize()[1]
+        }
+    } else if pos.flags & _uiPosFlagPx != 0 {
+        r = pos.ammount
+    } else if pos.flags & _uiPosFlagPc != 0 {
         parHeight = 0
         if this.parent != null {
             parHeight = this.parent.getSize()[1] - (this.parent.padding[1] + this.parent.padding[3])
@@ -234,20 +354,22 @@ __uiCalculateElemPosVec(this uiElement*, pos [uiPos,uiPos], absPos bool) [int,in
             parHeight = this.window.height
         }
 
-        r[1] = <int>(<float>parHeight * (<float><int>pos[1].ammount / 100.0))
+        r = <int>(<float>parHeight * (<float><int>pos.ammount / 100.0))
     }
 
-    if pos[0].flags & uiBasisCenter != 0 {
-        r[0] -= this.getSize()[0] / 2
-    } else if pos[0].flags & uiBasisEnd != 0 {
-        r[0] -= this.getSize()[0]
+    if this.parent != null && this.absolutePosition == false && absPos {
+        r += this.parent.padding[1]
     }
 
-    if pos[1].flags & uiBasisCenter != 0 {
-        r[1] -= this.getSize()[1] / 2
-    } else if pos[1].flags & uiBasisEnd != 0 {
-        r[1] -= this.getSize()[1]
+    if pos.flags & uiBasisCenter != 0 {
+        r -= this.getSize()[1] / 2
+    } else if pos.flags & uiBasisEnd != 0 {
+        r -= this.getSize()[1]
     }
 
     return r
+}
+
+__uiCalculateElemPosVec(this uiElement*, pos [uiPos,uiPos], absPos bool) [int,int] {
+    return [__uiCalculateElemPosX(this, pos[0], absPos), __uiCalculateElemPosY(this, pos[1], absPos)]
 }

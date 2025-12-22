@@ -1,0 +1,870 @@
+// Bindings automatically generated
+// using https://github.com/ithirzty/ctobah
+
+#cLib "lasound" "lm"
+
+// Original file: /usr/include/alsa/asoundlib.h
+// Bindings of exclusively: /usr/include/alsa
+
+//Location: /usr/include/alsa/global.h:50
+#define snd_asoundlib_version() char*
+
+//Location: /usr/include/alsa/global.h:74
+struct snd_dlsym_link {
+	next: snd_dlsym_link*
+	dlsym_name: char*
+	dlsym_ptr: ptr
+}
+
+//Location: /usr/include/alsa/global.h:103
+#define snd_dlpath(path char*, path_len uint, name char*) int32
+
+//Location: /usr/include/alsa/global.h:104
+#define snd_dlopen(file char*, mode int32, errbuf char*, errbuflen uint) ptr
+
+//Location: /usr/include/alsa/global.h:105
+#define snd_dlsym(handle ptr, name char*, version char*) ptr
+
+//Location: /usr/include/alsa/global.h:106
+#define snd_dlclose(handle ptr) int32
+
+//Location: /usr/include/alsa/global.h:127
+#define snd_async_add_handler(handler ptr*, fd int32, callback function(ptr), private_data ptr) int32
+
+//Location: /usr/include/alsa/global.h:129
+#define snd_async_del_handler(handler ptr) int32
+
+//Location: /usr/include/alsa/global.h:130
+#define snd_async_handler_get_fd(handler ptr) int32
+
+//Location: /usr/include/alsa/global.h:131
+#define snd_async_handler_get_signo(handler ptr) int32
+
+//Location: /usr/include/alsa/global.h:132
+#define snd_async_handler_get_callback_private(handler ptr) ptr
+
+//Location: /usr/include/alsa/global.h:134
+struct snd_shm_area {
+}
+
+//Location: /usr/include/alsa/global.h:135
+#define snd_shm_area_share(area snd_shm_area*)
+
+//Location: /usr/include/alsa/global.h:136
+#define snd_shm_area_destroy(area snd_shm_area*) int32
+
+//Location: /usr/include/alsa/global.h:138
+#define snd_user_file(file char*, result char**) int32
+
+//Location: /usr/include/alsa/global.h:155
+struct snd_timestamp_t {
+	tv_sec: int
+	tv_usec: int
+}
+
+//Location: /usr/include/alsa/global.h:157
+struct snd_htimestamp_t {
+	tv_sec: int
+	tv_nsec: int
+}
+
+//Enum: _snd_input_type
+//Location: /usr/include/alsa/input.h:65
+#define _snd_input_type uint32
+const SND_INPUT_STDIO = <_snd_input_type> 0
+const SND_INPUT_BUFFER = <_snd_input_type> 1
+
+//Location: /usr/include/alsa/input.h:72
+#define snd_input_stdio_open(inputp ptr*, file char*, mode char*) int32
+
+//Location: /usr/include/alsa/input.h:73
+#define snd_input_stdio_attach(inputp ptr*, fp FILE*, _close int32) int32
+
+//Location: /usr/include/alsa/input.h:74
+#define snd_input_buffer_open(inputp ptr*, Buffer char*, size int) int32
+
+//Location: /usr/include/alsa/input.h:75
+#define snd_input_close(input ptr) int32
+
+//Location: /usr/include/alsa/input.h:76
+#define snd_input_scanf(input ptr, format char*, ) int32
+
+//Location: /usr/include/alsa/input.h:81
+#define snd_input_gets(input ptr, str char*, size uint) char*
+
+//Location: /usr/include/alsa/input.h:82
+#define snd_input_getc(input ptr) int32
+
+//Location: /usr/include/alsa/input.h:83
+#define snd_input_ungetc(input ptr, c int32) int32
+
+//Enum: _snd_output_type
+//Location: /usr/include/alsa/output.h:63
+#define _snd_output_type uint32
+const SND_OUTPUT_STDIO = <_snd_output_type> 0
+const SND_OUTPUT_BUFFER = <_snd_output_type> 1
+
+//Location: /usr/include/alsa/output.h:70
+#define snd_output_stdio_open(outputp ptr*, file char*, mode char*) int32
+
+//Location: /usr/include/alsa/output.h:71
+#define snd_output_stdio_attach(outputp ptr*, fp FILE*, _close int32) int32
+
+//Location: /usr/include/alsa/output.h:72
+#define snd_output_buffer_open(outputp ptr*) int32
+
+//Location: /usr/include/alsa/output.h:73
+#define snd_output_buffer_string(output ptr, buf char**) uint
+
+//Location: /usr/include/alsa/output.h:74
+#define snd_output_buffer_steal(output ptr, buf char**) uint
+
+//Location: /usr/include/alsa/output.h:75
+#define snd_output_close(output ptr) int32
+
+//Location: /usr/include/alsa/output.h:76
+#define snd_output_printf(output ptr, format char*, ) int32
+
+//Location: /usr/include/alsa/output.h:81
+#define snd_output_vprintf(output ptr, format char*, ) int32
+
+//Location: /usr/include/alsa/output.h:82
+#define snd_output_puts(output ptr, str char*) int32
+
+//Location: /usr/include/alsa/output.h:83
+#define snd_output_putc(output ptr, c int32) int32
+
+//Location: /usr/include/alsa/output.h:84
+#define snd_output_flush(output ptr) int32
+
+//Location: /usr/include/alsa/error.h:50
+#define snd_strerror(errnum int32) char*
+
+//Location: /usr/include/alsa/error.h:65
+#define snd_lib_error(file char*, line int32, Function char*, err int32, fmt char*, )
+
+//Location: /usr/include/alsa/error.h:66
+#define snd_lib_error_set_handler(handler function(char*, int32, char*, int32, char*, ))
+
+//Location: /usr/include/alsa/error.h:87
+#define snd_lib_error_set_local(func function(char*, int32, char*, int32, char*, )) function(char*, int32, char*, int32, char*, )
+
+//Enum: _snd_config_type
+//Location: /usr/include/alsa/conf.h:53
+#define _snd_config_type uint32
+const SND_CONFIG_TYPE_INTEGER = <_snd_config_type> 0
+const SND_CONFIG_TYPE_INTEGER64 = <_snd_config_type> 1
+const SND_CONFIG_TYPE_REAL = <_snd_config_type> 2
+const SND_CONFIG_TYPE_STRING = <_snd_config_type> 3
+const SND_CONFIG_TYPE_POINTER = <_snd_config_type> 4
+const SND_CONFIG_TYPE_COMPOUND = <_snd_config_type> 1024
+
+//Location: /usr/include/alsa/conf.h:92
+#define snd_config_topdir() char*
+
+//Location: /usr/include/alsa/conf.h:94
+#define snd_config_top(config ptr*) int32
+
+//Location: /usr/include/alsa/conf.h:96
+#define snd_config_load(config ptr, inx ptr) int32
+
+//Location: /usr/include/alsa/conf.h:97
+#define snd_config_load_string(config ptr*, s char*, size uint) int32
+
+//Location: /usr/include/alsa/conf.h:98
+#define snd_config_load_override(config ptr, inx ptr) int32
+
+//Location: /usr/include/alsa/conf.h:99
+#define snd_config_save(config ptr, out ptr) int32
+
+//Location: /usr/include/alsa/conf.h:100
+#define snd_config_update() int32
+
+//Location: /usr/include/alsa/conf.h:101
+#define snd_config_update_r(top ptr*, update ptr*, path char*) int32
+
+//Location: /usr/include/alsa/conf.h:102
+#define snd_config_update_free(update ptr) int32
+
+//Location: /usr/include/alsa/conf.h:103
+#define snd_config_update_free_global() int32
+
+//Location: /usr/include/alsa/conf.h:105
+#define snd_config_update_ref(top ptr*) int32
+
+//Location: /usr/include/alsa/conf.h:106
+#define snd_config_ref(top ptr)
+
+//Location: /usr/include/alsa/conf.h:107
+#define snd_config_unref(top ptr)
+
+//Location: /usr/include/alsa/conf.h:109
+#define snd_config_search(config ptr, key char*, result ptr*) int32
+
+//Location: /usr/include/alsa/conf.h:111
+#define snd_config_searchv(config ptr, result ptr*, ) int32
+
+//Location: /usr/include/alsa/conf.h:113
+#define snd_config_search_definition(config ptr, base char*, key char*, result ptr*) int32
+
+//Location: /usr/include/alsa/conf.h:129
+#define snd_config_expand_custom(config ptr, root ptr, fcn function(ptr*, char*, ptr) int32, private_data ptr, result ptr*) int32
+
+//Location: /usr/include/alsa/conf.h:132
+#define snd_config_expand(config ptr, root ptr, args char*, private_data ptr, result ptr*) int32
+
+//Location: /usr/include/alsa/conf.h:135
+#define snd_config_evaluate(config ptr, root ptr, private_data ptr, result ptr*) int32
+
+//Location: /usr/include/alsa/conf.h:137
+#define snd_config_evaluate_string(dst ptr*, s char*, fcn function(ptr*, char*, ptr) int32, private_data ptr) int32
+
+//Location: /usr/include/alsa/conf.h:140
+#define snd_config_add(config ptr, child ptr) int32
+
+//Location: /usr/include/alsa/conf.h:141
+#define snd_config_add_before(before ptr, child ptr) int32
+
+//Location: /usr/include/alsa/conf.h:142
+#define snd_config_add_after(after ptr, child ptr) int32
+
+//Location: /usr/include/alsa/conf.h:143
+#define snd_config_remove(config ptr) int32
+
+//Location: /usr/include/alsa/conf.h:144
+#define snd_config_delete(config ptr) int32
+
+//Location: /usr/include/alsa/conf.h:145
+#define snd_config_delete_compound_members(config ptr) int32
+
+//Location: /usr/include/alsa/conf.h:146
+#define snd_config_copy(dst ptr*, src ptr) int32
+
+//Location: /usr/include/alsa/conf.h:147
+#define snd_config_substitute(dst ptr, src ptr) int32
+
+//Location: /usr/include/alsa/conf.h:148
+#define snd_config_merge(dst ptr, src ptr, override int32) int32
+
+//Location: /usr/include/alsa/conf.h:150
+#define snd_config_make(config ptr*, key char*, type _snd_config_type) int32
+
+//Location: /usr/include/alsa/conf.h:152
+#define snd_config_make_integer(config ptr*, key char*) int32
+
+//Location: /usr/include/alsa/conf.h:153
+#define snd_config_make_integer64(config ptr*, key char*) int32
+
+//Location: /usr/include/alsa/conf.h:154
+#define snd_config_make_real(config ptr*, key char*) int32
+
+//Location: /usr/include/alsa/conf.h:155
+#define snd_config_make_string(config ptr*, key char*) int32
+
+//Location: /usr/include/alsa/conf.h:156
+#define snd_config_make_pointer(config ptr*, key char*) int32
+
+//Location: /usr/include/alsa/conf.h:157
+#define snd_config_make_compound(config ptr*, key char*, join int32) int32
+
+//Location: /usr/include/alsa/conf.h:158
+#define snd_config_make_path(config ptr*, root ptr, key char*, join int32, override int32) int32
+
+//Location: /usr/include/alsa/conf.h:161
+#define snd_config_imake_integer(config ptr*, key char*, value int) int32
+
+//Location: /usr/include/alsa/conf.h:162
+#define snd_config_imake_integer64(config ptr*, key char*, value int) int32
+
+//Location: /usr/include/alsa/conf.h:163
+#define snd_config_imake_real(config ptr*, key char*, value float) int32
+
+//Location: /usr/include/alsa/conf.h:164
+#define snd_config_imake_string(config ptr*, key char*, ascii char*) int32
+
+//Location: /usr/include/alsa/conf.h:165
+#define snd_config_imake_safe_string(config ptr*, key char*, ascii char*) int32
+
+//Location: /usr/include/alsa/conf.h:166
+#define snd_config_imake_pointer(config ptr*, key char*, ptr ptr) int32
+
+//Location: /usr/include/alsa/conf.h:168
+#define snd_config_get_type(config ptr) _snd_config_type
+
+//Location: /usr/include/alsa/conf.h:169
+#define snd_config_is_array(config ptr) int32
+
+//Location: /usr/include/alsa/conf.h:170
+#define snd_config_is_empty(config ptr) int32
+
+//Location: /usr/include/alsa/conf.h:172
+#define snd_config_set_id(config ptr, id char*) int32
+
+//Location: /usr/include/alsa/conf.h:173
+#define snd_config_set_integer(config ptr, value int) int32
+
+//Location: /usr/include/alsa/conf.h:174
+#define snd_config_set_integer64(config ptr, value int) int32
+
+//Location: /usr/include/alsa/conf.h:175
+#define snd_config_set_real(config ptr, value float) int32
+
+//Location: /usr/include/alsa/conf.h:176
+#define snd_config_set_string(config ptr, value char*) int32
+
+//Location: /usr/include/alsa/conf.h:177
+#define snd_config_set_ascii(config ptr, ascii char*) int32
+
+//Location: /usr/include/alsa/conf.h:178
+#define snd_config_set_pointer(config ptr, ptr ptr) int32
+
+//Location: /usr/include/alsa/conf.h:179
+#define snd_config_get_id(config ptr, value char**) int32
+
+//Location: /usr/include/alsa/conf.h:180
+#define snd_config_get_integer(config ptr, value int*) int32
+
+//Location: /usr/include/alsa/conf.h:181
+#define snd_config_get_integer64(config ptr, value int*) int32
+
+//Location: /usr/include/alsa/conf.h:182
+#define snd_config_get_real(config ptr, value float*) int32
+
+//Location: /usr/include/alsa/conf.h:183
+#define snd_config_get_ireal(config ptr, value float*) int32
+
+//Location: /usr/include/alsa/conf.h:184
+#define snd_config_get_string(config ptr, value char**) int32
+
+//Location: /usr/include/alsa/conf.h:185
+#define snd_config_get_ascii(config ptr, value char**) int32
+
+//Location: /usr/include/alsa/conf.h:186
+#define snd_config_get_pointer(config ptr, value ptr*) int32
+
+//Location: /usr/include/alsa/conf.h:187
+#define snd_config_test_id(config ptr, id char*) int32
+
+//Location: /usr/include/alsa/conf.h:189
+#define snd_config_iterator_first(node ptr) ptr
+
+//Location: /usr/include/alsa/conf.h:190
+#define snd_config_iterator_next(iterator ptr) ptr
+
+//Location: /usr/include/alsa/conf.h:191
+#define snd_config_iterator_end(node ptr) ptr
+
+//Location: /usr/include/alsa/conf.h:192
+#define snd_config_iterator_entry(iterator ptr) ptr
+
+//Location: /usr/include/alsa/conf.h:216
+#define snd_config_get_bool_ascii(ascii char*) int32
+
+//Location: /usr/include/alsa/conf.h:217
+#define snd_config_get_bool(conf ptr) int32
+
+//Location: /usr/include/alsa/conf.h:218
+#define snd_config_get_card(conf ptr) int32
+
+//Location: /usr/include/alsa/conf.h:219
+#define snd_config_get_ctl_iface_ascii(ascii char*) int32
+
+//Location: /usr/include/alsa/conf.h:220
+#define snd_config_get_ctl_iface(conf ptr) int32
+
+//Location: /usr/include/alsa/conf.h:232
+struct snd_devname {
+	name: char*
+	comment: char*
+	next: ptr
+}
+
+//Location: /usr/include/alsa/conf.h:238
+#define snd_names_list(iface char*, list ptr*) int32
+
+//Location: /usr/include/alsa/conf.h:239
+#define snd_names_list_free(list ptr)
+
+//Enum: _snd_pcm_class
+//Location: /usr/include/alsa/pcm.h:82
+#define _snd_pcm_class uint32
+const SND_PCM_CLASS_GENERIC = <_snd_pcm_class> 0
+const SND_PCM_CLASS_MULTI = <_snd_pcm_class> 1
+const SND_PCM_CLASS_MODEM = <_snd_pcm_class> 2
+const SND_PCM_CLASS_DIGITIZER = <_snd_pcm_class> 3
+const SND_PCM_CLASS_LAST = <_snd_pcm_class> SND_PCM_CLASS_DIGITIZER
+
+//Enum: _snd_pcm_subclass
+//Location: /usr/include/alsa/pcm.h:96
+#define _snd_pcm_subclass uint32
+const SND_PCM_SUBCLASS_GENERIC_MIX = <_snd_pcm_subclass> 0
+const SND_PCM_SUBCLASS_MULTI_MIX = <_snd_pcm_subclass> 1
+const SND_PCM_SUBCLASS_LAST = <_snd_pcm_subclass> SND_PCM_SUBCLASS_MULTI_MIX
+
+//Enum: _snd_pcm_stream
+//Location: /usr/include/alsa/pcm.h:105
+#define _snd_pcm_stream uint32
+const SND_PCM_STREAM_PLAYBACK = <_snd_pcm_stream> 0
+const SND_PCM_STREAM_CAPTURE = <_snd_pcm_stream> 1
+const SND_PCM_STREAM_LAST = <_snd_pcm_stream> SND_PCM_STREAM_CAPTURE
+
+//Enum: _snd_pcm_access
+//Location: /usr/include/alsa/pcm.h:114
+#define _snd_pcm_access uint32
+const SND_PCM_ACCESS_MMAP_INTERLEAVED = <_snd_pcm_access> 0
+const SND_PCM_ACCESS_MMAP_NONINTERLEAVED = <_snd_pcm_access> 1
+const SND_PCM_ACCESS_MMAP_COMPLEX = <_snd_pcm_access> 2
+const SND_PCM_ACCESS_RW_INTERLEAVED = <_snd_pcm_access> 3
+const SND_PCM_ACCESS_RW_NONINTERLEAVED = <_snd_pcm_access> 4
+const SND_PCM_ACCESS_LAST = <_snd_pcm_access> SND_PCM_ACCESS_RW_NONINTERLEAVED
+
+//Enum: _snd_pcm_format
+//Location: /usr/include/alsa/pcm.h:129
+#define _snd_pcm_format uint32
+const SND_PCM_FORMAT_UNKNOWN = <_snd_pcm_format> -1
+const SND_PCM_FORMAT_S8 = <_snd_pcm_format> 0
+const SND_PCM_FORMAT_U8 = <_snd_pcm_format> 1
+const SND_PCM_FORMAT_S16_LE = <_snd_pcm_format> 2
+const SND_PCM_FORMAT_S16_BE = <_snd_pcm_format> 3
+const SND_PCM_FORMAT_U16_LE = <_snd_pcm_format> 4
+const SND_PCM_FORMAT_U16_BE = <_snd_pcm_format> 5
+const SND_PCM_FORMAT_S24_LE = <_snd_pcm_format> 6
+const SND_PCM_FORMAT_S24_BE = <_snd_pcm_format> 7
+const SND_PCM_FORMAT_U24_LE = <_snd_pcm_format> 8
+const SND_PCM_FORMAT_U24_BE = <_snd_pcm_format> 9
+const SND_PCM_FORMAT_S32_LE = <_snd_pcm_format> 10
+const SND_PCM_FORMAT_S32_BE = <_snd_pcm_format> 11
+const SND_PCM_FORMAT_U32_LE = <_snd_pcm_format> 12
+const SND_PCM_FORMAT_U32_BE = <_snd_pcm_format> 13
+const SND_PCM_FORMAT_FLOAT_LE = <_snd_pcm_format> 14
+const SND_PCM_FORMAT_FLOAT_BE = <_snd_pcm_format> 15
+const SND_PCM_FORMAT_FLOAT64_LE = <_snd_pcm_format> 16
+const SND_PCM_FORMAT_FLOAT64_BE = <_snd_pcm_format> 17
+const SND_PCM_FORMAT_IEC958_SUBFRAME_LE = <_snd_pcm_format> 18
+const SND_PCM_FORMAT_IEC958_SUBFRAME_BE = <_snd_pcm_format> 19
+const SND_PCM_FORMAT_MU_LAW = <_snd_pcm_format> 20
+const SND_PCM_FORMAT_A_LAW = <_snd_pcm_format> 21
+const SND_PCM_FORMAT_IMA_ADPCM = <_snd_pcm_format> 22
+const SND_PCM_FORMAT_MPEG = <_snd_pcm_format> 23
+const SND_PCM_FORMAT_GSM = <_snd_pcm_format> 24
+const SND_PCM_FORMAT_S20_LE = <_snd_pcm_format> 25
+const SND_PCM_FORMAT_S20_BE = <_snd_pcm_format> 26
+const SND_PCM_FORMAT_U20_LE = <_snd_pcm_format> 27
+const SND_PCM_FORMAT_U20_BE = <_snd_pcm_format> 28
+const SND_PCM_FORMAT_SPECIAL = <_snd_pcm_format> 30
+const SND_PCM_FORMAT_S24_3LE = <_snd_pcm_format> 31
+const SND_PCM_FORMAT_S24_3BE = <_snd_pcm_format> 32
+const SND_PCM_FORMAT_U24_3LE = <_snd_pcm_format> 32
+const SND_PCM_FORMAT_U24_3BE = <_snd_pcm_format> 33
+const SND_PCM_FORMAT_S20_3LE = <_snd_pcm_format> 34
+const SND_PCM_FORMAT_S20_3BE = <_snd_pcm_format> 35
+const SND_PCM_FORMAT_U20_3LE = <_snd_pcm_format> 36
+const SND_PCM_FORMAT_U20_3BE = <_snd_pcm_format> 37
+const SND_PCM_FORMAT_S18_3LE = <_snd_pcm_format> 38
+const SND_PCM_FORMAT_S18_3BE = <_snd_pcm_format> 49
+const SND_PCM_FORMAT_U18_3LE = <_snd_pcm_format> 40
+const SND_PCM_FORMAT_U18_3BE = <_snd_pcm_format> 41
+const SND_PCM_FORMAT_G723_24 = <_snd_pcm_format> 42
+const SND_PCM_FORMAT_G723_24_1B = <_snd_pcm_format> 43
+const SND_PCM_FORMAT_G723_40 = <_snd_pcm_format> 44
+const SND_PCM_FORMAT_G723_40_1B = <_snd_pcm_format> 45
+const SND_PCM_FORMAT_DSD_U8 = <_snd_pcm_format> 46
+const SND_PCM_FORMAT_DSD_U16_LE = <_snd_pcm_format> 47
+const SND_PCM_FORMAT_DSD_U32_LE = <_snd_pcm_format> 48
+const SND_PCM_FORMAT_DSD_U16_BE = <_snd_pcm_format> 49
+const SND_PCM_FORMAT_DSD_U32_BE = <_snd_pcm_format> 50
+const SND_PCM_FORMAT_LAST = <_snd_pcm_format> SND_PCM_FORMAT_DSD_U32_BE
+const SND_PCM_FORMAT_S16 = <_snd_pcm_format> SND_PCM_FORMAT_S16_LE
+const SND_PCM_FORMAT_U16 = <_snd_pcm_format> SND_PCM_FORMAT_U16_LE
+const SND_PCM_FORMAT_S24 = <_snd_pcm_format> SND_PCM_FORMAT_S24_LE
+const SND_PCM_FORMAT_U24 = <_snd_pcm_format> SND_PCM_FORMAT_U24_LE
+const SND_PCM_FORMAT_S32 = <_snd_pcm_format> SND_PCM_FORMAT_S32_LE
+const SND_PCM_FORMAT_U32 = <_snd_pcm_format> SND_PCM_FORMAT_U32_LE
+const SND_PCM_FORMAT_FLOAT = <_snd_pcm_format> SND_PCM_FORMAT_FLOAT_LE
+const SND_PCM_FORMAT_FLOAT64 = <_snd_pcm_format> SND_PCM_FORMAT_FLOAT64_LE
+const SND_PCM_FORMAT_IEC958_SUBFRAME = <_snd_pcm_format> SND_PCM_FORMAT_IEC958_SUBFRAME_LE
+const SND_PCM_FORMAT_S20 = <_snd_pcm_format> SND_PCM_FORMAT_S20_LE
+const SND_PCM_FORMAT_U20 = <_snd_pcm_format> SND_PCM_FORMAT_U20_LE
+
+//Enum: _snd_pcm_subformat
+//Location: /usr/include/alsa/pcm.h:288
+#define _snd_pcm_subformat uint32
+const SND_PCM_SUBFORMAT_UNKNOWN = <_snd_pcm_subformat> -1
+const SND_PCM_SUBFORMAT_STD = <_snd_pcm_subformat> 0
+const SND_PCM_SUBFORMAT_MSBITS_MAX = <_snd_pcm_subformat> 1
+const SND_PCM_SUBFORMAT_MSBITS_20 = <_snd_pcm_subformat> 2
+const SND_PCM_SUBFORMAT_MSBITS_24 = <_snd_pcm_subformat> 3
+const SND_PCM_SUBFORMAT_LAST = <_snd_pcm_subformat> SND_PCM_SUBFORMAT_MSBITS_24
+
+//Enum: _snd_pcm_state
+//Location: /usr/include/alsa/pcm.h:303
+#define _snd_pcm_state uint32
+const SND_PCM_STATE_OPEN = <_snd_pcm_state> 0
+const SND_PCM_STATE_SETUP = <_snd_pcm_state> 1
+const SND_PCM_STATE_PREPARED = <_snd_pcm_state> 2
+const SND_PCM_STATE_RUNNING = <_snd_pcm_state> 3
+const SND_PCM_STATE_XRUN = <_snd_pcm_state> 4
+const SND_PCM_STATE_DRAINING = <_snd_pcm_state> 5
+const SND_PCM_STATE_PAUSED = <_snd_pcm_state> 6
+const SND_PCM_STATE_SUSPENDED = <_snd_pcm_state> 7
+const SND_PCM_STATE_DISCONNECTED = <_snd_pcm_state> 8
+const SND_PCM_STATE_LAST = <_snd_pcm_state> SND_PCM_STATE_DISCONNECTED
+const SND_PCM_STATE_PRIVATE1 = <_snd_pcm_state> 1024
+
+//Enum: _snd_pcm_start
+//Location: /usr/include/alsa/pcm.h:328
+#define _snd_pcm_start uint32
+const SND_PCM_START_DATA = <_snd_pcm_start> 0
+const SND_PCM_START_EXPLICIT = <_snd_pcm_start> 1
+const SND_PCM_START_LAST = <_snd_pcm_start> SND_PCM_START_EXPLICIT
+
+//Enum: _snd_pcm_xrun
+//Location: /usr/include/alsa/pcm.h:337
+#define _snd_pcm_xrun uint32
+const SND_PCM_XRUN_NONE = <_snd_pcm_xrun> 0
+const SND_PCM_XRUN_STOP = <_snd_pcm_xrun> 1
+const SND_PCM_XRUN_LAST = <_snd_pcm_xrun> SND_PCM_XRUN_STOP
+
+//Enum: _snd_pcm_tstamp
+//Location: /usr/include/alsa/pcm.h:346
+#define _snd_pcm_tstamp uint32
+const SND_PCM_TSTAMP_NONE = <_snd_pcm_tstamp> 0
+const SND_PCM_TSTAMP_ENABLE = <_snd_pcm_tstamp> 1
+const SND_PCM_TSTAMP_MMAP = <_snd_pcm_tstamp> SND_PCM_TSTAMP_ENABLE
+const SND_PCM_TSTAMP_LAST = <_snd_pcm_tstamp> SND_PCM_TSTAMP_ENABLE
+
+//Enum: _snd_pcm_tstamp_type
+//Location: /usr/include/alsa/pcm.h:359
+#define _snd_pcm_tstamp_type uint32
+const SND_PCM_TSTAMP_TYPE_GETTIMEOFDAY = <_snd_pcm_tstamp_type> 0
+const SND_PCM_TSTAMP_TYPE_MONOTONIC = <_snd_pcm_tstamp_type> 1
+const SND_PCM_TSTAMP_TYPE_MONOTONIC_RAW = <_snd_pcm_tstamp_type> 2
+const SND_PCM_TSTAMP_TYPE_LAST = <_snd_pcm_tstamp_type> SND_PCM_TSTAMP_TYPE_MONOTONIC_RAW
+
+//Enum: _snd_pcm_audio_tstamp_type
+//Location: /usr/include/alsa/pcm.h:367
+#define _snd_pcm_audio_tstamp_type uint32
+const SND_PCM_AUDIO_TSTAMP_TYPE_COMPAT = <_snd_pcm_audio_tstamp_type> 0
+const SND_PCM_AUDIO_TSTAMP_TYPE_DEFAULT = <_snd_pcm_audio_tstamp_type> 1
+const SND_PCM_AUDIO_TSTAMP_TYPE_LINK = <_snd_pcm_audio_tstamp_type> 2
+const SND_PCM_AUDIO_TSTAMP_TYPE_LINK_ABSOLUTE = <_snd_pcm_audio_tstamp_type> 3
+const SND_PCM_AUDIO_TSTAMP_TYPE_LINK_ESTIMATED = <_snd_pcm_audio_tstamp_type> 4
+const SND_PCM_AUDIO_TSTAMP_TYPE_LINK_SYNCHRONIZED = <_snd_pcm_audio_tstamp_type> 5
+const SND_PCM_AUDIO_TSTAMP_TYPE_LAST = <_snd_pcm_audio_tstamp_type> SND_PCM_AUDIO_TSTAMP_TYPE_LINK_SYNCHRONIZED
+
+//Location: /usr/include/alsa/pcm.h:382
+struct _snd_pcm_audio_tstamp_config {
+	type_requested: uint32
+}
+
+//Location: /usr/include/alsa/pcm.h:382
+struct _snd_pcm_audio_tstamp_config {
+	type_requested: uint32
+}
+
+//Location: /usr/include/alsa/pcm.h:389
+struct _snd_pcm_audio_tstamp_report {
+	valid: uint32
+}
+
+//Location: /usr/include/alsa/pcm.h:389
+struct _snd_pcm_audio_tstamp_report {
+	valid: uint32
+}
+
+//Enum: _snd_pcm_type
+//Location: /usr/include/alsa/pcm.h:425
+#define _snd_pcm_type uint32
+const SND_PCM_TYPE_HW = <_snd_pcm_type> 0
+const SND_PCM_TYPE_HOOKS = <_snd_pcm_type> 1
+const SND_PCM_TYPE_MULTI = <_snd_pcm_type> 2
+const SND_PCM_TYPE_FILE = <_snd_pcm_type> 3
+const SND_PCM_TYPE_NULL = <_snd_pcm_type> 4
+const SND_PCM_TYPE_SHM = <_snd_pcm_type> 5
+const SND_PCM_TYPE_INET = <_snd_pcm_type> 6
+const SND_PCM_TYPE_COPY = <_snd_pcm_type> 7
+const SND_PCM_TYPE_LINEAR = <_snd_pcm_type> 8
+const SND_PCM_TYPE_ALAW = <_snd_pcm_type> 9
+const SND_PCM_TYPE_MULAW = <_snd_pcm_type> 10
+const SND_PCM_TYPE_ADPCM = <_snd_pcm_type> 11
+const SND_PCM_TYPE_RATE = <_snd_pcm_type> 12
+const SND_PCM_TYPE_ROUTE = <_snd_pcm_type> 13
+const SND_PCM_TYPE_PLUG = <_snd_pcm_type> 14
+const SND_PCM_TYPE_SHARE = <_snd_pcm_type> 15
+const SND_PCM_TYPE_METER = <_snd_pcm_type> 16
+const SND_PCM_TYPE_MIX = <_snd_pcm_type> 17
+const SND_PCM_TYPE_DROUTE = <_snd_pcm_type> 18
+const SND_PCM_TYPE_LBSERVER = <_snd_pcm_type> 19
+const SND_PCM_TYPE_LINEAR_FLOAT = <_snd_pcm_type> 20
+const SND_PCM_TYPE_LADSPA = <_snd_pcm_type> 21
+const SND_PCM_TYPE_DMIX = <_snd_pcm_type> 22
+const SND_PCM_TYPE_JACK = <_snd_pcm_type> 23
+const SND_PCM_TYPE_DSNOOP = <_snd_pcm_type> 24
+const SND_PCM_TYPE_DSHARE = <_snd_pcm_type> 25
+const SND_PCM_TYPE_IEC958 = <_snd_pcm_type> 26
+const SND_PCM_TYPE_SOFTVOL = <_snd_pcm_type> 27
+const SND_PCM_TYPE_IOPLUG = <_snd_pcm_type> 28
+const SND_PCM_TYPE_EXTPLUG = <_snd_pcm_type> 29
+const SND_PCM_TYPE_MMAP_EMUL = <_snd_pcm_type> 30
+const SND_PCM_TYPE_LAST = <_snd_pcm_type> SND_PCM_TYPE_MMAP_EMUL
+
+//Location: /usr/include/alsa/pcm.h:496
+struct _snd_pcm_channel_area {
+	addr: ptr
+	first: uint32
+	step: uint32
+}
+
+//Location: /usr/include/alsa/pcm.h:496
+struct snd_pcm_channel_area_t {
+	addr: ptr
+	first: uint32
+	step: uint32
+}
+
+//Location: /usr/include/alsa/pcm.h:528
+#define snd_pcm_open(pcm ptr*, name char*, stream _snd_pcm_stream, mode int32) int32
+
+//Location: /usr/include/alsa/pcm.h:530
+#define snd_pcm_open_lconf(pcm ptr*, name char*, stream _snd_pcm_stream, mode int32, lconf ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:533
+#define snd_pcm_open_fallback(pcm ptr*, root ptr, name char*, orig_name char*, stream _snd_pcm_stream, mode int32) int32
+
+//Location: /usr/include/alsa/pcm.h:537
+#define snd_pcm_close(pcm ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:538
+#define snd_pcm_name(pcm ptr) char*
+
+//Location: /usr/include/alsa/pcm.h:539
+#define snd_pcm_type(pcm ptr)
+
+//Location: /usr/include/alsa/pcm.h:540
+#define snd_pcm_stream(pcm ptr) _snd_pcm_stream
+
+//Location: /usr/include/alsa/pcm.h:541
+#define snd_pcm_poll_descriptors_count(pcm ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:542
+#define snd_pcm_poll_descriptors(pcm ptr, pfds int32*, space uint32) int32
+
+//Location: /usr/include/alsa/pcm.h:543
+#define snd_pcm_poll_descriptors_revents(pcm ptr, pfds int32*, nfds uint32, revents uint16*) int32
+
+//Location: /usr/include/alsa/pcm.h:544
+#define snd_pcm_nonblock(pcm ptr, nonblock int32) int32
+
+//Location: /usr/include/alsa/pcm.h:546
+#define snd_async_add_pcm_handler(handler ptr*, pcm ptr, callback function(ptr), private_data ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:548
+#define snd_async_handler_get_pcm(handler ptr) ptr
+
+//Location: /usr/include/alsa/pcm.h:549
+#define snd_pcm_info(pcm ptr, info ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:550
+#define snd_pcm_hw_params_current(pcm ptr, params ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:551
+#define snd_pcm_hw_params(pcm ptr, params ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:552
+#define snd_pcm_hw_free(pcm ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:553
+#define snd_pcm_sw_params_current(pcm ptr, params ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:554
+#define snd_pcm_sw_params(pcm ptr, params ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:555
+#define snd_pcm_prepare(pcm ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:556
+#define snd_pcm_reset(pcm ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:557
+#define snd_pcm_status(pcm ptr, status ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:558
+#define snd_pcm_start(pcm ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:559
+#define snd_pcm_drop(pcm ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:560
+#define snd_pcm_drain(pcm ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:561
+#define snd_pcm_pause(pcm ptr, enable int32) int32
+
+//Location: /usr/include/alsa/pcm.h:562
+#define snd_pcm_state(pcm ptr) _snd_pcm_state
+
+//Location: /usr/include/alsa/pcm.h:563
+#define snd_pcm_hwsync(pcm ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:564
+#define snd_pcm_delay(pcm ptr, delayp int*) int32
+
+//Location: /usr/include/alsa/pcm.h:565
+#define snd_pcm_resume(pcm ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:566
+#define snd_pcm_htimestamp(pcm ptr, avail uint*, tstamp snd_htimestamp_t*) int32
+
+//Location: /usr/include/alsa/pcm.h:567
+#define snd_pcm_avail(pcm ptr) int
+
+//Location: /usr/include/alsa/pcm.h:568
+#define snd_pcm_avail_update(pcm ptr) int
+
+//Location: /usr/include/alsa/pcm.h:569
+#define snd_pcm_avail_delay(pcm ptr, availp int*, delayp int*) int32
+
+//Location: /usr/include/alsa/pcm.h:570
+#define snd_pcm_rewindable(pcm ptr) int
+
+//Location: /usr/include/alsa/pcm.h:571
+#define snd_pcm_rewind(pcm ptr, frames uint) int
+
+//Location: /usr/include/alsa/pcm.h:572
+#define snd_pcm_forwardable(pcm ptr) int
+
+//Location: /usr/include/alsa/pcm.h:573
+#define snd_pcm_forward(pcm ptr, frames uint) int
+
+//Location: /usr/include/alsa/pcm.h:574
+#define snd_pcm_writei(pcm ptr, Buffer ptr, size uint) int
+
+//Location: /usr/include/alsa/pcm.h:575
+#define snd_pcm_readi(pcm ptr, Buffer ptr, size uint) int
+
+//Location: /usr/include/alsa/pcm.h:576
+#define snd_pcm_writen(pcm ptr, bufs ptr*, size uint) int
+
+//Location: /usr/include/alsa/pcm.h:577
+#define snd_pcm_readn(pcm ptr, bufs ptr*, size uint) int
+
+//Location: /usr/include/alsa/pcm.h:578
+#define snd_pcm_wait(pcm ptr, timeout int32) int32
+
+//Location: /usr/include/alsa/pcm.h:580
+#define snd_pcm_link(pcm1 ptr, pcm2 ptr) int32
+
+//Location: /usr/include/alsa/pcm.h:581
+#define snd_pcm_unlink(pcm ptr) int32
+
+//Enum: snd_pcm_chmap_type
+//Location: /usr/include/alsa/pcm.h:587
+#define snd_pcm_chmap_type uint32
+const SND_CHMAP_TYPE_NONE = <snd_pcm_chmap_type> 0
+const SND_CHMAP_TYPE_FIXED = <snd_pcm_chmap_type> 1
+const SND_CHMAP_TYPE_VAR = <snd_pcm_chmap_type> 2
+const SND_CHMAP_TYPE_PAIRED = <snd_pcm_chmap_type> 3
+const SND_CHMAP_TYPE_LAST = <snd_pcm_chmap_type> SND_CHMAP_TYPE_PAIRED
+
+//Enum: snd_pcm_chmap_position
+//Location: /usr/include/alsa/pcm.h:596
+#define snd_pcm_chmap_position uint32
+const SND_CHMAP_UNKNOWN = <snd_pcm_chmap_position> 0
+const SND_CHMAP_NA = <snd_pcm_chmap_position> 1
+const SND_CHMAP_MONO = <snd_pcm_chmap_position> 2
+const SND_CHMAP_FL = <snd_pcm_chmap_position> 3
+const SND_CHMAP_FR = <snd_pcm_chmap_position> 4
+const SND_CHMAP_RL = <snd_pcm_chmap_position> 5
+const SND_CHMAP_RR = <snd_pcm_chmap_position> 6
+const SND_CHMAP_FC = <snd_pcm_chmap_position> 7
+const SND_CHMAP_LFE = <snd_pcm_chmap_position> 8
+const SND_CHMAP_SL = <snd_pcm_chmap_position> 9
+const SND_CHMAP_SR = <snd_pcm_chmap_position> 10
+const SND_CHMAP_RC = <snd_pcm_chmap_position> 11
+const SND_CHMAP_FLC = <snd_pcm_chmap_position> 12
+const SND_CHMAP_FRC = <snd_pcm_chmap_position> 13
+const SND_CHMAP_RLC = <snd_pcm_chmap_position> 14
+const SND_CHMAP_RRC = <snd_pcm_chmap_position> 15
+const SND_CHMAP_FLW = <snd_pcm_chmap_position> 16
+const SND_CHMAP_FRW = <snd_pcm_chmap_position> 17
+const SND_CHMAP_FLH = <snd_pcm_chmap_position> 18
+const SND_CHMAP_FCH = <snd_pcm_chmap_position> 19
+const SND_CHMAP_FRH = <snd_pcm_chmap_position> 20
+const SND_CHMAP_TC = <snd_pcm_chmap_position> 21
+const SND_CHMAP_TFL = <snd_pcm_chmap_position> 22
+const SND_CHMAP_TFR = <snd_pcm_chmap_position> 23
+const SND_CHMAP_TFC = <snd_pcm_chmap_position> 24
+const SND_CHMAP_TRL = <snd_pcm_chmap_position> 25
+const SND_CHMAP_TRR = <snd_pcm_chmap_position> 26
+const SND_CHMAP_TRC = <snd_pcm_chmap_position> 27
+const SND_CHMAP_TFLC = <snd_pcm_chmap_position> 28
+const SND_CHMAP_TFRC = <snd_pcm_chmap_position> 29
+const SND_CHMAP_TSL = <snd_pcm_chmap_position> 30
+const SND_CHMAP_TSR = <snd_pcm_chmap_position> 31
+const SND_CHMAP_LLFE = <snd_pcm_chmap_position> 32
+const SND_CHMAP_RLFE = <snd_pcm_chmap_position> 33
+const SND_CHMAP_BC = <snd_pcm_chmap_position> 34
+const SND_CHMAP_BLC = <snd_pcm_chmap_position> 35
+const SND_CHMAP_BRC = <snd_pcm_chmap_position> 36
+const SND_CHMAP_LAST = <snd_pcm_chmap_position> SND_CHMAP_BRC
+
+//Location: /usr/include/alsa/pcm.h:646
+struct snd_pcm_chmap {
+	channels: uint32
+	pos: buffer:0
+}
+
+//Location: /usr/include/alsa/pcm.h:646
+struct snd_pcm_chmap_t {
+	channels: uint32
+	pos: buffer:0
+}
+
+
+//Location: /usr/include/alsa/pcm.h:652
+struct snd_pcm_chmap_query_t {
+	Type: snd_pcm_chmap_type
+	Map: snd_pcm_chmap_t
+}
+
+//Location: /usr/include/alsa/pcm.h:658
+#define snd_pcm_query_chmaps(pcm ptr) snd_pcm_chmap_query_t**
+
+//Location: /usr/include/alsa/pcm.h:659
+#define snd_pcm_query_chmaps_from_hw(card int32, dev int32, subdev int32, stream _snd_pcm_stream) snd_pcm_chmap_query_t**
+
+//Location: /usr/include/alsa/pcm.h:662
+#define snd_pcm_free_chmaps(maps snd_pcm_chmap_query_t**)
+
+//Location: /usr/include/alsa/pcm.h:663
+#define snd_pcm_get_chmap(pcm ptr) snd_pcm_chmap_t*
+
+//Location: /usr/include/alsa/pcm.h:664
+#define snd_pcm_set_chmap(pcm ptr, Map snd_pcm_chmap_t*) int32
+
+//Location: /usr/include/alsa/pcm.h:666
+#define snd_pcm_chmap_type_name(arg_1 snd_pcm_chmap_type) char*
+
+//Location: /usr/include/alsa/pcm.h:667
+#define snd_pcm_chmap_name(arg_1 snd_pcm_chmap_position) char*
+
+//Location: /usr/include/alsa/pcm.h:668
+#define snd_pcm_chmap_long_name(arg_1 snd_pcm_chmap_position) char*
+
+//Location: /usr/include/alsa/pcm.h:669
+#define snd_pcm_chmap_print(Map snd_pcm_chmap_t*, maxlen uint, buf char*) int32
+
+//Location: /usr/include/alsa/pcm.h:670
+#define snd_pcm_chmap_from_string(str char*) uint32
+
+//Location: /usr/include/alsa/pcm.h:671
+#define snd_pcm_chmap_parse_string(str char*) snd_pcm_chmap_t*
+
+//Location: /usr/include/alsa/pcm.h:680
+#define snd_pcm_recover(pcm ptr, err int32, silent int32) int32
+
+//Location: /usr/include/alsa/pcm.h:681
+#define snd_pcm_set_params(pcm ptr, format _snd_pcm_format, access _snd_pcm_access, channels uint32, rate uint32, soft_resample int32, latency uint32) int32
+
+//Location: /usr/include/alsa/pcm.h:688
+#define snd_pcm_get_params(pcm ptr, buffer_size uint*, period_size uint*) int32
