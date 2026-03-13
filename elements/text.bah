@@ -14,6 +14,7 @@ struct uiText extend uiElement {
     selBeg: [int, int, int]
     selEnd: [int, int, int]
     isSel: bool
+    bold: bool
 
 
     //character offset, line start character offset, line number, x pixel offset of character
@@ -133,11 +134,13 @@ struct uiText extend uiElement {
         this.text = s
         ui = <ui*>this.window
         ui.font.setSize(this.fontSize)
+        b = ui.font.setBold(this.bold)
         txtSize = this.window.measureText(ui.font, this.text)
         this.size = [
             pixels(txtSize[0] + this.padding[0] * 2),
             pixels(txtSize[1] + this.padding[1] * 2)
         ]
+        ui.font.setBold(b)
         this.selBeg[2] = 0
         this.selEnd[2] = 0
         this.redraw()
@@ -145,6 +148,7 @@ struct uiText extend uiElement {
 
     draw(w ui*) {
         w.font.setSize(this.fontSize)
+        b = w.font.setBold(this.bold)
 
         pos = this.getPosition()
 
@@ -204,6 +208,7 @@ struct uiText extend uiElement {
         }
 
         w.drawText(w.font, this.text, this.color, [pos[0] + this.padding[0], pos[1] + this.padding[1] + this.fontSize])
+        w.font.bold = b
     }
 
     _init() {

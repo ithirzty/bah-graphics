@@ -113,7 +113,7 @@ main(args []str) int {
     ui.addElement(new uiFileTarget {
 
         //its backdrop function is called on every draw call
-        backdrop: function(ft uiFileTarget*, ui ui*) {
+        backdrop: (ft uiFileTarget*, ui ui*) {
             //draw a grey rounded rectangle as backdrop
             pos = ft.getPosition()
             ui.drawRoundedRect(pos, ft.getSize(), 16, rgbColor{50, 50, 50})
@@ -129,7 +129,7 @@ main(args []str) int {
         ]
 
         //Declare some children elements
-        elements: []uiElement* {
+        elements: {
             //this is the text that is shown below the file.
             new uiText {
                 text: "Drag a file here."
@@ -152,7 +152,7 @@ main(args []str) int {
                 scrollable: false //disable scrolling on text overflow
                 cursor: "grab" //sets the cursor to a hand able of grabbing it
 
-                backdrop: function(bx uiBoxFolder*, ui ui*) {
+                backdrop: (bx uiBoxFolder*, ui ui*) {
                     pos = bx.getPosition()
                     //Draw the background if the element is hovered / focused
                     if bx.focused {
@@ -169,7 +169,7 @@ main(args []str) int {
                     }
                 }
 
-                elements: []uiElement* {
+                elements: {
                     new uiText { //add the name of the file / folder
                         focusable: false
                         color: WHITE

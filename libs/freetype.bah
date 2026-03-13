@@ -145,3 +145,7 @@ struct FT_FaceRec_ {
 #define FT_Get_Char_Index(f FT_FaceRec_*, c uint) uint
 #define FT_Load_Char(f FT_FaceRec_*, c uint, f int) int
 #define FT_Select_Charmap(f FT_FaceRec_*, e int) int
+#define FT_Bitmap_Init(abitmap FT_Bitmap_*)
+#define FT_Bitmap_Copy(l FT_Library, source FT_Bitmap_*, target FT_Bitmap_*)
+#define FT_Bitmap_Embolden(l FT_Library, bitmap FT_Bitmap_*, xStrength int, yStrength int)
+#define FT_Bitmap_Done(l FT_Library, bitmap FT_Bitmap_*)

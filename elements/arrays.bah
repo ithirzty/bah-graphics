@@ -5,6 +5,7 @@
 struct uiVerticalArray extend uiElement {
     spacing: int
     dynamicSize: bool = true
+    bgColor: rgbColor = rgbColor{0,0,0,0}
 
     draw(w ui*) {
         sizeAcc = [this.padding[0], this.padding[1]]
@@ -22,6 +23,8 @@ struct uiVerticalArray extend uiElement {
         if this.dynamicSize {
             this.size[0] = pixels(innerSize[0])
         }
+
+        w.drawRect(this.getPosition(), this.getSize(), this.bgColor)
     }
 
     _init() {
@@ -33,6 +36,7 @@ struct uiVerticalArray extend uiElement {
 struct uiHorizontalArray extend uiElement {
     spacing: int
     dynamicSize: bool = true
+    bgColor: rgbColor = rgbColor{0,0,0,0}
 
     draw(w ui*) {
         sizeAcc = [this.padding[0], this.padding[1]]
@@ -50,6 +54,7 @@ struct uiHorizontalArray extend uiElement {
         if this.dynamicSize {
             this.size[1] = pixels(innerSize[1])
         }
+        w.drawRect(this.getPosition(), this.getSize(), this.bgColor)
     }
 
     _init() {
@@ -60,6 +65,8 @@ struct uiHorizontalArray extend uiElement {
 
 struct uiVerticalGridArray extend uiElement {
     spacing: int
+    dynamicSize: bool = true
+    bgColor: rgbColor = rgbColor{0, 0, 0, 0}
 
     draw(w ui*) {
         sizeAcc = [this.padding[0], this.padding[1]]
@@ -88,7 +95,10 @@ struct uiVerticalGridArray extend uiElement {
         }
 
         innerSize = this.getInnerSize()
-        this.size[1] = pixels(innerSize[1])
+        if this.dynamicSize {
+            this.size[1] = pixels(innerSize[1])
+        }
+        w.drawRect(this.getPosition(), this.getSize(), this.bgColor)
     }
 
     _init() {

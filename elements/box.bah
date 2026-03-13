@@ -198,6 +198,7 @@ struct uiBoxScrollbar extend uiElement {
 struct uiBox extend uiElement {
     scrollable: bool = true
     scrollBars: [uiElement*,uiElement*]
+    bgColor: rgbColor = rgbColor{0, 0, 0, 0}
 
     backdrop: function(uiBox*, ui*)
 
@@ -206,13 +207,17 @@ struct uiBox extend uiElement {
     }
 
     draw(w ui*) {
+        pos = this.getPosition()
+        size = this.getSize()
+        
+        if this.bgColor.a != 0 {
+            w.drawRect(pos, size, this.bgColor)
+        }
+
         if this.backdrop != null {
             bd = this.backdrop
             bd(this, w)
         }
-
-        pos = this.getPosition()
-        size = this.getSize()
 
         if this.scrollable == false {
             return

@@ -183,7 +183,9 @@ MOUSE_SCROLL_RIGHT).
 - `.getRect(pos [int, int], size [uint, uint], buff []rgbColor)` fills a given buffer with the pixels of a rectangle on the screen.
 - `.drawRect(pos [int, int], size [uint, uint], color rgbColor)` draws a rectangle.
 - `.drawRectImage(pos [int, int], size [uint, uint], buff []rgbColor)` draws a rectangle with a given image buffer instad of a single color.
-- `.drawCircle(pos [int, int], radi uint, color rgbColor)` draws a circle.
+- `.drawCircle(pos [int, int], radi int, color rgbColor)` draws a circle.
+- `strokeCircle(pos [int, int], radi int, width int, color rgbColor)` draws the outline of a circle.
+- `drawLine(from [int, int], to [int, int], color rgbColor)` draws a line from point 'from' to point 'to'.
 - `.drawRoundedRect(pos [int, int], size [uint, uint], radi uint, color rgbColor)` draws a rectangle with a given border radius.
 - `.drawText(fnt font, text str, color rgbColor, pos [int, int]) [int,int]` draws unicode text using the specified [font] returns the location of a next caracter (as measureText()).
 - `.drawChar(fnt font, c uint32, color rgbColor, pos [int,int]) [int,int]` draws a single character.
@@ -218,12 +220,15 @@ Functions:
 - `getSystemUIfont() font` returns the default system UI font.
 
 Fields:
-- `.currX` and `.currY` are the current location.
 - `.fontSize` is the current font size (should not be set directly).
+- `.bold` indicated if the font is in bold mode or not.
+- `.currX` and `.currY` are the current location.
 
 Methods:
 - `.load(path str) bool` loads a TTF font from a file path.
+- `.destroy()` destroys the font object.
 - `.setSize(s uint)` sets the font size.
+- `.setBold(bold bool) bool` sets weither the font is bold or not and returns the previous state.
 - `.writeChar(c uint32, color rgbColor, setPixel function(ptr, [int,int], rgbColor), window ptr)` writes a single char to a window with a given setPixel function.
 - `.measureChar(c uint32)` advances .currX and .currY but does not draw.
 
@@ -277,6 +282,28 @@ uiEventElementFileDrag: a file is being dragged over the element
 uiEventElementFileDrop: a file has been droped on the element
 uiEventElementFileDropOutside: the element has been droped on another window
 
+### UI position and size
+Every element has a position and a size.
+These are calculated using the uiPos structure.
+
+To declare a position / size, you can use:
+- `pixels(px int) uiPos`,
+- `percents(pc int) uiPos`,
+- `sizeOfElement(elem ptr) uiPos`,
+- `sizeOfElementById(id str) uiPos`,
+- or constants: `nullPos`, `uiInnerSize`.
+
+In addition to that, you can specify the calculation basis:
+- `.basis(uiBasisCenter)` will compute the position from the center of the element.
+- `.basis(uiBasisEnd)` will compute the position from the end of the element.
+
+You can also define a minimum and a maximum value using:
+- `min(x uiPos) uiPos`,
+- `max(x uiPos) uiPos`.
+
+At last, you can specify more complex computation using arithmetic operators:
+`pos1 + pos2`, `pos1 - pos2`, `pos1 * pos2`, `pos1 / pos2`.
+
 ### UI elements
 Every element drawn on the screen is based on the uiElement structure.
 An element can contain children that shall be drawn only inside of it.
@@ -286,7 +313,7 @@ There are base elements that you can use to build your interface. You can also c
 Fields:
 - `.pos: [uiPos,uiPos]` its position.
 - `.margin: [uiPos,uiPos]` offsets the position of the element.
-- `.size: [int,int]` the size of the element. Note that drawing outside of the rectangle defined by .pos and .size is illegal.
+- `.size: [uiPos,uiPos]` the size of the element. Note that drawing outside of the rectangle defined by .pos and .size is illegal.
 - `.padding: [uint,uint,uint,uint]` the space between the border and the contents of the element [left, top, right, bottom].
 - `.innerMargin: [uint,uint,uint,uint]` the scissor box offset of the element.
 - `.offsets: [int,int]` offsets every elements inside of this element (scrolling).
@@ -313,6 +340,7 @@ Methods:
 - `.getPosition() [int,int]` returns the calculated position of an element.
 - `.getInnerSize() [uint,uint]` returns the size of the space occupied by its children. 
 - `.remove()` removes an element.
+- `.removeChild(index uint)` removes its nth element.
 - `.addElement(elem uiElement*)` adds an element as child.
 - `.addElementNoRedraw(elem uiElement*)` adds an element as child but does not trigger a redraw of the element. This can be used to insert multiple elements and then calling .redraw().
 - `.redrawIn(ms uint)` schedules a redraw in x miliseconds (for animation).
@@ -322,6 +350,20 @@ Functions:
 - `pixels(px int) uiPos` returns a position structure of x pixels.
 - `percents(pc int) uiPos` returns a position structure of x percents. Note that a basis can then be applied on the position with `.basis(uiBasisCenter or uiBasisEnd)` that defines if the position should be calculated at the top left, center or bottom right of the element.
 
+Globals: these specify the default colors for every element
+ELEMENT_BACKGROUND_COLOR = rgbColor{220, 220, 220}
+ELEMENT_FOCUSED_BACKGROUND_COLOR = rgbColor{220, 220, 220}
+ELEMENT_HOVERED_BACKGROUND_COLOR = rgbColor{191, 191, 255}
+ELEMENT_CLICKED_BACKGROUND_COLOR = rgbColor{120, 120, 255}
+ELEMENT_INVALID_BACKGROUND_COLOR = rgbColor{255, 191, 191}
+ELEMENT_PLACEHOLDER_TEXT_COLOR = rgbColor{60,60,60}
+ELEMENT_TEXT_COLOR = rgbColor{0,0,0}
+ELEMENT_TEXT_SELECTION_COLOR = rgbColor{120, 120, 255}
+ELEMENT_CLICKED_TEXT_COLOR = rgbColor{255,255,255}
+ELEMENT_BORDER_COLOR = rgbColor{140, 140, 140}
+ELEMENT_HOVERED_BORDER_COLOR = rgbColor{120, 120, 255}
+ELEMENT_SECONDARY_BACKGROUND_COLOR = rgbColor{160, 160, 160}
+BACKGROUND_COLOR = rgbColor{255, 255, 255}
 
 #### uiText
 A text that dinamically grows in size and can be selectable (focusable) or not.
@@ -346,17 +388,45 @@ A text selection input.
 Fields:
 - `.text: str` the placeholder text to show when it has no value.
 - `.onsubmit: function(uiTextInput*)` callback called on enter key press.
+- `.validate: function(uiTextInput*, []byte)` callback called when user finished typing, to sanitize the input.
 - `.value: []byte` the value.
 - `.carret: uint` the position from the start of the text of the carret (cursor).
+- `.invalid: bool` weither the input is invalid (alternate styling)
+- `.border: int = 1` 1: has a border, 0: no border
+- `.radius: int = 6` the radius of the element's corners
+- `.bgColor: rgbColor = ELEMENT_BACKGROUND_COLOR` background color
+- `.fgColor: rgbColor = ELEMENT_TEXT_COLOR` text color
+- `.borderColor: rgbColor = ELEMENT_BORDER_COLOR` botfer color
+- `.hoveredBgColor: rgbColor = ELEMENT_HOVERED_BACKGROUND_COLOR` alternate styling when hovered
+- `.hoveredFgColor: rgbColor = ELEMENT_TEXT_COLOR`
+- `.hoveredBorderColor: rgbColor = ELEMENT_HOVERED_BORDER_COLOR`
+- `.focusedBgColor: rgbColor = ELEMENT_FOCUSED_BACKGROUND_COLOR` alternate styling when focused
+- `.focusedFgColor: rgbColor = ELEMENT_TEXT_COLOR`
+- `.invalidBgColor: rgbColor = ELEMENT_INVALID_BACKGROUND_COLOR` alternate styling when invalid
+- `.invalidFgColor: rgbColor = ELEMENT_TEXT_COLOR`
+- `.placeholderColor: rgbColor = ELEMENT_PLACEHOLDER_TEXT_COLOR` color of the .text when there is no value.
 
-Globals:
-INPUT_BACKGROUND_COLOR = rgbColor{220, 220, 220}
-INPUT_FOCUSED_BACKGROUND_COLOR = rgbColor{220, 220, 220}
-INPUT_HOVERED_BACKGROUND_COLOR = rgbColor{191, 191, 255}
-INPUT_PLACEHOLDER_TEXT_COLOR = rgbColor{60,60,60}
-INPUT_TEXT_COLOR = rgbColor{0,0,0}
-INPUT_TEXT_SELECTION_COLOR = rgbColor{120, 120, 255}
-
+#### uiSelectInput
+A selection input with multiple options
+Fields:
+- `.text: str` the placeholder text to show when it has no value.
+- `.onsubmit: function(uiTextInput*)` callback called on enter key press.
+- `.values: []str` the available values.
+- `.index: int = -1` the currently selected value
+- `.invalid: bool` weither the input is invalid (alternate styling)
+- `.border: int = 1` 1: has a border, 0: no border
+- `.radius: int = 6` the radius of the element's corners
+- `.bgColor: rgbColor = ELEMENT_BACKGROUND_COLOR` background color
+- `.fgColor: rgbColor = ELEMENT_TEXT_COLOR` text color
+- `.borderColor: rgbColor = ELEMENT_BORDER_COLOR` botfer color
+- `.hoveredBgColor: rgbColor = ELEMENT_HOVERED_BACKGROUND_COLOR` alternate styling when hovered
+- `.hoveredFgColor: rgbColor = ELEMENT_TEXT_COLOR`
+- `.hoveredBorderColor: rgbColor = ELEMENT_HOVERED_BORDER_COLOR`
+- `.focusedBgColor: rgbColor = ELEMENT_FOCUSED_BACKGROUND_COLOR` alternate styling when focused
+- `.focusedFgColor: rgbColor = ELEMENT_TEXT_COLOR`
+- `.invalidBgColor: rgbColor = ELEMENT_INVALID_BACKGROUND_COLOR` alternate styling when invalid
+- `.invalidFgColor: rgbColor = ELEMENT_TEXT_COLOR`
+- `.placeholderColor: rgbColor = ELEMENT_PLACEHOLDER_TEXT_COLOR` color of the .text when there is no value.
 
 #### uiButton
 A clickable button.
@@ -364,15 +434,17 @@ A clickable button.
 Fields:
 - `.text: str` the text of the button.
 - `.onclick: function(uiButton*)` callback called on click / enter key press.
-- `.value: []byte` the value.
-- `.radius: uint` the border radius of the button.
-
-Globals:
-BUTTON_BACKGROUND_COLOR = rgbColor{220, 220, 220}
-BUTTON_BACKGROUND_HOVERED_COLOR = rgbColor{191, 191, 255}
-BUTTON_BACKGROUND_CLICKED_COLOR = rgbColor{120, 120, 255}
-BUTTON_TEXT_COLOR = rgbColor{0,0,0}
-BUTTON_CLICKED_TEXT_COLOR = rgbColor{255,255,255}
+- `.border: int = 1` 1: has a border, 0: no border
+- `.radius: int = 6` the radius of the element's corners
+- `.bold: bool` specifies the boldness of the button's text
+- `.bgColor: rgbColor = ELEMENT_BACKGROUND_COLOR` background color
+- `.fgColor: rgbColor = ELEMENT_TEXT_COLOR` text color
+- `.borderColor: rgbColor = ELEMENT_BORDER_COLOR` botfer color
+- `.hoveredBgColor: rgbColor = ELEMENT_HOVERED_BACKGROUND_COLOR` alternate styling when hovered
+- `.hoveredFgColor: rgbColor = ELEMENT_TEXT_COLOR`
+- `.hoveredBorderColor: rgbColor = ELEMENT_HOVERED_BORDER_COLOR`
+- `.clickedBgColor: rgbColor = ELEMENT_CLICKED_BACKGROUND_COLOR` alternate styling when clicked
+- `.clickedFgColor: rgbColor = ELEMENT_CLICKED_TEXT_COLOR`
 
 
 #### uiBox
@@ -380,7 +452,8 @@ A container element that can be overflowed and scrolled.
 This is the only element that has scrollbars.
 
 Fields:
-- `.backdrop: function(uiBox*, ui*)` callback called before drawing its children. This is used for drawing a backdrop inside the box or changing its size...
+- `.bgColor: rgbColor` if specified, will paint a background of said color.
+- `.backdrop: function(uiBox*, ui*)` callback called before drawing its children. This is used for drawing a backdrop inside the box.
 
 
 #### uiVerticalArray / uiHorizontalArray
@@ -388,6 +461,7 @@ A container that cannot be overflowed as it grows dynamically.
 It displays its children as an array on a single axis.
 
 Fields:
+- `.bgColor: rgbColor` if specified, will paint a background of said color.
 - `.spacing: int` spacing between elements in pixels.
 - `.dynamicSize: bool = true` the other axis (not the one on which children are spread) grows dynamicaly by default as it is set to true. If set to false, you will have to set manualy its size. 
 
@@ -395,6 +469,8 @@ Fields:
 A container lays all of its children on a grid and grows dynamically in its main axis.
 
 Fields:
+- `.bgColor: rgbColor` if specified, will paint a background of said color.
+- `.dynamicSize: bool = true` the other axis (not the one on which children are spread) grows dynamicaly by default as it is set to true. If set to false, you will have to set manualy its size. 
 - `.spacing: int` spacing between elements in pixels.
 
 #### uiVerticalSeparator / uiHorizontalSeparator
@@ -406,13 +482,26 @@ Fields:
 - `.maxSep: int` the maximum separation offset after which the separator cannot be dragged anymore.
 - `.minSep: int` the minimum separation offset after which the separator cannot be dragged anymore.
 
-Globals:
-UI_SEPARATOR_COLOR = rgbColor{100, 100, 100}
+#### uiTabs
+The tab element is a list of tabs, switching the element's body to a different element.
+
+Fields:
+- `.tabs: []uiTab` the list of tab to generate. Should not be changed after element declaration.
+- `.border: int = 1` the element's border size.
+- `radius: int = 4` the element corner radius.
+- `bgColor: rgbColor = BACKGROUND_COLOR` the element's background color.
+- `borderColor: rgbColor = ELEMENT_BORDER_COLOR` this element's background color.
+
+Methods:
+- `.setTab(i int)` sets the current visible tab.
 
 ## Examples
 You can find examples in the [example directory](/examples/).
+Note that [elements.bah](/examples/elements.bah) should contain every default elements.
 
 ![chat example](/examples/assets/chat.png)
+
+![elements example](/examples/assets/elements.png)
 
 ## Notes
 

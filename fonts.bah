@@ -6,13 +6,16 @@
 struct __fontGlyphCache {
     codepoint: uint32
     size: uint32
+    bold: bool
     glyph: FT_GlyphSlotRec_
 }
 
 struct font {
+    fontSize: uint
+    bold: bool
+
     lib: FT_Library
     face: FT_FaceRec_*
-    fontSize: uint
     currX: int
     currY: int
     slotsCache: []__fontGlyphCache
@@ -29,11 +32,23 @@ struct font {
 
         err = FT_New_Face(this.lib, cStr(path), 0, &this.face)
 
-        if err != 0 {
+        if err != 0 || this.face == null {
             panic("error loading font")
             return false
         }
+
         return true
+    }
+
+    destroy() {
+        i=0; for i < len(this.slotsCache), i++ {
+            s = &this.slotsCache[i]
+            FT_Bitmap_Done(this.lib, &s.glyph.bitmap)
+        }
+
+        FT_Done_Face(this.face)
+        this.face = null
+        clear(this.slotsCache)
     }
 
     setSize(s uint) {
@@ -41,16 +56,25 @@ struct font {
         this.fontSize = s
     }
 
+    setBold(bold bool) bool {
+        wasBold = this.bold
+        this.bold = bold
+        return wasBold
+    }
+
     writeChar(c uint32, color rgbColor, setPixel function(ptr, [int,int], rgbColor), window ptr) {
         slot = this.face.glyph
 
+        bitmap = FT_Bitmap_{}
         i=0; for i < len(this.slotsCache), i++ {
             sc = &this.slotsCache[i]
-            if sc.codepoint == c && sc.size == this.fontSize {
+            if sc.codepoint == c && sc.size == this.fontSize && sc.bold == this.bold {
                 slot = &sc.glyph
+                bitmap = slot.bitmap
                 break
             }
         }
+
 
         if i == len(this.slotsCache) {
             err = FT_Load_Char(this.face, c, 4)
@@ -63,19 +87,26 @@ struct font {
                 absPitch = 0 - absPitch
             }
 
+            FT_Bitmap_Init(&bitmap)
+            FT_Bitmap_Copy(this.lib, &slot.bitmap, &bitmap)
+
+            if this.bold {
+                FT_Bitmap_Embolden(this.lib, &bitmap, 1 << 5, 1 << 5)
+            }
 
             this.slotsCache[i] = __fontGlyphCache {
                 codepoint: c
                 glyph: *slot
                 size: this.fontSize
+                bold: this.bold
             }
-            if absPitch * slot.bitmap.rows > 0 {
-                this.slotsCache[i].glyph.bitmap.buff = <byte*>memoryAllocSTR_NZ(absPitch * slot.bitmap.rows)
-                memcpy(this.slotsCache[i].glyph.bitmap.buff, slot.bitmap.buff, absPitch * slot.bitmap.rows)
+
+            if absPitch * bitmap.rows > 0 {
+                this.slotsCache[i].glyph.bitmap = bitmap
             }
+
         }
 
-        bitmap = slot.bitmap
         raw = <byte*>bitmap.buff
 
         y=0; for y < bitmap.rows, y++ {
@@ -117,10 +148,12 @@ struct font {
     measureChar(c uint32) {
         slot = this.face.glyph
 
+        bitmap = FT_Bitmap_{}
         i=0; for i < len(this.slotsCache), i++ {
             sc = &this.slotsCache[i]
-            if sc.codepoint == c && sc.size == this.fontSize {
+            if sc.codepoint == c && sc.size == this.fontSize && sc.bold == this.bold {
                 slot = &sc.glyph
+                bitmap = slot.bitmap
                 break
             }
         }
@@ -136,16 +169,24 @@ struct font {
                 absPitch = 0 - absPitch
             }
 
+            FT_Bitmap_Init(&bitmap)
+            FT_Bitmap_Copy(this.lib, &slot.bitmap, &bitmap)
+
+            if this.bold {
+                FT_Bitmap_Embolden(this.lib, &bitmap, 1 << 5, 1 << 5)
+            }
 
             this.slotsCache[i] = __fontGlyphCache {
                 codepoint: c
                 glyph: *slot
                 size: this.fontSize
+                bold: this.bold
             }
-            if absPitch * slot.bitmap.rows > 0 {
-                this.slotsCache[i].glyph.bitmap.buff = <byte*>memoryAllocSTR_NZ(absPitch * slot.bitmap.rows)
-                memcpy(this.slotsCache[i].glyph.bitmap.buff, slot.bitmap.buff, absPitch * slot.bitmap.rows)
+            
+            if absPitch * bitmap.rows > 0 {
+                this.slotsCache[i].glyph.bitmap = bitmap
             }
+
         }
 
         this.currX += (slot.advance.x >> 6)

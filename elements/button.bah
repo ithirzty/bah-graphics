@@ -2,19 +2,34 @@
 
 #import "./base.bah"
 
-BUTTON_BACKGROUND_COLOR = rgbColor{220, 220, 220}
-BUTTON_BACKGROUND_HOVERED_COLOR = rgbColor{191, 191, 255}
-BUTTON_BACKGROUND_CLICKED_COLOR = rgbColor{120, 120, 255}
-BUTTON_TEXT_COLOR = rgbColor{0,0,0}
-BUTTON_CLICKED_TEXT_COLOR = rgbColor{255,255,255}
+// ELEMENT_BACKGROUND_COLOR = rgbColor{220, 220, 220}
+// ELEMENT_BACKGROUND_HOVERED_COLOR = rgbColor{191, 191, 255}
+// ELEMENT_BACKGROUND_CLICKED_COLOR = rgbColor{120, 120, 255}
+// ELEMENT_TEXT_COLOR = rgbColor{0,0,0}
+// ELEMENT_CLICKED_TEXT_COLOR = rgbColor{255,255,255}
+// ELEMENT_BORDER_COLOR = rgbColor{255, 255, 255}
 
 struct uiButton extend uiElement {
     text: str = "Button"
     onclick: function(uiButton*)
     showTime: uint
-    bgColor: rgbColor
-    fgColor: rgbColor
-    radius: int = -1
+    radius: int = 6
+    border: int = 1
+    bold: bool
+    _bgColor: rgbColor
+    _fgColor: rgbColor
+    //colors
+    bgColor: rgbColor = ELEMENT_BACKGROUND_COLOR
+    fgColor: rgbColor = ELEMENT_TEXT_COLOR
+    borderColor: rgbColor = ELEMENT_BORDER_COLOR
+    //colors hovered
+    hoveredBgColor: rgbColor = ELEMENT_HOVERED_BACKGROUND_COLOR
+    hoveredFgColor: rgbColor = ELEMENT_TEXT_COLOR
+    hoveredBorderColor: rgbColor = ELEMENT_HOVERED_BORDER_COLOR
+    //colors clicked
+    clickedBgColor: rgbColor = ELEMENT_CLICKED_BACKGROUND_COLOR
+    clickedFgColor: rgbColor = ELEMENT_CLICKED_TEXT_COLOR
+
 
     events(evnt uint32) {
         clickFn = this.onclick
@@ -33,31 +48,6 @@ struct uiButton extend uiElement {
                 if clickFn != null {
                     clickFn(this)
                 }
-            } else if c == Char_tab || c == Char_shit_tab {
-                ui = <ui*>this.window
-                i=0; for i < len(ui.elements), i++ {
-                    if ui.elements[i] == this {
-                        if this.window.isKeyModifier(Key_SHIFT) {
-                            i--
-                            for i != -1, i-- {
-                                if ui.elements[i].focusable {
-                                    ui.setFocus(ui.elements[i])
-                                    break
-                                }
-                            }
-                            break
-                        } else {
-                            i++
-                            for i < len(ui.elements), i++ {
-                                if ui.elements[i].focusable {
-                                    ui.setFocus(ui.elements[i])
-                                    break
-                                }
-                            }
-                            break
-                        }
-                    }
-                }
             }
         }
 
@@ -66,69 +56,87 @@ struct uiButton extend uiElement {
     draw(w ui*) {
         now = getTimeUnix()
         w.font.setSize(this.fontSize)
+        b = w.font.setBold(this.bold)
+
         textWidth = w.measureText(w.font, this.text)[0]
 
-        this.size[0] = pixels(textWidth + this.padding[0] * 2)
-        this.size[1] = pixels(this.fontSize + this.padding[1] * 2)
+        if isPosNull(this.size[0]) {
+            this.size[0] = pixels(textWidth + this.padding[0] * 2)
+        }
+
+        if isPosNull(this.size[1]) {
+            this.size[1] = pixels(this.fontSize + this.padding[1] * 2)
+        }
+
 
         pos = this.getPosition()
         size = this.getSize()
 
-        bgColor = this.bgColor
-        fgColor = this.fgColor
+        bgColor = this._bgColor
+        fgColor = this._fgColor
 
         if this.clicked {
-            this.bgColor = BUTTON_BACKGROUND_CLICKED_COLOR
-            this.fgColor = BUTTON_CLICKED_TEXT_COLOR
-            bgColor = this.bgColor
-            fgColor = this.fgColor
+            this._bgColor = this.clickedBgColor
+            this._fgColor = this.clickedFgColor
+            bgColor = this._bgColor
+            fgColor = this._fgColor
         } else {
             if now - this.showTime < 120000000 {
                 amm = ((now - this.showTime) * 255) / 120000000
                 if this.hovered {
-                    bgColor = this.bgColor.interpolate(BUTTON_BACKGROUND_HOVERED_COLOR, amm)
-                    fgColor = this.fgColor.interpolate(BUTTON_TEXT_COLOR, amm)
+                    bgColor = this._bgColor.interpolate(this.hoveredBgColor, amm)
+                    fgColor = this.fgColor.interpolate(this.hoveredFgColor, amm)
                 } else {
-                    bgColor = this.bgColor.interpolate(BUTTON_BACKGROUND_COLOR, amm)
-                    fgColor = this.fgColor.interpolate(BUTTON_TEXT_COLOR, amm)
+                    bgColor = this._bgColor.interpolate(this.bgColor, amm)
+                    fgColor = this.fgColor.interpolate(this.fgColor, amm)
                 }
                 this.redrawIn(40)
             } else {
                 if this.hovered {
-                    this.bgColor = BUTTON_BACKGROUND_HOVERED_COLOR
-                    this.fgColor = BUTTON_TEXT_COLOR
+                    this._bgColor = this.hoveredBgColor
+                    this._fgColor = this.fgColor
                 } else {
-                    this.bgColor = BUTTON_BACKGROUND_COLOR
-                    this.fgColor = BUTTON_TEXT_COLOR
+                    this._bgColor = this.bgColor
+                    this._fgColor = this.fgColor
                 }
-                bgColor = this.bgColor
-                fgColor = this.fgColor
+                bgColor = this._bgColor
+                fgColor = this._fgColor
             }
         }
 
-        if this.radius == 0 {
-            w.drawRect(pos, size, bgColor)
-        } else {
-            w.drawRoundedRect(pos, size, this.radius, bgColor)
+        bdColor = this.borderColor
+        if this.hovered || this.focused {
+            bdColor = this.hoveredBorderColor
         }
-        w.drawText(w.font, this.text, fgColor, [pos[0] + this.padding[0], pos[1] + size[1] / 2 + this.fontSize / 2 + 2])
+
+        w.drawLine([pos[0] + this.radius, pos[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]], bdColor)
+        w.drawLine([pos[0], pos[1] + this.radius], [pos[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
+        w.drawLine([pos[0] + this.radius, pos[1]  - 1 + size[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]  - 1 + size[1]], bdColor)
+        w.drawLine([pos[0]  - 1 + size[0], pos[1] + this.radius], [pos[0]  - 1 + size[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
+
+        if this.radius == 0 {
+            w.drawRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], bgColor)
+        } else {
+            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
+            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
+            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
+            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
+            w.drawRoundedRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], this.radius, bgColor)
+        }
+
+        w.drawText(w.font, this.text, fgColor, [pos[0] + this.padding[0], pos[1]  - 1 + size[1] / 2 + this.fontSize / 2 + 2])
+        w.font.bold = b
+
     }
 
     _init() {
         this._events = this.events
         this._draw = this.draw
-
-        this.bgColor = BUTTON_BACKGROUND_COLOR
-        this.fgColor = BUTTON_TEXT_COLOR
         
         this.cursor = "hand1"
 
         if this.fontSize == 0 {
             this.fontSize = 8
-        }
-
-        if this.radius == -1 {
-            this.radius = 8
         }
 
         if this.padding[0] == 0 {

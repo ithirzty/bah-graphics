@@ -1,0 +1,214 @@
+#import "../ui_struct.bah"
+
+#import "./base.bah"
+#import "./button.bah"
+#import "./arrays.bah"
+#import "./box.bah"
+
+#define __uiTabsPropagateClick(btn uiButton*)
+
+struct _uiTabButton extend uiButton {
+    active: bool
+    radius: int = 6
+    border: int = 1
+    _bgColor: rgbColor
+    _fgColor: rgbColor
+    //colors
+    activeFgColor: rgbColor = ELEMENT_TEXT_COLOR
+    activeBgColor: rgbColor = ELEMENT_BACKGROUND_COLOR
+
+    draw(w ui*) {
+        now = getTimeUnix()
+        w.font.setSize(this.fontSize)
+        textWidth = w.measureText(w.font, this.text)[0]
+
+        this.size[0] = pixels(textWidth + this.padding[0] * 2)
+        this.size[1] = pixels(this.fontSize + this.padding[1] * 2)
+
+        pos = this.getPosition()
+        size = this.getSize()
+
+        bgColor = this.bgColor
+        fgColor = this.fgColor
+
+        bgColor = this._bgColor
+        fgColor = this._fgColor
+
+        if this.clicked {
+            this._bgColor = this.clickedBgColor
+            this._fgColor = this.clickedFgColor
+            bgColor = this._bgColor
+            fgColor = this._fgColor
+        } else if this.active {
+            this._bgColor = this.activeBgColor
+            this._fgColor = this.activeFgColor
+            bgColor = this._bgColor
+            fgColor = this._fgColor
+        } else {
+            if now - this.showTime < 120000000 {
+                amm = ((now - this.showTime) * 255) / 120000000
+                if this.hovered {
+                    bgColor = this._bgColor.interpolate(this.hoveredBgColor, amm)
+                    fgColor = this.fgColor.interpolate(this.hoveredFgColor, amm)
+                } else {
+                    bgColor = this._bgColor.interpolate(this.bgColor, amm)
+                    fgColor = this.fgColor.interpolate(this.fgColor, amm)
+                }
+                this.redrawIn(40)
+            } else {
+                if this.hovered {
+                    this._bgColor = this.hoveredBgColor
+                    this._fgColor = this.fgColor
+                } else {
+                    this._bgColor = this.bgColor
+                    this._fgColor = this.fgColor
+                }
+                bgColor = this._bgColor
+                fgColor = this._fgColor
+            }
+        }
+
+        bdColor = this.borderColor
+        if this.hovered || this.focused {
+            bdColor = this.hoveredBorderColor
+        }
+
+        w.drawLine([pos[0] + this.radius, pos[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]], bdColor)
+        w.drawLine([pos[0], pos[1] + this.radius], [pos[0], pos[1]  - 1 + size[1]], bdColor)
+        w.drawLine([pos[0]  - 1 + size[0], pos[1] + this.radius], [pos[0]  - 1 + size[0], pos[1] - 1 + size[1]], bdColor)
+        
+        if this.radius == 0 {
+            w.drawRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], bgColor)
+        } else {
+            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
+            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
+            w.drawRoundedRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], this.radius, bgColor)
+        }
+
+        w.drawRect([pos[0] + this.border, pos[1] + size[1] - this.radius], [size[0] - this.border * 2, this.radius], bgColor)
+        w.drawText(w.font, this.text, fgColor, [pos[0] + this.padding[0], pos[1] + size[1] / 2 + this.fontSize / 2 + 2])
+    }
+
+    _init() {
+        btn = <uiButton*>this
+        btn._init()
+        this.bgColor = ELEMENT_SECONDARY_BACKGROUND_COLOR
+
+        this._draw = this.draw
+        this.onclick = __uiTabsPropagateClick
+        this.padding = [12, 7, 12, 0]
+        this.fontSize = 10
+        this.radius = 6
+    }
+}
+
+struct uiTab {
+    name: str
+    element: uiElement*
+    callback: function(uiTab*, int)
+}
+
+struct uiTabs extend uiElement {
+    tabs: []uiTab
+    border: int = 1
+    radius: int = 4
+    //colors
+    bgColor: rgbColor = BACKGROUND_COLOR
+    borderColor: rgbColor = ELEMENT_BORDER_COLOR
+    
+
+    events(event uint32) {
+
+    }
+
+    draw(w ui*) {
+        pos = this.getPosition()
+        size = this.getSize()
+
+        w.drawLine([pos[0], pos[1] + 24], [pos[0]  - 1 + size[0] - this.radius, pos[1] + 24], this.borderColor)
+        w.drawLine([pos[0], pos[1] + 24], [pos[0], pos[1]  - 1 + size[1] - this.radius], this.borderColor)
+        w.drawLine([pos[0] + this.radius, pos[1]  - 1 + size[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]  - 1 + size[1]], this.borderColor)
+        w.drawLine([pos[0]  - 1 + size[0], pos[1] + 24 + this.radius], [pos[0]  - 1 + size[0], pos[1]  - 1 + size[1] - this.radius], this.borderColor)
+
+        if this.radius != 0 {
+            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius + 23], this.radius, this.border + 1, this.borderColor)
+            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, this.borderColor)
+            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, this.borderColor)
+        }
+        w.drawRect([pos[0] + this.border, pos[1] + 24 + this.border], [this.radius, this.radius], this.bgColor)
+        w.drawRoundedRect([pos[0] + this.border, pos[1] + 24 + this.border], [size[0] - this.border * 2, size[1] - 24 - this.border * 2], this.radius, this.bgColor)
+    }
+
+    setTab(i int) {
+        __uiTabsPropagateClick(this.elements[0].elements[0].elements[i])
+    }
+
+    _init() {
+        this._draw = this.draw
+        this._events = this.events
+
+        tabsArray = new uiHorizontalArray {}
+
+        this.addElement(new uiBox {
+            size: [percents(100), pixels(24)]
+
+            elements: {
+                tabsArray
+            }
+        })
+
+        neededPad = this.border
+        if this.radius / 2 > neededPad {
+            neededPad = this.radius / 2
+        }
+
+        i=0; for i < len(this.tabs), i++ {
+            tabBtn = new _uiTabButton {
+                text: this.tabs[i].name
+                border: this.border
+                borderColor: this.borderColor
+            }
+
+            if i == 0 {
+                tabBtn.active = true
+                this.addElement(new uiBox {
+                    pos: [pixels(0), pixels(25)]
+                    size: [percents(100), percents(100) - pixels(25)]
+                    padding: [neededPad, neededPad, neededPad, neededPad]
+
+                    elements: {
+                        this.tabs[i].element
+                    }
+                })
+            }
+
+            tabsArray.addElementNoRedraw(tabBtn)
+        }
+    }
+}
+
+__uiTabsPropagateClick(btn _uiTabButton*) {
+    tabs = <uiHorizontalArray*>btn.parent
+    parent = <uiTabs*>btn.parent.parent.parent
+    
+    i=0; for i < len(tabs.elements), i++ {
+        iterBtn = <_uiTabButton*>tabs.elements[i]
+        if btn != iterBtn {
+            iterBtn.active = false
+            continue
+        }
+        iterBtn.active = true
+
+        if len(parent.elements) > 1 && len(parent.elements[1].elements) != 0 {
+            parent.elements[1].removeChild(0)
+            parent.elements[1].addElement(parent.tabs[i].element)
+            if parent.tabs[i].callback != null {
+                t = parent.tabs[i]
+                t.callback(i)
+            }
+        }
+        
+    }
+
+    tabs.redraw()
+}

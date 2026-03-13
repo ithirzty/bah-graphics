@@ -67,7 +67,7 @@ fileContextItems = []uiContextItem {
         ctrl: false //disable the need to press control as it is not a CTRL + key shortcut
         key: Char_delete
 
-        callback: function(item uiContextItem*, el uiBoxFolder*) {
+        callback: (item uiContextItem*, el uiBoxFolder*) {
             if removeFile(el.path) {
                 el.remove()
                 el.parent.redraw()
@@ -79,7 +79,7 @@ fileContextItems = []uiContextItem {
         ctrl: false
         key: Char_enter
 
-        callback: function(item uiContextItem*, el uiBoxFolder*) {
+        callback: (item uiContextItem*, el uiBoxFolder*) {
             command("xdg-open \""+el.path+"\"").runBytes()
         }
     }
@@ -156,7 +156,7 @@ constructFileElement(file str, fullPath str, isFolder bool) uiBoxFolder* {
         fileURI: fullPath //set to allow for dragging files to other windows
         dragTarget: isFolder //if the element is a folder, allow files to be drag-and-droped on it
 
-        backdrop: function(bx uiBoxFolder*, ui ui*) {
+        backdrop: (bx uiBoxFolder*, ui ui*) {
             pos = bx.getPosition()
             //Draw the background if the element is hovered / focused
             if bx.focused {
@@ -173,7 +173,7 @@ constructFileElement(file str, fullPath str, isFolder bool) uiBoxFolder* {
             }
         }
 
-        elements: []uiElement* {
+        elements: {
             new uiText { //add the name of the file / folder
                 focusable: false
                 color: WHITE
@@ -240,7 +240,12 @@ setPath(path str, isNewEntry bool) {
         pathHistory[pathHistoryIndex] = currentPath
     }
 
-    clear(historyList.elements) //clear all history entry elements
+    //clear all history entry elements
+
+    i=len(historyList.elements)-1; for i != -1, i-- {
+        historyList.removeChild(i)
+    }
+
     //and make new items based on the array
     i=0; for i < len(pathHistory), i++ {
 
@@ -330,6 +335,7 @@ main(args []str) int {
         panic("could not find file image asset")
     }
 
+
     ui.setIcon(folderImg) //sets the window icon to a folder image
     
     //This uiBox is the navigation bar at the top of the window.
@@ -339,7 +345,7 @@ main(args []str) int {
         size: [
             percents(100), pixels(pathBarHeight)
         ]
-        backdrop: function(bx uiBox*, ui ui*) {
+        backdrop: (bx uiBox*, ui ui*) {
             pos = bx.getPosition()
             size = bx.getSize()
             //draw a background
@@ -348,16 +354,16 @@ main(args []str) int {
             ui.drawRect([pos[0], pos[1] + size[1] - 1], [size[0], 1], UI_SEPARATOR_COLOR)
         }
 
-        elements: []uiElement* {
+        elements: {
             new uiTextInput { //the path input
                 id: "pathInput"
                 text: "Folder path"
                 size: [
-                    percents(100) - (sizeOfElementById("historyBtns") + pixels(10)),
+                    percents(100) - pixels(80),
                     nullPos
                 ]
 
-                onsubmit: function(inp uiTextInput*) {
+                onsubmit: (inp uiTextInput*) {
                     setPath(arrToStr(inp.value), true)
                 }
             },
@@ -368,16 +374,18 @@ main(args []str) int {
                     percents(100).basis(uiBasisEnd), //make it stick to the right of the box
                     pixels(0) //10px from the top
                 ]
-                elements: []uiElement* { //the two history buttons
+                elements: { //the two history buttons
                     new uiButton {
                         text: "<"
-                        onclick: function(btn uiButton*) {
+                        bold: true
+                        onclick: (btn uiButton*) {
                             goBack()
                         }
                     },
                     new uiButton {
                         text: ">"
-                        onclick: function(btn uiButton*) {
+                        bold: true
+                        onclick: (btn uiButton*) {
                             goForward()
                         }
                     }
@@ -399,21 +407,21 @@ main(args []str) int {
             percents(100) - pixels(pathBarHeight)
         ]
 
-        // backdrop: function(sep uiVerticalSeparator*, ui ui*) {
+        // backdrop: (sep uiVerticalSeparator*, ui ui*) {
         //     //Fill the whole window except the navigation bar space
         //     sep.size = [ui.width, ui.height - pathBarHeight]
         // }
 
-        elements: []uiElement* {
+        elements: {
             new uiBox { //The history list part of the window
                 padding: [10, 10, 10, 10]
-                backdrop: function(bx uiBox*, ui ui*) {
+                backdrop: (bx uiBox*, ui ui*) {
                     ui.drawRect(bx.getPosition(), bx.getSize(), backgroundColor)
                     //Sets the list container size (uiBox is scrollable if overflowed)
                     // bx.elements[1].size = [bx.size[0] - 20, bx.size[1] - 40]
                 }
 
-                elements: []uiElement* {
+                elements: {
                     new uiText { //title
                         text: "History"
                         color: WHITE
@@ -429,7 +437,7 @@ main(args []str) int {
                             percents(100) - pixels(30)
                         ]
 
-                        elements: []uiElement* {
+                        elements: {
                             new uiVerticalArray { //the list itself
                                 id: "historyContainer"
                             }
@@ -441,7 +449,7 @@ main(args []str) int {
             new uiBox { //The file list part of the window
                 id: "fileContainer"
                 dragTarget: true
-                backdrop: function(bx uiBox*, ui ui*) {
+                backdrop: (bx uiBox*, ui ui*) {
                     //Draw its background darker than the rest (.lum(50/255))
                     ui.drawRect(bx.getPosition(), bx.getSize(), backgroundColor.lum(50))
 
@@ -455,7 +463,7 @@ main(args []str) int {
                         name: "Reload folder"
                         key: 'r'
 
-                        callback: function(itm uiContextItem*, el uiElement*) {
+                        callback: (itm uiContextItem*, el uiElement*) {
                             setPath(currentPath, false)
                         }
                     },
@@ -465,7 +473,7 @@ main(args []str) int {
                         ctrl: false
                         alt: true
 
-                        callback: function(itm uiContextItem*, el uiElement*) {
+                        callback: (itm uiContextItem*, el uiElement*) {
                             goBack()
                         }
                     },
@@ -475,13 +483,13 @@ main(args []str) int {
                         ctrl: false
                         alt: true
 
-                        callback: function(itm uiContextItem*, el uiElement*) {
+                        callback: (itm uiContextItem*, el uiElement*) {
                             goForward()
                         }
                     }
                 }
 
-                elements: []uiElement* {
+                elements: {
                     new uiVerticalGridArray { //the file list itself
                         id: "fileListContainer"
                         spacing: 20

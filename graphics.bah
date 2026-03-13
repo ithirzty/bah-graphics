@@ -2,6 +2,7 @@
 #import "string.bah"
 #import "channel.bah"
 #import "http.bah"
+#import "time.bah"
 
 #import "./libs/xcb.bah"
 #import "./libs/shm.bah"
@@ -33,6 +34,9 @@ const __graphicsDrawRequestTypeRectImg = 2
 const __graphicsDrawRequestTypeClear = 3
 
 const __graphicsNbDrawers = 2 // Max: 8
+
+#define floor(x float) float
+#define type256bytes [uint,uint,uint,uint]
 
 struct __graphicsDrawRequest {
     from: [int,int]
@@ -354,7 +358,18 @@ struct window {
             return
         }
 
-        v = (<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16)
+
+        v = <uint32>((<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16))
+
+        if l - offset > 7 {
+            dp = [v,v,v,v,v,v,v,v]
+
+            lm = l - 7
+            for offset < lm, offset += 8 {
+                *(<type256bytes*>(<uint>this.frameBuffer + offset * 4)) = dp
+            }
+        }
+
         for offset < l, offset++ {
             *(<uint32*>(<uint>this.frameBuffer + offset * 4)) = v
         }
@@ -392,6 +407,10 @@ struct window {
             y=req.from[1]; for y < req.to[1], y++ {
                 i = 0
                 x = req.from[0]; for x < req.to[0], x++ {
+                    if y < 0 {
+                        i += req.to[0] - req.from[0]
+                        continue
+                    }
                     this.setPixelUnsafe([x,y], buff[n + i])
                     i++
                 }
@@ -445,13 +464,13 @@ struct window {
         this.haveFrameBool = ~0
         atomic_store(&this.frameDone, 0)
         if req.type == __graphicsDrawRequestTypeRectImg {
-            this.haveFrame.send()
             this.haveFrameMut.unlock()
+            this.haveFrame.send()
             return
         }
 
-        this.haveFrame.broadcast()
         this.haveFrameMut.unlock()
+        this.haveFrame.broadcast()
 
         this.__threadedDrawer(0)
 
@@ -503,7 +522,7 @@ struct window {
     }
 
     drawRect(pos [int, int], size [int, int], color rgbColor) {
-        if this.isExposed == false || color.a == 0 || size[0] < 0 || size[1] < 0 {
+        if this.isExposed == false || color.a == 0 || size[0] <= 0 || size[1] <= 0 {
             return
         }
 
@@ -641,7 +660,7 @@ struct window {
         // }
     }
 
-    drawCircle(pos [int, int], radi uint, color rgbColor) {
+    drawCircle(pos [int, int], radi int, color rgbColor) {
         if this.isExposed == false || color.a == 0 {
             return
         }
@@ -699,8 +718,115 @@ struct window {
         }
     }
 
-    drawRoundedRect(pos [int, int], size [uint, uint], radi uint, color rgbColor) {
+    strokeCircle(pos [int, int], radi int, width int, color rgbColor) {
         if this.isExposed == false || color.a == 0 {
+            return
+        }
+
+        this.hasDrawn = true
+        fradi = <float>radi
+
+        rect = [pos[0] - radi - width / 2, pos[1] - radi - width / 2, pos[0] + width / 2 + radi, pos[1] + width / 2 + radi]
+
+        if this.scissor[0] {
+            if rect[0] < this.scissor[1] {
+                rect[0] = this.scissor[1]
+            }
+
+            if rect[1] < this.scissor[2] {
+                rect[1] = this.scissor[2]
+            }
+
+            if rect[2] > this.scissor[3] {
+                rect[2] = this.scissor[3]
+            }
+
+            if rect[3] > this.scissor[4] {
+                rect[3] = this.scissor[4]
+            }
+        }
+
+        this._overlapCheck([rect[0], rect[1]], [rect[2] - rect[0], rect[3] - rect[1]])
+
+        y = rect[1]; for y < rect[3], y++ {
+            if y >= this.height || y < 0 {
+                continue
+            }
+            x = rect[0]; for x < rect[2], x++ {
+                if x >= this.width || x < 0 {
+                    continue
+                }
+
+                dx = <float>x - <float>pos[0]
+                dy = <float>y - <float>pos[1]
+                d = sqrt(dx*dx + dy*dy)
+
+                if d > fradi || fradi - d > <float>width {
+                    continue
+                }
+
+                rColor = color
+
+                dist = fradi - d
+                if dist < 1.0 {
+                    rColor.a = <byte>(dist / 1.0 * <float><uint>color.a)
+                }
+
+                this.setPixel([x,y], rColor)
+            }
+        }
+    }
+
+    drawRoundedRect(pos [int, int], size [int, int], radi int, color rgbColor) {
+
+        if radi == 0 {
+            this.drawRect(pos, size, color)
+            return
+        }
+
+        if this.isExposed == false || color.a == 0 || size[0] <= 0 || size[1] <= 0 {
+            return
+        }
+
+        this.hasDrawn = true
+        max = [pos[0] + size[0], pos[1] + size[1]]
+        min = pos
+
+        if this.scissor[0] {
+            if pos[0] < this.scissor[1] {
+                min[0] = this.scissor[1]
+            }
+
+            if pos[1] < this.scissor[2] {
+                min[1] = this.scissor[2]
+            }
+
+            if max[0] > this.scissor[3] {
+                max[0] = this.scissor[3]
+            }
+
+            if max[1] > this.scissor[4] {
+                max[1] = this.scissor[4]
+            }
+        }
+
+        if min[0] < 0 {
+            min[0] = 0
+        }
+
+        if min[1] < 0 {
+            min[1] = 0
+        }
+
+        if max[0] > this.width {
+            max[0] = this.width
+        }
+
+        if max[1] > this.height {
+            max[1] = this.height
+        }
+
+        if max[0] <= pos[0] || max[1] <= pos[1] {
             return
         }
 
@@ -716,47 +842,76 @@ struct window {
             radi = size[1] / 2
         }
 
-        center = [pos[0] + size[0] / 2, pos[1] + size[1] / 2]
-        corners = [size[0] / 2 - radi, size[1] / 2 - radi]
-        y=pos[1]; for y < pos[1] + size[1], y++ {
-            if y >= this.height || y < 0 {
-                continue
-            }
-            x = pos[0]; for x < pos[0] + size[0], x++ {
-                if x >= this.width || x < 0 {
-                    continue
-                }
-
-                dx = x - center[0]
-                dy = y - center[1]
-
-                if dx < 0 {
-                    dx = 0 - dx
-                }
-
-                if dy < 0 {
-                    dy = 0 - dy
-                }
-
-                if dx > corners[0] && dy > corners[1] {
-                    continue
-                }
+        this.drawRect([pos[0] + radi, pos[1] + radi], [size[0] - radi * 2, size[1] - radi * 2 + 1], color)
+        this.drawRect([pos[0] + radi, pos[1]], [size[0] - radi * 2 + 1, radi], color)
+        this.drawRect([pos[0], pos[1] + radi], [radi, size[1] - radi * 2 + 1], color)
+        this.drawRect([pos[0] + radi, pos[1] + size[1] - radi + 1], [size[0] - radi * 2 + 1, radi - 1], color)
+        this.drawRect([pos[0] + size[0] - radi, pos[1] + radi], [radi, size[1] - radi * 2 + 1], color)
 
 
-                this.setPixel([x,y], color)
-            }
+        // center = [pos[0] + size[0] / 2, pos[1] + size[1] / 2]
+        // corners = [size[0] / 2 - radi, size[1] / 2 - radi]
+        // y=pos[1]; for y < pos[1] + size[1], y++ {
+        //     if y >= this.height || y < 0 {
+        //         continue
+        //     }
+        //     x = pos[0]; for x < pos[0] + size[0], x++ {
+        //         if x >= this.width || x < 0 {
+        //             continue
+        //         }
 
-        }
+        //         dx = x - center[0]
+        //         dy = y - center[1]
+
+        //         if dx < 0 {
+        //             dx = 0 - dx
+        //         }
+
+        //         if dy < 0 {
+        //             dy = 0 - dy
+        //         }
+
+        //         if dx > corners[0] && dy > corners[1] {
+        //             continue
+        //         }
+
+
+        //         this.setPixel([x,y], color)
+        //     }
+
+        // }
 
         fradi = <float>radi
         
         cPos = [pos[0] + radi - 1, pos[1] + radi - 1]
 
-        y=cPos[1] - radi; for y <= cPos[1], y++ {
+        y=cPos[1] - radi
+        
+        if y < min[1] {
+            y = min[1]
+        }
+        cMax = cPos[1]
+        if cMax > max[1] {
+            cMax = max[1]
+        }
+        
+        xMax = cPos[0]
+        if xMax > max[0] {
+            xMax = max[0]
+        }
+
+        for y <= cMax, y++ {
             if y >= this.height || y < 0 {
                 continue
             }
-            x = cPos[0] - radi; for x <= cPos[0], x++ {
+
+
+            x = cPos[0] - radi
+            if x < min[0] {
+                x = min[0]
+            }
+            
+            for x <= xMax, x++ {
                 if x >= this.width || x < 0 {
                     continue
                 }
@@ -772,24 +927,43 @@ struct window {
 
                 if fradi - d < 1.0 {
                     rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
+                    this.setPixel([x,y], rColor)
+                } else {
+                    this.__unsafeFastSetPixel(y * this.width + x, cPos[0] - x + 1, color)
+                    break
                 }
 
-                this.setPixel([x,y], rColor)
             }
         }
 
         cPos = [pos[0] + size[0] - radi, pos[1] + radi - 1]
 
-        y=cPos[1] - radi; for y <= cPos[1], y++ {
+        y=cPos[1] - radi
+        
+        if y < min[1] {
+            y = min[1]
+        }
+
+        cMax = cPos[1]
+        if cMax > max[1] {
+            cMax = max[1]
+        }
+
+        xMin = cPos[0]
+        if xMin < min[0] + 1 {
+            xMin = min[0] + 1
+        }
+        for y <= cMax, y++ {
             if y >= this.height || y < 0 {
                 continue
             }
-            x = cPos[0]
-            if size[0] % 2 == 0 {
-                x++
+            x = cPos[0] + radi
+
+            if x > max[0] {
+                x = max[0] - 1
             }
 
-            for x < cPos[0] + radi, x++ {
+            for x >= xMin, x-- {
                 if x >= this.width || x < 0 {
                     continue
                 }
@@ -805,26 +979,43 @@ struct window {
 
                 if fradi - d < 1.0 {
                     rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
+                    this.setPixel([x,y], rColor)
+                } else {
+                    this.__unsafeFastSetPixel(y * this.width + cPos[0] + 1, x - cPos[0], color)
+                    break
                 }
-
-                this.setPixel([x,y], rColor)
             }
         }
 
         cPos = [pos[0] + radi - 1, pos[1] + size[1] - radi]
 
-        y=cPos[1]
+        y=cPos[1]+1
 
-        if size[1] % 2 == 0 {
-            y++
+        if y < min[1] {
+            y = min[1]
+        }
+        cMax = cPos[1] + radi
+        if cMax > max[1] {
+            cMax = max[1]
         }
 
-        for y < cPos[1] + radi, y++ {
+        xMax = cPos[0]
+        if xMax > max[0] {
+            xMax = max[0]
+        }
+        for y < cMax, y++ {
             if y >= this.height || y < 0 {
                 continue
             }
             
-            x = cPos[0] - radi; for x <= cPos[0], x++ {
+            x = cPos[0] - radi   
+
+            x = cPos[0] - radi
+            if x < min[0] {
+                x = min[0]
+            }
+
+            for x <= xMax, x++ {
                 if x >= this.width || x < 0 {
                     continue
                 }
@@ -840,29 +1031,43 @@ struct window {
 
                 if fradi - d < 1.0 {
                     rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
+                    this.setPixel([x,y], rColor)
+                } else {
+                    this.__unsafeFastSetPixel(y * this.width + x, cPos[0] - x + 1, color)
+                    break
                 }
-
-                this.setPixel([x,y], rColor)
             }
         }
 
         cPos = [pos[0] + size[0] - radi, pos[1] + size[1] - radi]
 
-        y=cPos[1]
+        y=cPos[1]+1
 
-        if size[1] % 2 == 0 {
-            y++
+        if y < min[1] {
+            y = min[1]
+        }
+        cMax = cPos[1] + radi
+        if cMax > max[1] {
+            cMax = max[1]
         }
 
-        for y < cPos[1] + radi, y++ {
+
+        xMin = cPos[0]
+        if xMin < min[0] + 1 {
+            xMin = min[0] + 1
+        }
+        
+        for y < cMax, y++ {
             if y >= this.height || y < 0 {
                 continue
             }
-            x = cPos[0]
-            if size[0] % 2 == 0 {
-                x++
+            x = cPos[0] + radi
+
+            if x > max[0] {
+                x = max[0] - 1
             }
-            for x < cPos[0] + radi, x++ {
+
+            for x >= xMin, x-- {
                 if x >= this.width || x < 0 {
                     continue
                 }
@@ -878,9 +1083,11 @@ struct window {
 
                 if fradi - d < 1.0 {
                     rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
+                    this.setPixel([x,y], rColor)
+                } else {
+                    this.__unsafeFastSetPixel(y * this.width + cPos[0] + 1, x - cPos[0], color)
+                    break
                 }
-
-                this.setPixel([x,y], rColor)
             }
         }
 
@@ -888,6 +1095,25 @@ struct window {
         // this.drawCircle([pos[0] + size[0] - radi, pos[1] + radi - 1], radi, color)
         // this.drawCircle([pos[0] + radi - 1, pos[1] + size[1] - radi], radi, color)
         // this.drawCircle([pos[0] + size[0] - radi, pos[1] + size[1] - radi], radi, color)
+    }
+
+    drawLine(from [int, int], to [int, int], color rgbColor) {
+
+        m = <float>(to[1] - from[1]) / <float>(to[0] - from[0])
+
+        if to[0] - from[0] > to[1] - from[1] {
+            x=from[0]; for x <= to[0], x++ {
+                y = <int>(m * <float>(x - from[0]) + <float>from[1])
+                this.setPixel([x, y], color)
+            }
+        } else {
+            m = 1.0 / m
+            y=from[1]; for y <= to[1], y++ {
+                x = <int>(m * <float>(y - from[1]) + <float>from[0])
+                this.setPixel([x, y], color)
+            }
+        }
+
     }
 
     drawText(fnt font, text str, color rgbColor, pos [int, int]) [int,int] {
@@ -1393,6 +1619,7 @@ struct window {
         }
 
         this.isExposed = false
+        mouseMoveLast = [0, 0, false]
         for true, event = xcb_wait_for_event(this.connection) {
             if event == null {
                 if this.isExposed {
@@ -1401,6 +1628,7 @@ struct window {
                 }
                 continue
             }
+
 
 
             eventType = event.response_type & 0x7F
@@ -1455,11 +1683,29 @@ struct window {
                 c = xcb_get_input_focus(this.connection)
                 xcb_get_input_focus_reply(this.connection, c, null)
             } else if eventType == 6 {
+                if mouseMoveLast[2] {
+                    mvEvnt = <xcb_motion_notify_event_t*>event
+                    now = mvEvnt.time
+                    realNow = getTimeUnix() / 1000000
+                    mouseMoveDelta = now - mouseMoveLast[0]
+                    realDelta = realNow - mouseMoveLast[1]
+                    if realDelta - mouseMoveDelta > 10 {
+                        free(event)
+                        continue
+                    }
+
+                    mouseMoveLast[0] = now
+                    mouseMoveLast[1] = realNow
+
+                }
                 this.callEventFunction(windowEventMouseMove)
             } else if eventType == 4 {
+                mouseMoveLast[2] = true
+                mouseMoveLast[1] = getTimeUnix()
                 this.lastMouseCode = event.pad0
                 this.callEventFunction(windowEventMouseDown)
             } else if eventType == 5 {
+                mouseMoveLast[2] = false
                 this.lastMouseCode = event.pad0
                 this.callEventFunction(windowEventMouseUp)
             } else if eventType == 2 {
@@ -1627,7 +1873,6 @@ struct window {
             } else if eventType == 10 {
                 this.callEventFunction(windowEventFocusOut)
             }
-
             free(event)
         }
 

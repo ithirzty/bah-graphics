@@ -14,10 +14,6 @@ const uiEventElementFileDrag        = 1032
 const uiEventElementFileDrop        = 1033
 const uiEventElementFileDropOutside = 1034
 
-const uiNotDrawnEvents = []uint{
-    uiEventElementHovered
-}
-
 #import "./elements/base.bah"
 
 #define usleep(us uint)
@@ -51,7 +47,6 @@ struct uiBorderlessWindow extend window {
 
         i=1; for i <= __graphicsNbDrawers, i++ {
             async threadWrkrFn(this, i)
-
         }
 
         this.width = width
@@ -284,6 +279,7 @@ struct ui extend window {
     frameStart: uint
     isDrawing: bool
     lastFrameTime: uint
+    initialized: bool
 
     alreadyDrawn: bool
     needsRedraw: bool
@@ -312,7 +308,9 @@ struct ui extend window {
             if this.isDrawing == false {
                 this.frameStart = getTimeUnix()
             }
+            elem.redraw()
             this.redraw()
+            elem.redraw()
         }
     }
 
@@ -415,6 +413,8 @@ struct ui extend window {
     }
 }
 
+#define __uiForceDrawElement(ui ui*, elem uiElement*)
+
 __uiFindElement(ui ui*, id str) uiElement* {
     i=0; for i < len(ui.elements), i++ {
         f = ui.elements[i].find(id)
@@ -430,6 +430,7 @@ _uiDrawElementBackground(pos [int,int], size [int,int], currElem uiElement*) {
     ui = <ui*>currElem.window
 
     os = ui.scissor
+
 
     ui.setScissor(pos, size)
 
@@ -460,6 +461,12 @@ _uiDrawElementBackground(pos [int,int], size [int,int], currElem uiElement*) {
         __uiRedrawElement_inner(ui, currElem.parent, __uiElementDrawTypeBackground + i)
     } else {
         ui.clear(WHITE)
+        i=0; for i < len(ui.elements), i++ {
+            if ui.elements[i] == currElem {
+                break
+            }
+            __uiRedrawElement_inner(ui, ui.elements[i], __uiElementDrawTypeFull)
+        }
     }
 
     ui.scissor = os
@@ -481,13 +488,17 @@ __uiIsOutsideScissor(ui ui*, pos [int,int], size [int,int]) bool {
 }
 
 __uiRedrawElement_inner(ui ui*, elem uiElement*, drawType int) {
-    ui.needsRedraw = true
     currElem = elem
     for currElem != null, currElem = currElem.parent {
-
         if currElem.toRemove {
             return
         }
+    }
+
+    ui.needsRedraw = true
+
+    currElem = elem
+    for currElem != null, currElem = currElem.parent {
 
         if currElem.hashChanged() {
             if currElem.parent == null {
@@ -511,9 +522,13 @@ __uiRedrawElement_inner(ui ui*, elem uiElement*, drawType int) {
             }
 
             currBox = currElem
+            topParent = currElem
             //Checking recursively if there is an element on top. If it is the case,
             //redraw their common parent entirely.
             for currBox != null, currBox = currBox.parent {
+                if currBox.parent == null {
+                    topParent = currBox
+                }
                 if drawType == __uiElementDrawTypeFull && currBox.parent != null {
                     i=0; for i < len(currBox.parent.elements), i++ {
                         if currBox.parent.elements[i] == currBox {
@@ -616,6 +631,9 @@ __uiRedrawElement_inner(ui ui*, elem uiElement*, drawType int) {
             max = len(currElem.elements)
             if drawType >= __uiElementDrawTypeBackground {
                 max = drawType - __uiElementDrawTypeBackground
+                if max > len(currElem.elements) {
+                    break
+                }
                 i=0; for i < max, i++ {
                     el = currElem.elements[i]
                     __uiRedrawElement_inner(ui, el, __uiElementDrawTypeBackground + len(el.elements))
@@ -627,18 +645,44 @@ __uiRedrawElement_inner(ui ui*, elem uiElement*, drawType int) {
                 }
             }
             ui.scissor = os
+
+            //Check if any element is on top of it
+            //start from the element's top parent
+            i=0; for i < len(ui.elements), i++ {
+                if ui.elements[i] == topParent {
+                    i++
+                    break
+                }
+            }
+            //check if any element that comes after is on top of it
+            for i < len(ui.elements), i++ {
+                nextElem = ui.elements[i]
+                nextPos = nextElem.getPosition()
+                nextMax = nextElem.getSize()
+                nextMax[0] += nextPos[0]
+                nextMax[1] += nextPos[1]
+                if nextPos[0] < pos[0] + size[0] && nextPos[1] < pos[1] + size[1] && nextMax[0] > pos[0] && nextMax[1] > pos[1] {
+                    __uiForceDrawElement(ui, nextElem)
+                }
+            }
+
             break
         }
     }
 
     if currElem == null {
         ui.alreadyDrawn = false
+        ui.redraw()
     }
 
 }
 
 __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
     now = getTimeUnix()
+
+    if ui.initialized == false {
+        return
+    }
 
     if drawType == __uiElementDrawTypeFull {
         if now - elem.lastDraw < 16000000 {
@@ -680,13 +724,12 @@ __uiAnimationHandler(ui ui*) {
     for ui.isRunning {
         ui.animationsMutex.lock()
         // println("waiting: "+uintToStr(freq)+"ms")
-        if len(ui.animations) == 0 {
+        for len(ui.animations) == 0 {
             ui.animationsCond.wait(ui.animationsMutex)
-        } else {
-            ui.animationsMutex.unlock()
-            usleep(freq * 1000)
-            ui.animationsMutex.lock()
         }
+        ui.animationsMutex.unlock()
+        usleep(freq * 1000)
+        ui.animationsMutex.lock()
 
         if ui.needsRedraw {
             ui.animationsMutex.unlock()
@@ -768,7 +811,7 @@ __uiDispatchEvent(ui ui*, elem uiElement*, event uint32) {
     }
 
     // if elem.manualDrawingMode == false {
-    if event in uiNotDrawnEvents == false {
+    if event != uiEventElementHovered && (event != uiEventElementHoverIn && event != uiEventElementHoverOut || elem.focusable) {
         __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
     }
     // }
@@ -999,8 +1042,17 @@ __uiForceDrawElement(ui ui*, elem uiElement*) {
         }
         
         fn(elem, ui)
-        elem.hashChanged()
         ui.scissor = os
+        
+        if elem.hashChanged() {
+            currElem = elem.parent
+            for currElem != null, currElem = currElem.parent {
+                if __uiIsSizeDynamic(&currElem.size[0]) || __uiIsSizeDynamic(&currElem.size[1]) {
+                    __uiForceDrawElement(ui, currElem)
+                    return
+                }
+            }
+        }
     }
 
     i=0; for i < len(elem.elements), i++ {
@@ -1111,8 +1163,9 @@ __uiHandleEvents(ui ui*, event uint32) {
     }
 
     if event == windowEventInitialize || event == windowEventDraw {
-        if event == windowEventInitialize {
+        if event == windowEventInitialize && ui.initialized == false {
             ui.alreadyDrawn = false
+            ui.initialized = true
             async __uiAnimationHandler(ui)
         }
 
@@ -1130,22 +1183,17 @@ __uiHandleEvents(ui ui*, event uint32) {
         i=0; for i < len(ui.elements), i++ {
             if ui.elements[i].toRemove {
                 _uiElementRecusriveRemove(ui.elements[i], ui, true)
-                if ui.elements[i].hashChanged() == false && ui.elements[i].manualDrawingMode == false {
-                    pos = ui.elements[i].getPosition()
-                    size = ui.elements[i].getSize()
-                    _uiDrawElementBackground(pos, size, ui.elements[i])
-                } else {
-                    ui.alreadyDrawn = false
-                }
+                ui.alreadyDrawn = false
                 j=len(ui.animations) - 1; for j != -1, j-- {
                     anim = &ui.animations[j]
                     if anim.elem == ui.elements[i] {
                         delete(ui.animations, j)
                     }
                 }
+                if ui.focusedElement == ui.elements[i] {
+                    ui.focusedElement = null
+                }
                 delete(ui.elements, i)
-                //remove its animations
-                //instead of full redraw, paint its bg mask
                 i--
             } else {
                 _uiElementRecusriveRemove(ui.elements[i], ui, false)
@@ -1407,18 +1455,20 @@ __uiHandleEvents(ui ui*, event uint32) {
         ui.draggingStage = 1
         pos = ui.getCursorPosition()
         clickedBtn = ui.getEventButton()
+        found = false
         if clickedBtn <= MOUSE_RIGHT_BUTTON {
-            i=0; for i < len(ui.elements), i++ {
+            i=len(ui.elements)-1; for i != -1, i-- {
                 elem = _uiElementRecusriveCollide(ui.elements[i], pos)
                 if elem != null {
                     __uiDispatchEvent(ui, elem, uiEventElementMouseDown)
                     __uiSetElementOnFocus(ui, elem)
+                    found = true
                     break
                 }
             }
         }
         if clickedBtn == MOUSE_SCROLL_DOWN {
-            i=0; for i < len(ui.elements), i++ {
+            i=len(ui.elements)-1; for i != -1, i-- {
                 elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemScrollableV)
                 if elem != null {
                     elem.offsets[1] += 10
@@ -1428,11 +1478,12 @@ __uiHandleEvents(ui ui*, event uint32) {
                         elem.offsets[1] = innerSize[1] - size[1]
                     }
                     __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
+                    found = true
                     break
                 }
             }
         } else if clickedBtn == MOUSE_SCROLL_UP {
-            i=0; for i < len(ui.elements), i++ {
+            i=len(ui.elements)-1; for i != -1, i-- {
                 elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemScrollableV)
                 if elem != null {
                     elem.offsets[1] -= 10
@@ -1440,11 +1491,12 @@ __uiHandleEvents(ui ui*, event uint32) {
                         elem.offsets[1] = 0
                     }
                     __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
+                    found = true
                     break
                 }
             }
         } else if clickedBtn == MOUSE_SCROLL_RIGHT {
-            i=0; for i < len(ui.elements), i++ {
+            i=len(ui.elements)-1; for i != -1, i-- {
                 elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemScrollableH)
                 if elem != null {
                     elem.offsets[0] += 10
@@ -1454,11 +1506,12 @@ __uiHandleEvents(ui ui*, event uint32) {
                         elem.offsets[0] = innerSize[0] - size[0]
                     }
                     __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
+                    found = true
                     break
                 }
             }
         } else if clickedBtn == MOUSE_SCROLL_LEFT {
-            i=0; for i < len(ui.elements), i++ {
+            i=len(ui.elements)-1; for i != -1, i-- {
                 elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemScrollableH)
                 if elem != null {
                     elem.offsets[0] -= 10
@@ -1466,6 +1519,18 @@ __uiHandleEvents(ui ui*, event uint32) {
                         elem.offsets[0] = 0
                     }
                     __uiRedrawElement(ui, elem, __uiElementDrawTypeFull)
+                    found = true
+                    break
+                }
+            }
+        }
+
+        if found == false {
+            i=len(ui.elements)-1; for i != -1, i-- {
+                elem = _uiElementRecusriveCollide(ui.elements[i], pos)
+                if elem != null {
+                    __uiDispatchEvent(ui, elem, uiEventElementMouseDown)
+                    found = true
                     break
                 }
             }
@@ -1500,14 +1565,16 @@ __uiHandleEvents(ui ui*, event uint32) {
         clickedBtn = ui.getEventButton()
         if clickedBtn == MOUSE_LEFT_BUTTON {
             if ui.focusedElement != null {
-                i=0; for i < len(ui.elements), i++ {
+                i=len(ui.elements)-1; for i != -1, i-- {
                     elem = _uiElementRecusriveCollide(ui.elements[i], pos)
                     if elem != null {
                         if elem != ui.focusedElement {
-                            ui.focusedElement.clicked = false
-                            ui.focusedElement.focused = false
-                            __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
-                            ui.focusedElement = null
+                            if ui.focusedElement != null {
+                                ui.focusedElement.clicked = false
+                                ui.focusedElement.focused = false
+                                __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
+                                ui.focusedElement = null
+                            }
                         } else {
                             elem.clicked = false
                             __uiDispatchEvent(ui, elem, uiEventElementClicked)
@@ -1515,7 +1582,7 @@ __uiHandleEvents(ui ui*, event uint32) {
                         }
                     }
                 }
-                if i == len(ui.elements) && ui.focusedElement != null {
+                if i == -1 && ui.focusedElement != null {
                     ui.focusedElement.clicked = false
                     ui.focusedElement.focused = false
                     __uiDispatchEvent(ui, ui.focusedElement, uiEventElementFocusOut)
@@ -1525,7 +1592,7 @@ __uiHandleEvents(ui ui*, event uint32) {
         }
     } else if event == windowEventDrag {
         elem uiElement*
-        i=0; for i < len(ui.elements), i++ {
+        i=len(ui.elements)-1; for i != -1, i-- {
             pos = ui.getCursorPosition()
             elem = _uiElementRecusriveCollideFiltered(ui.elements[i], pos, __ui_filterIsElemDragTarget)
             if elem != null {

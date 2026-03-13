@@ -1,0 +1,150 @@
+#import "../ui.bah"
+
+ui ui
+
+main(args []str) int {
+
+    ui = ui{}
+
+    ui.addElement(new uiTabs {
+        size: [percents(100), percents(100)]
+
+        tabs: []uiTab {
+
+            uiTab {
+                name: "Basic elements"
+                element: new uiVerticalArray {
+                    size: [percents(100), percents(100)]
+                    padding: [10, 5, 10, 10]
+                    spacing: 10
+                    dynamicSize: false
+
+                    elements: {
+                        new uiText {
+                            text: "I'm a text element."
+                            focusable: false
+                        },
+                        new uiText {
+                            text: "I'm another text element but you can interact with me!"
+                        },
+                        new uiText {
+                            text: "I'm a BOLD text element."
+                            bold: true
+                        },
+                        new uiBox {
+                            size: [percents(100), pixels(50)]
+                            bgColor: BLACK
+                            padding: [5,5,5,5]
+                            elements: {
+                                new uiText {
+                                    text: "I'm some very long text.\nI'm placed inside a uiBox element.\n\nThis enables me to be any size. When my size becomes large enough to overflow my parent uiBox,\nit will become scrollable!"
+                                    color: WHITE
+                                }
+                            }
+                        },
+                        new uiTabs {
+                            id: "tabsExample"
+                            size: [percents(100), pixels(80)]
+                            tabs: {
+                                uiTab {
+                                    name: "Tab 1"
+                                    element: new uiText {
+                                        text: "And some more tabs...\nGo to tab 2!"
+                                    }
+                                },
+                                uiTab {
+                                    name: "Tab 2"
+                                    element: new uiVerticalArray {
+                                        size: [percents(100), nullPos]
+                                        elements: {
+                                            new uiText {
+                                                text: "You can also:"
+                                            },
+                                            new uiButton {
+                                                text: "disable my borders"
+                                                onclick: (btn uiButton*) {
+                                                    tabs = <uiTabs*>ui.find("tabsExample")
+                                                    if tabs.border == 0 {
+                                                        tabs.border = 1
+                                                        tabs.radius = 6
+                                                        btn.text = "disable my borders"
+                                                    } else {
+                                                        tabs.border = 0
+                                                        tabs.radius = 0
+                                                        btn.text = "restore my borders"
+                                                    }
+                                                    tabs.redraw()
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                }
+            },
+
+            uiTab {
+                name: "Inputs"
+                element: new uiVerticalArray {
+                    size: [percents(100), percents(100)]
+                    padding: [10, 5, 10, 10]
+                    spacing: 10
+
+                    elements: {
+                        new uiText {
+                            text: "Here are some inputs:"
+                            focusable: false
+                        },
+                        new uiTextInput {
+                            text: "Type any text here."
+                        },
+                        new uiTextInput {
+                            text: "And numbers?"
+                            validate: (inp uiTextInput*, val []byte) {
+                                n = strToInt(arrToStr(val))
+                                inp.value = strToArr(intToStr(n))
+                                inp.redraw()
+                            }
+                        },
+                        new uiSelectInput {
+                            text: "I'm a selection input."
+                            values: {"Please select", "one of my", "values"}
+                        }
+                    }
+
+                }
+            },
+
+            uiTab {
+                name: "Buttons"
+                element: new uiVerticalArray {
+                    size: [percents(100), nullPos]
+                    padding: [10, 5, 10, 10]
+                    
+                    elements: {
+                        new uiText {
+                            text: "For now, there is only a single type of button."
+                            focusable: false
+                        },
+                        new uiButton {
+                            text: "You can click on me."
+
+                            onclick: (btn uiButton*) {
+                                println("test!")
+                            }
+                        }
+                    }
+                }
+            }
+
+        }
+
+    })
+
+    ui.launch(400, 300, "Elements showdown")
+
+    return 0
+}

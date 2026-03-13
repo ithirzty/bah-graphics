@@ -2,16 +2,31 @@
 
 #import "./base.bah"
 
-INPUT_BACKGROUND_COLOR = rgbColor{220, 220, 220}
-INPUT_FOCUSED_BACKGROUND_COLOR = rgbColor{220, 220, 220}
-INPUT_HOVERED_BACKGROUND_COLOR = rgbColor{191, 191, 255}
-INPUT_PLACEHOLDER_TEXT_COLOR = rgbColor{60,60,60}
-INPUT_TEXT_COLOR = rgbColor{0,0,0}
-INPUT_TEXT_SELECTION_COLOR = rgbColor{120, 120, 255}
+const __graphics_select_triangle_asset = []uint32{
+    0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000,
+    0x00000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0x00000000,
+    0x00000000, 0x00000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x00000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0x00000000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xAF000000, 0xAF000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000
+}
+
+const __graphics_select_triangle_close_asset = []uint32{
+    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xAF000000, 0xAF000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x00000000, 0x00000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0x00000000, 0x00000000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0x00000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0x00000000, 0x00000000, 0x00000000,
+    0x00000000, 0x00000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0x00000000, 0x00000000,
+    0x00000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0x00000000,
+    0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000, 0xAF000000
+}
+
 
 struct uiTextInput extend uiElement {
     text: str = "Text input"
     onsubmit: function(uiTextInput*)
+    validate: function(uiTextInput*, []byte)
     lastAction: uint
     value: []byte
     carret: uint
@@ -19,7 +34,27 @@ struct uiTextInput extend uiElement {
     selection: [int, int]
     selectionType: byte
     showTime: uint
-    bgColor: rgbColor
+    invalid: bool
+    isDragging: bool
+    border: int = 1
+    radius: int = 6
+    _bgColor: rgbColor
+    _fgColor: rgbColor
+    //colors
+    bgColor: rgbColor = ELEMENT_BACKGROUND_COLOR
+    fgColor: rgbColor = ELEMENT_TEXT_COLOR
+    borderColor: rgbColor = ELEMENT_BORDER_COLOR
+    //colors hovered
+    hoveredBgColor: rgbColor = ELEMENT_HOVERED_BACKGROUND_COLOR
+    hoveredFgColor: rgbColor = ELEMENT_TEXT_COLOR
+    hoveredBorderColor: rgbColor = ELEMENT_HOVERED_BORDER_COLOR
+    //colors clicked
+    focusedBgColor: rgbColor = ELEMENT_FOCUSED_BACKGROUND_COLOR
+    focusedFgColor: rgbColor = ELEMENT_TEXT_COLOR
+    //other colors
+    invalidBgColor: rgbColor = ELEMENT_INVALID_BACKGROUND_COLOR
+    invalidFgColor: rgbColor = ELEMENT_TEXT_COLOR
+    placeholderColor: rgbColor = ELEMENT_PLACEHOLDER_TEXT_COLOR
 
     _deleteSelection() {
         from = this.selection[0]
@@ -183,9 +218,11 @@ struct uiTextInput extend uiElement {
                         }
                     }
                 } else if c == Char_enter {
-                    sumbitFn = this.onsubmit
-                    if sumbitFn != null {
-                        sumbitFn(this)
+                    if this.validate != null {
+                        this.validate(this.value)
+                    }
+                    if this.onsubmit != null {
+                        this.onsubmit()
                     }
                     
                 } else if this.window.isKeyModifier(Key_CTRL) == false {
@@ -213,10 +250,16 @@ struct uiTextInput extend uiElement {
                 }
             }
 
-        } else if evnt == uiEventElementClicked {
+        } else if evnt == uiEventElementMouseDown {
+            if this.window.isKeyModifier(Key_SHIFT) == false {
+                this._handleCursorMovement()
+                this.selectionType = 0
+            }
+            this.isDragging = true
+        } else if evnt == uiEventElementClicked || (evnt == uiEventElementHovered && this.isDragging) {
             this.lastAction = getTimeUnix() / 1000000 //to keep the carret visible
 
-            if this.window.isKeyModifier(Key_SHIFT) {
+            if this.window.isKeyModifier(Key_SHIFT) || this.isDragging {
                 oCarret = this.carret
                 this._handleCursorMovement()
                 if this.selectionType == 0 {
@@ -253,6 +296,14 @@ struct uiTextInput extend uiElement {
                 this.selectionType = 0
                 this._handleCursorMovement()
             }
+
+            if evnt == uiEventElementClicked {
+                this.isDragging = false
+            }
+        } else if evnt == uiEventElementFocusOut {
+            if this.validate != null {
+                this.validate(this.value)
+            }
         }
     }
 
@@ -264,31 +315,58 @@ struct uiTextInput extend uiElement {
         pos = this.getPosition()
         size = this.getSize()
 
-        bgColor = this.bgColor
+        bgColor = this._bgColor
+        fgColor = this._fgColor
 
         if this.focused {
-            this.bgColor = INPUT_FOCUSED_BACKGROUND_COLOR
-            bgColor = this.bgColor
+            this._bgColor = this.focusedBgColor
+            this._fgColor = this.focusedFgColor
+            bgColor = this._bgColor
+            fgColor = this._fgColor
         } else {
             if now - this.showTime < 120000000 {
                 amm = ((now - this.showTime) * 255) / 120000000
                 if this.hovered {
-                    bgColor = this.bgColor.interpolate(INPUT_HOVERED_BACKGROUND_COLOR, amm)
+                    bgColor = this._bgColor.interpolate(this.hoveredBgColor, amm)
+                    fgColor = this._fgColor.interpolate(this.hoveredFgColor, amm)
                 } else {
-                    bgColor = this.bgColor.interpolate(INPUT_BACKGROUND_COLOR, amm)
+                    bgColor = this._bgColor.interpolate(this.bgColor, amm)
+                    fgColor = this._fgColor.interpolate(this.fgColor, amm)
                 }
                 this.redrawIn(40)
             } else {
                 if this.hovered {
-                    this.bgColor = INPUT_HOVERED_BACKGROUND_COLOR
+                    this._bgColor = this.hoveredBgColor
+                    this._fgColor = this.hoveredFgColor
+                } else if this.invalid {
+                    this._bgColor = this.invalidBgColor
+                    this._fgColor = this.invalidFgColor
                 } else {
-                    this.bgColor = INPUT_BACKGROUND_COLOR
+                    this._bgColor = this.bgColor
+                    this._fgColor = this.fgColor
                 }
-                bgColor = this.bgColor
+                bgColor = this._bgColor
+                fgColor = this._fgColor
             }
         }
 
-        w.drawRoundedRect(pos, size, 8, bgColor)
+        bdColor = this.borderColor
+        if this.hovered || this.focused {
+            bdColor = this.hoveredBorderColor
+        }
+
+        w.drawLine([pos[0] + this.radius, pos[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]], bdColor)
+        w.drawLine([pos[0], pos[1] + this.radius], [pos[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
+        w.drawLine([pos[0] + this.radius, pos[1]  - 1 + size[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]  - 1 + size[1]], bdColor)
+        w.drawLine([pos[0]  - 1 + size[0], pos[1] + this.radius], [pos[0]  - 1 + size[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
+        if this.radius != 0 {
+            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
+            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
+            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
+            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
+        }
+
+        w.drawRoundedRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], this.radius, bgColor)
 
         fullTextLength = w.measureByteArr(w.font, this.value, 0, len(this.value))[0]
         carretTextLength = w.measureByteArr(w.font, this.value, 0, this.carret)[0]
@@ -341,13 +419,13 @@ struct uiTextInput extend uiElement {
             textSizesSelectionFrom = w.measureByteArr(w.font, this.value, textMin, self)[0]
             textSizesSelectionTo = w.measureByteArr(w.font, this.value, self, selt)[0]
 
-            w.drawRect([pos[0] + this.padding[0] + textSizesSelectionFrom, pos[1] + size[1] / 2 - this.fontSize], [textSizesSelectionTo, this.fontSize * 2], INPUT_TEXT_SELECTION_COLOR)
+            w.drawRect([pos[0] + this.padding[0] + textSizesSelectionFrom, pos[1] + size[1] / 2 - this.fontSize], [textSizesSelectionTo, this.fontSize * 2], ELEMENT_TEXT_SELECTION_COLOR)
         }
 
         if len(this.value) == 0 {
-            w.drawText(w.font, this.text, INPUT_PLACEHOLDER_TEXT_COLOR, [pos[0] + this.padding[0], pos[1] + size[1] / 2 + this.fontSize / 2 + 2])
+            w.drawText(w.font, this.text, this.placeholderColor, [pos[0] + this.padding[0], pos[1] + size[1] / 2 + this.fontSize / 2 + 2])
         } else {
-            w.drawByteArr(w.font, this.value, textMin, textMax, INPUT_TEXT_COLOR, [pos[0] + this.padding[0], pos[1] + size[1] / 2 + this.fontSize / 2 + 2])
+            w.drawByteArr(w.font, this.value, textMin, textMax, fgColor, [pos[0] + this.padding[0], pos[1] + size[1] / 2 + this.fontSize / 2 + 2])
         }
 
         if this.focused {
@@ -382,7 +460,6 @@ struct uiTextInput extend uiElement {
             this.size[1] = pixels(this.fontSize + this.padding[1] * 2)
         }
 
-        this.bgColor = INPUT_BACKGROUND_COLOR
         this.cursor = "xterm"
 
         this.contextItems[len(this.contextItems)] = uiContextItem {
@@ -465,5 +542,261 @@ struct uiTextInput extend uiElement {
         }
 
         
+    }
+}
+
+struct uiSelectInput extend uiElement {
+    text: str = "Select input"
+    onsubmit: function(uiSelectInput*)
+    lastAction: uint
+    values: []str
+    index: int = -1
+    showTime: uint
+    ctxWindow: contextMenuWindow*
+    invalid: bool
+    border: int = 1
+    radius: int = 6
+    _bgColor: rgbColor
+    _fgColor: rgbColor
+    //colors
+    bgColor: rgbColor = ELEMENT_BACKGROUND_COLOR
+    fgColor: rgbColor = ELEMENT_TEXT_COLOR
+    borderColor: rgbColor = ELEMENT_BORDER_COLOR
+    //colors hovered
+    hoveredBgColor: rgbColor = ELEMENT_HOVERED_BACKGROUND_COLOR
+    hoveredFgColor: rgbColor = ELEMENT_TEXT_COLOR
+    hoveredBorderColor: rgbColor = ELEMENT_HOVERED_BORDER_COLOR
+    //colors clicked
+    focusedBgColor: rgbColor = ELEMENT_FOCUSED_BACKGROUND_COLOR
+    focusedFgColor: rgbColor = ELEMENT_TEXT_COLOR
+    //other colors
+    invalidBgColor: rgbColor = ELEMENT_INVALID_BACKGROUND_COLOR
+    invalidFgColor: rgbColor = ELEMENT_TEXT_COLOR
+    placeholderColor: rgbColor = ELEMENT_PLACEHOLDER_TEXT_COLOR
+
+    setValue(index uint) {
+        this.index = index
+        if this.onsubmit != null {
+            this.onsubmit()
+        }
+        this.redraw()
+    }
+
+    updateValues(values []str) {
+        this.values = values
+        this.index = -1
+        i=0; for i < len(this.values), i++ {
+            this.ctxWindow.list[i] = uiContextItem {
+                name: this.values[i]
+            }
+        }
+        this.redraw()
+    }
+
+    events(evnt uint32) {
+        ui = <ui*>this.window
+        if evnt == uiEventElementHoverIn || evnt == uiEventElementHoverOut {
+            this.showTime = getTimeUnix()
+        }
+
+        if evnt == uiEventElementClicked {
+            pos = this.getPosition()
+            pos = ui.toScreenCoord(pos)
+            size = this.getSize()
+            this.ctxWindow.parent = ui
+            
+            if len(this.values) != 0 {
+                if this.ctxWindow.isRunning == false {
+                    this.ctxWindow.choice = this.index
+                    async this.ctxWindow.launch(pos[0], pos[1] + size[1], size[0], len(this.ctxWindow.list) * 31 + 1)
+                } else {
+                    this.ctxWindow.close()
+                }
+            }
+        } else if evnt == uiEventElementFocusOut {
+            if this.ctxWindow.isRunning {
+                this.ctxWindow.close()
+            }
+        } else if evnt == windowEventKeyDown {
+            key = ui.getEventChar()
+
+            if key == Char_arr_down {
+                if this.index+1 < len(this.values) {
+                    this.index++
+                }
+            } else if key == Char_arr_up {
+                if this.index > 0 {
+                    this.index--
+                }
+            }
+        }
+    }
+
+    draw(w ui*) {
+        w.font.setSize(this.fontSize)
+
+        now = getTimeUnix()
+
+        pos = this.getPosition()
+        size = this.getSize()
+
+        bgColor = this._bgColor
+        fgColor = this._fgColor
+
+        if this.focused {
+            this._bgColor = this.focusedBgColor
+            this._fgColor = this.focusedFgColor
+            bgColor = this._bgColor
+            fgColor = this._fgColor
+        } else {
+            if now - this.showTime < 120000000 {
+                amm = ((now - this.showTime) * 255) / 120000000
+                if this.hovered {
+                    bgColor = this._bgColor.interpolate(this.hoveredBgColor, amm)
+                    fgColor = this._fgColor.interpolate(this.hoveredFgColor, amm)
+                } else {
+                    bgColor = this._bgColor.interpolate(this.bgColor, amm)
+                    fgColor = this._fgColor.interpolate(this.fgColor, amm)
+                }
+                this.redrawIn(40)
+            } else {
+                if this.hovered {
+                    this._bgColor = this.hoveredBgColor
+                    this._fgColor = this.hoveredFgColor
+                } else if this.invalid {
+                    this._bgColor = this.invalidBgColor
+                    this._fgColor = this.invalidFgColor
+                } else {
+                    this._bgColor = this.bgColor
+                    this._fgColor = this.fgColor
+                }
+                bgColor = this._bgColor
+                fgColor = this._fgColor
+            }
+        }
+
+        bdColor = this.borderColor
+        if this.hovered || this.focused {
+            bdColor = this.hoveredBorderColor
+        }
+
+        w.drawLine([pos[0] + this.radius, pos[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]], bdColor)
+        w.drawLine([pos[0], pos[1] + this.radius], [pos[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
+        w.drawLine([pos[0] + this.radius, pos[1]  - 1 + size[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]  - 1 + size[1]], bdColor)
+        w.drawLine([pos[0]  - 1 + size[0], pos[1] + this.radius], [pos[0]  - 1 + size[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
+        if this.radius != 0 {
+            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
+            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
+            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
+            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
+        }
+
+        w.drawRoundedRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], this.radius, bgColor)
+
+        if len(this.values) != 0 {
+            if this.ctxWindow.isRunning == false {
+                w.drawRectImage([pos[0] + size[0] - 22, pos[1] + 14], [14, 7], __graphics_select_triangle_asset)
+            } else {
+                w.drawRectImage([pos[0] + size[0] - 22, pos[1] + 14], [14, 7], __graphics_select_triangle_close_asset)
+            }
+        }
+
+        if this.index == -1 {
+            w.drawText(w.font, this.text, this.placeholderColor, [pos[0] + this.padding[0], pos[1] + size[1] / 2 + this.fontSize / 2 + 2])
+        } else {
+            w.drawText(w.font, this.values[this.index], fgColor, [pos[0] + this.padding[0], pos[1] + size[1] / 2 + this.fontSize / 2 + 2])
+        }
+    }
+
+    _init() {
+        this._events = this.events
+        this._draw = this.draw
+
+        if this.fontSize == 0 {
+            this.fontSize = 8
+        }
+
+        if this.padding[0] == 0 {
+            this.padding = [8, 12, 8, 12]
+        }
+
+        if isPosNull(this.size[0]) {
+            this.size[0] = pixels(300)
+        }
+
+        if isPosNull(this.size[1]) {
+            this.size[1] = pixels(this.fontSize + this.padding[1] * 2)
+        }
+
+        this.cursor = "hand1"
+
+        this.ctxWindow = new contextMenuWindow {
+            font: getSystemUIfont()
+            elem: this
+            events: function(win contextMenuWindow*, event uint32) {
+                if event == windowEventMouseMove {
+                    win.redraw()
+                } else if event == windowEventDraw || event == windowEventInitialize {
+                    win.clear(BLACK)
+                    win.setCursor("hand1")
+                    win.font.setSize(8)
+
+                    cursorPos = win.getCursorPosition()
+
+                    i=0; for i < len(win.list), i++ {
+                        pos = [1, i * 31 + 1]
+
+                        bgColor = WHITE
+                        fgColor = BLACK
+
+                        if win.choice == i {
+                            fgColor = WHITE
+                            bgColor = rgbColor{120, 120, 255}
+                        } else if cursorPos[1] >= pos[1] && cursorPos[1] < pos[1] + 30 {
+                            bgColor = rgbColor{191, 191, 255}
+                        }
+                        win.drawRect(pos, [win.width - 2, 30], bgColor)
+
+                        win.drawText(win.font, win.list[i].name, fgColor, [pos[0] + 4, pos[1] + 20])
+                    }
+                } else if event == windowEventMouseDown {
+                    cursorPos = win.getCursorPosition()
+                    i=0; for i < len(win.list), i++ {
+                        pos = [0, i * 31 + 1]
+
+                        if cursorPos[1] >= pos[1] && cursorPos[1] < pos[1] + 30 {
+                            win.choice = i
+                            break
+                        }
+                    }
+                    win.redraw()
+                } else if event == windowEventMouseUp {
+                    cursorPos = win.getCursorPosition()
+                    i=0; for i < len(win.list), i++ {
+                        pos = [0, i * 31 + 1]
+
+                        if cursorPos[1] >= pos[1] && cursorPos[1] < pos[1] + 30 {
+                            break
+                        }
+                    }
+                    if i == win.choice {
+                        win.close()
+                        elem = (<uiSelectInput*>win.elem)
+                        win.isRunning = false
+                        elem.setValue(i)
+                        win.isRunning = true
+                    } else {
+                        win.choice = -1
+                        win.redraw()
+                    }
+                }
+            }
+        }
+
+        i=0; for i < len(this.values), i++ {
+            this.ctxWindow.list[i] = uiContextItem {
+                name: this.values[i]
+            }
+        }
     }
 }

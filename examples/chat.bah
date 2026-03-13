@@ -8,6 +8,7 @@
 
 #import "../ui.bah"
 
+ui ui
 
 msgContainer uiElement* //The element containg the messages.
 
@@ -26,9 +27,8 @@ generateMessage(s str, author str) uiBox* {
         pos: [
             xPos, pixels(0)
         ]
-        backdrop: function(bx uiBox*, w ui*) {
-            innerSize = bx.getInnerSize()
-            bx.size = [pixels(innerSize[0]), pixels(innerSize[1])]
+        size: [uiInnerSize.max(percents(100)), uiInnerSize]
+        backdrop: (bx uiBox*, w ui*) {
             //Changes the background color depending on the author.
             color = rgbColor{0, 200, 80}
             if ((<uiText*>bx.elements[0].elements[1]).text) != "You" {
@@ -37,10 +37,10 @@ generateMessage(s str, author str) uiBox* {
             w.drawRoundedRect(bx.getPosition(), bx.getSize(), 8, color)
         }
 
-        elements: []uiElement* {
+        elements: {
             new uiVerticalArray { //There are two text element one on top of the other
                 spacing: 10
-                elements: []uiElement* {
+                elements: {
                     new uiText { //The message body
                         text: s
                     },
@@ -66,18 +66,13 @@ main(args []str) int {
     //The messages container
     ui.addElement(
         new uiBox { //Using a box as it is scrollable.
+            bgColor: rgbColor{200, 200, 230}
             size: [
                 percents(100),
                 percents(100) - pixels(50)
             ]
-            backdrop: function(bx uiBox*, ui ui*) {
-                //Make sure its makes the full width of the window but 50 pixels short in height for the input below.
-                pos = bx.getPosition()
 
-                ui.drawRect(pos, bx.getSize(), rgbColor{220, 220, 220})
-            }
-
-            elements: []uiElement* {
+            elements: {
                 new uiVerticalArray { //the vertical array container
                     id: "msgContainer" //sets an id to find it easily -> msgContainer = ui.find("msgContainer")
                     dynamicSize: false //As we set its width (line 73) we do not want it to grow on that axis
@@ -87,7 +82,7 @@ main(args []str) int {
                         percents(100),
                         nullPos
                     ]
-                    elements: []uiElement* {
+                    elements: {
                         generateMessage("Hi, how are you?", "Alois") // Generate a first message
                     }
                 }
@@ -100,6 +95,7 @@ main(args []str) int {
     //The text input box.
     ui.addElement(
         new uiBox {
+            bgColor: WHITE
             pos: [
                 pixels(0), percents(100).basis(uiBasisEnd) //bottom of the screen
             ]
@@ -108,7 +104,7 @@ main(args []str) int {
                 pixels(50)
             ]
 
-            elements: []uiElement* {
+            elements: {
                 new uiTextInput {
                     pos: [
                         pixels(10),
@@ -119,8 +115,8 @@ main(args []str) int {
                         nullPos
                     ]
                     text: "Text message"
-                    onsubmit: function(inp uiTextInput*) {
-                        btn = (<uiButton*>inp.parent.elements[1])
+                    onsubmit: (inp uiTextInput*) {
+                        btn = <uiButton*>ui.find("sendBtn")
                         btn.onclick() //call the btn.onclick callback instead of duplicating code
                     }
                 },
@@ -133,8 +129,7 @@ main(args []str) int {
 
                     text: "Send"
 
-                    onclick: function(btn uiButton*) { //when clicked
-                        ui = <ui*>btn.window
+                    onclick: (btn uiButton*) { //when clicked
                         inp = <uiTextInput*>btn.parent.elements[0]
 
                         if len(inp.value) == 0 {
