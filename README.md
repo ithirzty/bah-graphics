@@ -184,8 +184,8 @@ MOUSE_SCROLL_RIGHT).
 - `.drawRect(pos [int, int], size [uint, uint], color rgbColor)` draws a rectangle.
 - `.drawRectImage(pos [int, int], size [uint, uint], buff []rgbColor)` draws a rectangle with a given image buffer instad of a single color.
 - `.drawCircle(pos [int, int], radi int, color rgbColor)` draws a circle.
-- `strokeCircle(pos [int, int], radi int, width int, color rgbColor)` draws the outline of a circle.
-- `drawLine(from [int, int], to [int, int], color rgbColor)` draws a line from point 'from' to point 'to'.
+- `.strokeCircle(pos [int, int], radi int, width int, color rgbColor)` draws the outline of a circle.
+- `.drawLine(from [int, int], to [int, int], color rgbColor)` draws a line from point 'from' to point 'to'.
 - `.drawRoundedRect(pos [int, int], size [uint, uint], radi uint, color rgbColor)` draws a rectangle with a given border radius.
 - `.drawText(fnt font, text str, color rgbColor, pos [int, int]) [int,int]` draws unicode text using the specified [font] returns the location of a next caracter (as measureText()).
 - `.drawChar(fnt font, c uint32, color rgbColor, pos [int,int]) [int,int]` draws a single character.
@@ -298,8 +298,8 @@ In addition to that, you can specify the calculation basis:
 - `.basis(uiBasisEnd)` will compute the position from the end of the element.
 
 You can also define a minimum and a maximum value using:
-- `min(x uiPos) uiPos`,
-- `max(x uiPos) uiPos`.
+- `.min(x uiPos) uiPos`,
+- `.max(x uiPos) uiPos`.
 
 At last, you can specify more complex computation using arithmetic operators:
 `pos1 + pos2`, `pos1 - pos2`, `pos1 * pos2`, `pos1 / pos2`.
@@ -488,9 +488,9 @@ The tab element is a list of tabs, switching the element's body to a different e
 Fields:
 - `.tabs: []uiTab` the list of tab to generate. Should not be changed after element declaration.
 - `.border: int = 1` the element's border size.
-- `radius: int = 4` the element corner radius.
-- `bgColor: rgbColor = BACKGROUND_COLOR` the element's background color.
-- `borderColor: rgbColor = ELEMENT_BORDER_COLOR` this element's background color.
+- `.radius: int = 4` the element corner radius.
+- `.bgColor: rgbColor = BACKGROUND_COLOR` the element's background color.
+- `.borderColor: rgbColor = ELEMENT_BORDER_COLOR` this element's background color.
 
 Methods:
 - `.setTab(i int)` sets the current visible tab.
