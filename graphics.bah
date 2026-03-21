@@ -33,10 +33,11 @@ const __graphicsDrawRequestTypeCircle = 1
 const __graphicsDrawRequestTypeRectImg = 2
 const __graphicsDrawRequestTypeClear = 3
 
-const __graphicsNbDrawers = 2 // Max: 8
+const __graphicsNbDrawers = 3 // Max: 8
 
 #define floor(x float) float
 #define type256bytes [uint,uint,uint,uint]
+#define type512bytes [uint,uint,uint,uint,uint,uint,uint,uint]
 
 struct __graphicsDrawRequest {
     from: [int,int]
@@ -361,12 +362,18 @@ struct window {
 
         v = <uint32>((<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16))
 
-        if l - offset > 7 {
-            dp = [v,v,v,v,v,v,v,v]
+        if l - offset > 15 {
+            v2 = <uint>v | (<uint>v << 32)
+            dp = [v2,v2,v2,v2,v2,v2,v2,v2]
 
-            lm = l - 7
-            for offset < lm, offset += 8 {
-                *(<type256bytes*>(<uint>this.frameBuffer + offset * 4)) = dp
+            lm = l - 15
+            for offset < lm, offset += 16 {
+                *(<type512bytes*>(<uint>this.frameBuffer + offset * 4)) = dp
+            }
+
+            if l - offset > 7 {
+                *(<type256bytes*>(<uint>this.frameBuffer + offset * 4)) = *(<type256bytes*>&dp)
+                offset += 8
             }
         }
 
@@ -842,11 +849,9 @@ struct window {
             radi = size[1] / 2
         }
 
-        this.drawRect([pos[0] + radi, pos[1] + radi], [size[0] - radi * 2, size[1] - radi * 2 + 1], color)
+        this.drawRect([pos[0], pos[1] + radi], [size[0], size[1] - radi * 2 + 1], color)
         this.drawRect([pos[0] + radi, pos[1]], [size[0] - radi * 2 + 1, radi], color)
-        this.drawRect([pos[0], pos[1] + radi], [radi, size[1] - radi * 2 + 1], color)
         this.drawRect([pos[0] + radi, pos[1] + size[1] - radi + 1], [size[0] - radi * 2 + 1, radi - 1], color)
-        this.drawRect([pos[0] + size[0] - radi, pos[1] + radi], [radi, size[1] - radi * 2 + 1], color)
 
 
         // center = [pos[0] + size[0] / 2, pos[1] + size[1] / 2]
