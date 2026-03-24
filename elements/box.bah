@@ -198,20 +198,32 @@ struct uiBoxScrollbar extend uiElement {
 struct uiBox extend uiElement {
     scrollable: bool = true
     scrollBars: [uiElement*,uiElement*]
+    radius: int = 0
+    border: int = 0
+
+    //colors
     bgColor: rgbColor = rgbColor{0, 0, 0, 0}
+    borderColor: rgbColor = ELEMENT_BORDER_COLOR
 
     backdrop: function(uiBox*, ui*)
-
-    events(evnt uint32) {
-
-    }
 
     draw(w ui*) {
         pos = this.getPosition()
         size = this.getSize()
+
+        if this.border != 0 {
+            w.drawLine([pos[0] + this.radius, pos[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]], this.borderColor)
+            w.drawLine([pos[0], pos[1] + this.radius], [pos[0], pos[1]  - 1 + size[1] - this.radius], this.borderColor)
+            w.drawLine([pos[0] + this.radius, pos[1]  - 1 + size[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]  - 1 + size[1]], this.borderColor)
+            w.drawLine([pos[0]  - 1 + size[0], pos[1] + this.radius], [pos[0]  - 1 + size[0], pos[1]  - 1 + size[1] - this.radius], this.borderColor)
+            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + this.radius - 1], this.radius, this.border + 1, this.borderColor)
+            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius - 1], this.radius, this.border + 1, this.borderColor)
+            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, this.borderColor)
+            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, this.borderColor)
+        }
         
         if this.bgColor.a != 0 {
-            w.drawRect(pos, size, this.bgColor)
+            w.drawRoundedRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], this.radius, this.bgColor)
         }
 
         if this.backdrop != null {
@@ -263,7 +275,6 @@ struct uiBox extend uiElement {
     }
 
     _init() {
-        this._events = this.events
         this._draw = this.draw
         this.focusable = false
     }

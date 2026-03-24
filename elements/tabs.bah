@@ -134,8 +134,8 @@ struct uiTabs extend uiElement {
             w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius + 23], this.radius, this.border + 1, this.borderColor)
             w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, this.borderColor)
             w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, this.borderColor)
+            w.drawRect([pos[0] + this.border, pos[1] + 24 + this.border], [this.radius, this.radius], this.bgColor)
         }
-        w.drawRect([pos[0] + this.border, pos[1] + 24 + this.border], [this.radius, this.radius], this.bgColor)
         w.drawRoundedRect([pos[0] + this.border, pos[1] + 24 + this.border], [size[0] - this.border * 2, size[1] - 24 - this.border * 2], this.radius, this.bgColor)
     }
 
@@ -172,8 +172,8 @@ struct uiTabs extend uiElement {
             if i == 0 {
                 tabBtn.active = true
                 this.addElement(new uiBox {
-                    pos: [pixels(0), pixels(25)]
-                    size: [percents(100), percents(100) - pixels(25)]
+                    pos: [pixels(0), pixels(24)]
+                    size: [percents(100), percents(100) - pixels(24)]
                     padding: [neededPad, neededPad, neededPad, neededPad]
 
                     elements: {

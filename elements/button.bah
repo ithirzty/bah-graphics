@@ -18,6 +18,7 @@ struct uiButton extend uiElement {
     bold: bool
     _bgColor: rgbColor
     _fgColor: rgbColor
+    transitionTime: int = ELEMENT_TRANSITION_TIME
     //colors
     bgColor: rgbColor = ELEMENT_BACKGROUND_COLOR
     fgColor: rgbColor = ELEMENT_TEXT_COLOR
@@ -81,8 +82,8 @@ struct uiButton extend uiElement {
             bgColor = this._bgColor
             fgColor = this._fgColor
         } else {
-            if now - this.showTime < 120000000 {
-                amm = ((now - this.showTime) * 255) / 120000000
+            if now - this.showTime < this.transitionTime {
+                amm = ((now - this.showTime) * 255) / this.transitionTime
                 if this.hovered {
                     bgColor = this._bgColor.interpolate(this.hoveredBgColor, amm)
                     fgColor = this.fgColor.interpolate(this.hoveredFgColor, amm)
@@ -94,7 +95,7 @@ struct uiButton extend uiElement {
             } else {
                 if this.hovered {
                     this._bgColor = this.hoveredBgColor
-                    this._fgColor = this.fgColor
+                    this._fgColor = this.hoveredFgColor
                 } else {
                     this._bgColor = this.bgColor
                     this._fgColor = this.fgColor
@@ -109,20 +110,18 @@ struct uiButton extend uiElement {
             bdColor = this.hoveredBorderColor
         }
 
-        w.drawLine([pos[0] + this.radius, pos[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]], bdColor)
-        w.drawLine([pos[0], pos[1] + this.radius], [pos[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
-        w.drawLine([pos[0] + this.radius, pos[1]  - 1 + size[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]  - 1 + size[1]], bdColor)
-        w.drawLine([pos[0]  - 1 + size[0], pos[1] + this.radius], [pos[0]  - 1 + size[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
-
-        if this.radius == 0 {
-            w.drawRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], bgColor)
-        } else {
+        if this.border != 0 {
+            w.drawLine([pos[0] + this.radius, pos[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]], bdColor)
+            w.drawLine([pos[0], pos[1] + this.radius], [pos[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
+            w.drawLine([pos[0] + this.radius, pos[1]  - 1 + size[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]  - 1 + size[1]], bdColor)
+            w.drawLine([pos[0]  - 1 + size[0], pos[1] + this.radius], [pos[0]  - 1 + size[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
             w.strokeCircle([pos[0] + this.radius - 1, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
             w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
             w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
             w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
-            w.drawRoundedRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], this.radius, bgColor)
         }
+
+        w.drawRoundedRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], this.radius, bgColor)
 
         w.drawText(w.font, this.text, fgColor, [pos[0] + this.padding[0], pos[1]  - 1 + size[1] / 2 + this.fontSize / 2 + 2])
         w.font.bold = b

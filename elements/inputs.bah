@@ -40,6 +40,7 @@ struct uiTextInput extend uiElement {
     radius: int = 6
     _bgColor: rgbColor
     _fgColor: rgbColor
+    transitionTime: int = ELEMENT_TRANSITION_TIME
     //colors
     bgColor: rgbColor = ELEMENT_BACKGROUND_COLOR
     fgColor: rgbColor = ELEMENT_TEXT_COLOR
@@ -299,6 +300,8 @@ struct uiTextInput extend uiElement {
 
             if evnt == uiEventElementClicked {
                 this.isDragging = false
+            } else {
+                this.redraw()
             }
         } else if evnt == uiEventElementFocusOut {
             if this.validate != null {
@@ -324,8 +327,8 @@ struct uiTextInput extend uiElement {
             bgColor = this._bgColor
             fgColor = this._fgColor
         } else {
-            if now - this.showTime < 120000000 {
-                amm = ((now - this.showTime) * 255) / 120000000
+            if now - this.showTime < this.transitionTime {
+                amm = ((now - this.showTime) * 255) / this.transitionTime
                 if this.hovered {
                     bgColor = this._bgColor.interpolate(this.hoveredBgColor, amm)
                     fgColor = this._fgColor.interpolate(this.hoveredFgColor, amm)
@@ -558,6 +561,7 @@ struct uiSelectInput extend uiElement {
     radius: int = 6
     _bgColor: rgbColor
     _fgColor: rgbColor
+    transitionTime: int = ELEMENT_TRANSITION_TIME
     //colors
     bgColor: rgbColor = ELEMENT_BACKGROUND_COLOR
     fgColor: rgbColor = ELEMENT_TEXT_COLOR
@@ -649,8 +653,8 @@ struct uiSelectInput extend uiElement {
             bgColor = this._bgColor
             fgColor = this._fgColor
         } else {
-            if now - this.showTime < 120000000 {
-                amm = ((now - this.showTime) * 255) / 120000000
+            if now - this.showTime < this.transitionTime {
+                amm = ((now - this.showTime) * 255) / this.transitionTime
                 if this.hovered {
                     bgColor = this._bgColor.interpolate(this.hoveredBgColor, amm)
                     fgColor = this._fgColor.interpolate(this.hoveredFgColor, amm)

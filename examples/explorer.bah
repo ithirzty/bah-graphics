@@ -8,7 +8,7 @@
 
 #define setPath(path str, isNewEntry bool)
 
-const pathBarHeight = 55 //height of the top file path bar
+const sizeUnits = []str{"bytes", "KiB", "Mib", "Gib", "Tib"}
 
 backgroundColor = rgbColor{50, 50, 70} //main theme color
 
@@ -38,24 +38,8 @@ struct uiBoxFolder extend uiBox {
 //This element represents a single entry of the browsing history that is displayd on the left of the window.
 //This is a bit more tricky as it has its one ._init() function that calls the uiText._init() function
 //to be able to override the events function.
-struct uiHistoryItem extend uiText {
+struct uiHistoryItem extend uiButton {
     historyIndex: int
-    
-    events(event uint32) {
-        if event == uiEventElementClicked {
-            pathHistoryIndex = this.historyIndex
-            setPath(this.text, false)
-            this.remove() //this prevents a redraw after having drawn a new history list.
-            //It happens because after the clicked event, there is a mouseUp event.
-        }
-    }
-
-    _init() {
-        txt = (<uiText*>this)
-        txt._init() //if this wasnt called, uiHistoryItem._draw would be null instead of being equal to uiText._draw
-        this._events = this.events
-    }
-    
 }
 
 //This is a shared contextual list for every file/folder element.
@@ -137,11 +121,6 @@ constructFileElement(file str, fullPath str, isFolder bool) uiBoxFolder* {
             //call this lambda in a new thread to not block sending the filepath to the other window
             async refreshFunc()
         }
-
-        bx.events(event) //call the default uiBox event loop
-        //Note that ._events if not the same as .events().
-        //.events() is a method defined in /elements/box.bah for the uiBox struct
-        //._events is a field which can be equal to any function that is called on an uiElement event.
     }
 
     //Create the file element
@@ -249,15 +228,40 @@ setPath(path str, isNewEntry bool) {
     //and make new items based on the array
     i=0; for i < len(pathHistory), i++ {
 
+        folderName = pathHistory[i]
+        if len(folderName) > 1 {
+            j=len(folderName)-1; for j > 0, j-- {
+                if folderName[j] == '/' {
+                    break
+                }
+            }
+            folderName = folderName[j+1:]
+        }
+
         itm = new uiHistoryItem {
-            text: pathHistory[i]
-            color: rgbColor{200, 200, 200}
+            text: folderName
+            padding: [10, 10, 10, 10]
+            fgColor: rgbColor{200, 200, 200}
+            bgColor: rgbColor{0,0,0,0}
+            hoveredBgColor: rgbColor{255,255,255,50}
+            hoveredFgColor: WHITE
+            border: 0
             historyIndex: i
+            size: [percents(100), nullPos]
+
+            onclick: (btn uiHistoryItem*) {
+                pathHistoryIndex = btn.historyIndex
+                setPath(pathHistory[pathHistoryIndex], false)
+                btn.remove() //this prevents a redraw after having drawn a new history list.
+                //It happens because after the clicked event, there is a mouseUp event.
+            }
         }
 
         //if the entry is the current folder, change its styling
         if i == pathHistoryIndex {
-            itm.color = WHITE
+            itm.fgColor = WHITE
+            itm.bgColor = itm.clickedBgColor
+            itm.hoveredBgColor = itm.clickedBgColor
             itm.cursor = null
         } else {
             itm.cursor = "hand1"
@@ -290,7 +294,9 @@ setPath(path str, isNewEntry bool) {
         return
     }
 
-    println("Showing: "+intToStr(len(files))+" files.")
+    size = 0.0
+    tmpFs = fileStream{}
+    numElems = [0,0]
 
     //For every file in the folder
     i=0; for i < len(files), i++ {
@@ -301,14 +307,39 @@ setPath(path str, isNewEntry bool) {
 
         //concatenates current path and file name
         fullPath = currentPath + "/" + files[i]
+
+        isFldr = isFolder(fullPath)
+
+        tmpFs.open(fullPath, "rb")
+        size += <float>tmpFs.getSize()
+        tmpFs.close()
+
+        if isFldr {
+            numElems[1]++
+        } else {
+            numElems[0]++
+        }
+
         //Add the file element to the file list
-        fileList.addElementNoRedraw(constructFileElement(files[i], fullPath, isFolder(fullPath)))
+        fileList.addElementNoRedraw(constructFileElement(files[i], fullPath, isFldr))
     }
 
     //Could redraw the entire list: fileList.redraw()
     //But instead, set focus on its parent as it will not only redraw the list but also
     //make it possible to use keyboard shortcuts without having to click the background of the file box
     ui.setFocus(ui.find("fileContainer"))
+
+    sizeIndex = 0
+    for size / 1024.0 > 1.0 {
+        size = size / 1024.0
+        sizeIndex++
+    }
+
+    size = <float>(<int>(size * 100.0) / 100) 
+
+    sizeUnit = sizeUnits[sizeIndex]
+    infoText = <uiText*>ui.find("infoText")
+    infoText.setText(intToStr(numElems[1])+" folders, "+intToStr(numElems[0])+" files, "+floatToStr(size)+" "+sizeUnit)
 }
 
 main(args []str) int {
@@ -339,165 +370,184 @@ main(args []str) int {
     ui.setIcon(folderImg) //sets the window icon to a folder image
     
     //This uiBox is the navigation bar at the top of the window.
+
     ui.addElement(new uiBox {
+        size: [percents(100), percents(100)]
+        bgColor: backgroundColor.lum(50)
         padding: [10, 10, 10, 10]
-        scrollable: false
-        size: [
-            percents(100), pixels(pathBarHeight)
-        ]
-        backdrop: (bx uiBox*, ui ui*) {
-            pos = bx.getPosition()
-            size = bx.getSize()
-            //draw a background
-            ui.drawRect(pos, [size[0], size[1] - 1], backgroundColor)
-            //draw a thin separation (bottom border) 
-            ui.drawRect([pos[0], pos[1] + size[1] - 1], [size[0], 1], UI_SEPARATOR_COLOR)
-        }
 
         elements: {
-            new uiTextInput { //the path input
-                id: "pathInput"
-                text: "Folder path"
-                size: [
-                    percents(100) - pixels(80),
-                    nullPos
-                ]
 
-                onsubmit: (inp uiTextInput*) {
-                    setPath(arrToStr(inp.value), true)
-                }
-            },
-            new uiHorizontalArray {
-                id: "historyBtns"
-                spacing: 10 //10px spacing between buttons
-                pos: [
-                    percents(100).basis(uiBasisEnd), //make it stick to the right of the box
-                    pixels(0) //10px from the top
-                ]
-                elements: { //the two history buttons
-                    new uiButton {
-                        text: "<"
-                        bold: true
-                        onclick: (btn uiButton*) {
-                            goBack()
-                        }
-                    },
-                    new uiButton {
-                        text: ">"
-                        bold: true
-                        onclick: (btn uiButton*) {
-                            goForward()
-                        }
-                    }
-                }
-
-            }
-        }
-    })
-
-    //The main part of the window :
-    // Browsing history |separator| File list
-    ui.addElement(new uiVerticalSeparator {
-        pos: [pixels(0), pixels(pathBarHeight)] //offset of the navigation bar height
-        separation: 200 //by default the history list width is 200px
-        minSep: 200 //the history list width cannot be smaller than 200px
-        maxSep: 500 //or larger than 500px
-        size: [
-            percents(100),
-            percents(100) - pixels(pathBarHeight)
-        ]
-
-        // backdrop: (sep uiVerticalSeparator*, ui ui*) {
-        //     //Fill the whole window except the navigation bar space
-        //     sep.size = [ui.width, ui.height - pathBarHeight]
-        // }
-
-        elements: {
-            new uiBox { //The history list part of the window
+            //path bar
+            new uiBox {
+                id: "pathBar"
                 padding: [10, 10, 10, 10]
-                backdrop: (bx uiBox*, ui ui*) {
-                    ui.drawRect(bx.getPosition(), bx.getSize(), backgroundColor)
-                    //Sets the list container size (uiBox is scrollable if overflowed)
-                    // bx.elements[1].size = [bx.size[0] - 20, bx.size[1] - 40]
-                }
+                scrollable: false
+                size: [percents(100), uiInnerSize]
+                radius: 10
+                bgColor: backgroundColor
 
                 elements: {
-                    new uiText { //title
-                        text: "History"
-                        color: WHITE
-                        focusable: false
-                        fontSize: 10
-                    },
-                    new uiBox { //container
-                        pos: [
-                            pixels(0), pixels(30) //offset because of the title
-                        ]
+                    new uiTextInput { //the path input
+                        id: "pathInput"
+                        text: "Folder path"
                         size: [
-                            percents(100),
-                            percents(100) - pixels(30)
+                            percents(100) - pixels(80),
+                            nullPos
                         ]
 
+                        onsubmit: (inp uiTextInput*) {
+                            setPath(arrToStr(inp.value), true)
+                        }
+                    },
+                    new uiHorizontalArray {
+                        id: "historyBtns"
+                        spacing: 10 //10px spacing between buttons
+                        pos: [
+                            percents(100).basis(uiBasisEnd), //make it stick to the right of the box
+                            pixels(0) //10px from the top
+                        ]
+                        elements: { //the two history buttons
+                            new uiButton {
+                                text: "<"
+                                bold: true
+                                onclick: (btn uiButton*) {
+                                    goBack()
+                                }
+                            },
+                            new uiButton {
+                                text: ">"
+                                bold: true
+                                onclick: (btn uiButton*) {
+                                    goForward()
+                                }
+                            }
+                        }
+
+                    }
+                }
+            },
+            //The main part of the window :
+            // Browsing history |separator| File list
+            new uiVerticalSeparator {
+                pos: [pixels(0), sizeOfElementById("pathBar") + pixels(10)] //offset of the navigation bar height
+                separation: 200 //by default the history list width is 200px
+                minSep: 200 //the history list width cannot be smaller than 200px
+                maxSep: 500 //or larger than 500px
+                fgColor: rgbColor{0,0,0,0}
+                size: [
+                    percents(100),
+                    percents(100) - sizeOfElementById("pathBar") - sizeOfElementById("infoBar") - pixels(10)
+                ]
+
+                elements: {
+                    new uiBox {
+                        padding: [10, 10, 10, 10]
+                        bgColor: backgroundColor
+                        size: [percents(100), percents(100) - pixels(10)]
+                        radius: 10
+
                         elements: {
-                            new uiVerticalArray { //the list itself
-                                id: "historyContainer"
+                            new uiText { //title
+                                text: "History"
+                                color: WHITE
+                                focusable: false
+                                fontSize: 10
+                            },
+                            new uiBox { //container
+                                pos: [
+                                    pixels(0), pixels(30) //offset because of the title
+                                ]
+                                size: [
+                                    percents(100),
+                                    percents(100) - pixels(30)
+                                ]
+
+                                elements: {
+                                    new uiVerticalArray { //the list itself
+                                        size: [percents(100), nullPos]
+                                        dynamicSize: false
+                                        id: "historyContainer"
+                                    }
+                                }
+                            }
+                        }
+
+                    },
+                    new uiBox { //The file list part of the window
+                        id: "fileContainer"
+                        dragTarget: true
+                        size: [percents(100), percents(100)]
+
+                        //shortcuts
+                        contextItems: []uiContextItem {
+                            uiContextItem {
+                                name: "Reload folder"
+                                key: 'r'
+
+                                callback: (itm uiContextItem*, el uiElement*) {
+                                    setPath(currentPath, false)
+                                }
+                            },
+                            uiContextItem {
+                                name: "Go back"
+                                key: Char_arr_left
+                                ctrl: false
+                                alt: true
+
+                                callback: (itm uiContextItem*, el uiElement*) {
+                                    goBack()
+                                }
+                            },
+                            uiContextItem {
+                                name: "Go Forward"
+                                key: Char_arr_right
+                                ctrl: false
+                                alt: true
+
+                                callback: (itm uiContextItem*, el uiElement*) {
+                                    goForward()
+                                }
+                            }
+                        }
+
+                        elements: {
+                            new uiVerticalGridArray { //the file list itself
+                                id: "fileListContainer"
+                                spacing: 20
+                                padding: [10, 10, 10, 10]
+                                size: [
+                                    percents(100),
+                                    nullPos
+                                ]
                             }
                         }
                     }
-
                 }
             },
-            new uiBox { //The file list part of the window
-                id: "fileContainer"
-                dragTarget: true
-                backdrop: (bx uiBox*, ui ui*) {
-                    //Draw its background darker than the rest (.lum(50/255))
-                    ui.drawRect(bx.getPosition(), bx.getSize(), backgroundColor.lum(50))
 
-                    // bx.elements[0].size[0] = bx.size[0] //sets the width of the uiVerticalGridArray that contains the file elements
-                    //This is because it is a vertical grid so it grows verticaly but needs a width as a guideline.
-                }
-
-                //shortcuts
-                contextItems: []uiContextItem {
-                    uiContextItem {
-                        name: "Reload folder"
-                        key: 'r'
-
-                        callback: (itm uiContextItem*, el uiElement*) {
-                            setPath(currentPath, false)
-                        }
-                    },
-                    uiContextItem {
-                        name: "Go back"
-                        key: Char_arr_left
-                        ctrl: false
-                        alt: true
-
-                        callback: (itm uiContextItem*, el uiElement*) {
-                            goBack()
-                        }
-                    },
-                    uiContextItem {
-                        name: "Go Forward"
-                        key: Char_arr_right
-                        ctrl: false
-                        alt: true
-
-                        callback: (itm uiContextItem*, el uiElement*) {
-                            goForward()
-                        }
-                    }
-                }
+            new uiBox {
+                id: "infoBar"
+                pos: [pixels(0), percents(100).basis(uiBasisEnd)]
+                size: [percents(100), uiInnerSize]
+                bgColor: backgroundColor
+                radius: 6
+                border: 1
+                padding: [5, 5, 5, 5]
 
                 elements: {
-                    new uiVerticalGridArray { //the file list itself
-                        id: "fileListContainer"
-                        spacing: 20
-                        padding: [10, 10, 10, 10]
-                        size: [
-                            percents(100),
-                            nullPos
-                        ]
+                    new uiText {
+                        id: "infoText"
+                        pos: [percents(50).basis(uiBasisCenter), nullPos]
+                        focusable: false
+                        color: WHITE
+                        text: "loading..."
+                    },
+                    new uiText {
+                        pos: [percents(100).basis(uiBasisEnd), nullPos]
+                        focusable: false
+                        color: rgbColor{200, 200, 200}
+                        text: "This is a demo of Bah graphic's library."
                     }
                 }
             }
@@ -512,14 +562,13 @@ main(args []str) int {
 
     fileContainer = ui.find("fileContainer")
 
+
     //if a file is drag-and-droped on the file list, execute the command to move the file to the current open folder
     fileContainer._events = function(bx uiBox*, event uint32) {
         if event == uiEventElementFileDrop {
             //in case of file drop, bx.window.getEventFiles() returns the list of all files droped
             command("mv \""+bx.window.getEventFiles()[0]+"\" \""+currentPath+"\"").runBytes()
             setPath(currentPath, false)
-        } else {
-            bx.events(event)
         }
 
     }

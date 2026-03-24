@@ -14,6 +14,7 @@ ELEMENT_BORDER_COLOR = rgbColor{140, 140, 140}
 ELEMENT_HOVERED_BORDER_COLOR = rgbColor{120, 120, 255}
 ELEMENT_SECONDARY_BACKGROUND_COLOR = rgbColor{160, 160, 160}
 BACKGROUND_COLOR = rgbColor{255, 255, 255}
+ELEMENT_TRANSITION_TIME = 120000000
 
 const __uiElementDrawTypeFull = 0
 const __uiElementDrawTypeChildren = 1
@@ -179,6 +180,8 @@ struct uiElement {
     fileURI: str
     lastDraw: int
 
+    _memSize: uint
+
     elements: []uiElement*
     parent: uiElement*
     window: window*
@@ -326,26 +329,26 @@ __uiCalculateElemPosX(this uiElement*, pos uiPos, absPos bool) int {
     r = 0
     if pos.flags & _uiPosFlagOpAdd != 0 {
         if pos.children[0] != null && pos.children[1] != null {
-            a = __uiCalculateElemPosX(this, *<uiPos*>pos.children[0], absPos)
-            b = __uiCalculateElemPosX(this, *<uiPos*>pos.children[1], absPos)
+            a = __uiCalculateElemPosX(this, *<uiPos*>pos.children[0], false)
+            b = __uiCalculateElemPosX(this, *<uiPos*>pos.children[1], false)
             r = a + b
         }
     } else if pos.flags & _uiPosFlagOpSub != 0 {
         if pos.children[0] != null && pos.children[1] != null {
-            a = __uiCalculateElemPosX(this, *<uiPos*>pos.children[0], absPos)
-            b = __uiCalculateElemPosX(this, *<uiPos*>pos.children[1], absPos)
+            a = __uiCalculateElemPosX(this, *<uiPos*>pos.children[0], false)
+            b = __uiCalculateElemPosX(this, *<uiPos*>pos.children[1], false)
             r = a - b
         }
     } else if pos.flags & _uiPosFlagOpMult != 0 {
         if pos.children[0] != null && pos.children[1] != null {
-            a = __uiCalculateElemPosX(this, *<uiPos*>pos.children[0], absPos)
-            b = __uiCalculateElemPosX(this, *<uiPos*>pos.children[1], absPos)
+            a = __uiCalculateElemPosX(this, *<uiPos*>pos.children[0], false)
+            b = __uiCalculateElemPosX(this, *<uiPos*>pos.children[1], false)
             r = a * b
         }
     } else if pos.flags & _uiPosFlagOpDiv != 0 {
         if pos.children[0] != null && pos.children[1] != null {
-            a = __uiCalculateElemPosX(this, *<uiPos*>pos.children[0], absPos)
-            b = __uiCalculateElemPosX(this, *<uiPos*>pos.children[1], absPos)
+            a = __uiCalculateElemPosX(this, *<uiPos*>pos.children[0], false)
+            b = __uiCalculateElemPosX(this, *<uiPos*>pos.children[1], false)
             r = a / b
         }
     } else if pos.flags & _uiPosFlagRefID != 0 {
@@ -420,26 +423,26 @@ __uiCalculateElemPosY(this uiElement*, pos uiPos, absPos bool) int {
     r = 0
     if pos.flags & _uiPosFlagOpAdd != 0 {
         if pos.children[0] != null && pos.children[1] != null {
-            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], absPos)
-            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], absPos)
+            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], false)
+            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], false)
             r = a + b
         }
     } else if pos.flags & _uiPosFlagOpSub != 0 {
         if pos.children[0] != null && pos.children[1] != null {
-            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], absPos)
-            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], absPos)
+            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], false)
+            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], false)
             r = a - b
         }
     } else if pos.flags & _uiPosFlagOpMult != 0 {
         if pos.children[0] != null && pos.children[1] != null {
-            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], absPos)
-            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], absPos)
+            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], false)
+            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], false)
             r = a * b
         }
     } else if pos.flags & _uiPosFlagOpDiv != 0 {
         if pos.children[0] != null && pos.children[1] != null {
-            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], absPos)
-            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], absPos)
+            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], false)
+            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], false)
             r = a / b
         }
     } else if pos.flags & _uiPosFlagRefID != 0 {
@@ -476,8 +479,8 @@ __uiCalculateElemPosY(this uiElement*, pos uiPos, absPos bool) int {
         this.size = os
     } else if pos.flags & _uiPosFlagMin != 0 {
         if pos.children[0] != null && pos.children[1] != null {
-            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], absPos)
-            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], absPos)
+            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], true)
+            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], true)
             if a > b {
                 r = a
             } else {
@@ -486,8 +489,8 @@ __uiCalculateElemPosY(this uiElement*, pos uiPos, absPos bool) int {
         }
     } else if pos.flags & _uiPosFlagMax != 0 {
         if pos.children[0] != null && pos.children[1] != null {
-            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], absPos)
-            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], absPos)
+            a = __uiCalculateElemPosY(this, *<uiPos*>pos.children[0], true)
+            b = __uiCalculateElemPosY(this, *<uiPos*>pos.children[1], true)
             if b > a {
                 r = a
             } else {

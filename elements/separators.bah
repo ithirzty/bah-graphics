@@ -2,8 +2,6 @@
 
 #import "./base.bah"
 
-UI_SEPARATOR_COLOR = rgbColor{100, 100, 100}
-
 struct uiVerticalSeparator extend uiElement {
     backdrop: function(uiVerticalSeparator*, ui*)
     separation: int = -1
@@ -11,6 +9,14 @@ struct uiVerticalSeparator extend uiElement {
     minSep: int = 0
     isHoveringSep: bool
     isDraggingSep: bool
+    showTime: uint
+    _fgColor: rgbColor
+
+    transitionTime: int = 0
+    //colors
+    fgColor: rgbColor = ELEMENT_BORDER_COLOR
+    bgColor: rgbColor = rgbColor{0,0,0,0}
+    hoveredFgColor: rgbColor = ELEMENT_HOVERED_BORDER_COLOR
 
     events(event uint32) {
         ui = <ui*>this.window
@@ -32,22 +38,24 @@ struct uiVerticalSeparator extend uiElement {
                     this.separation = this.maxSep
                 }
 
-
                 this.redraw()
             } else {
                 if cursorPos[0] >= this.separation - 1 && cursorPos[0] <= this.separation + 1 {
                     if this.isHoveringSep == false {
+                        this.showTime = getTimeUnix()
                         this.cursor = "sb_h_double_arrow"
+                        this.isHoveringSep = true
                         ui.setCursor(this.cursor)
+                        this.redraw()
                     }
-
-                    this.isHoveringSep = true                
                 } else {
                     if this.isHoveringSep {
+                        this.showTime = getTimeUnix()
                         this.cursor = null
+                        this.isHoveringSep = false
                         ui.setCursor(this.cursor)
+                        this.redraw()
                     }
-                    this.isHoveringSep = false                
                 }
             }
         } else if event == uiEventElementMouseDown {
@@ -68,6 +76,7 @@ struct uiVerticalSeparator extend uiElement {
     }
 
     draw(w ui*) {
+        now = getTimeUnix()
         if this.backdrop != null {
             this.backdrop(w)
         }
@@ -79,16 +88,34 @@ struct uiVerticalSeparator extend uiElement {
         size = this.getSize()
 
         this.elements[0].size[0] = pixels(this.separation - 1)
-        this.elements[0].size[1] = pixels(size[1])
         this.elements[0].pos[0]  = pixels(0)
 
         this.elements[1].size[0] = pixels(size[0]) - pixels(this.separation + 1)
-        this.elements[1].size[1] = pixels(size[1])
         this.elements[1].pos[0]  = pixels(this.separation + 1)
 
         pos = this.getPosition()
 
-        w.drawRect([pos[0] + this.separation - 1, pos[1]], [2, size[1]], UI_SEPARATOR_COLOR)
+        fgColor = this._fgColor
+
+        if now - this.showTime < this.transitionTime {
+            amm = ((now - this.showTime) * 255) / this.transitionTime
+            if this.isHoveringSep {
+                fgColor = this.fgColor.interpolate(this.hoveredFgColor, amm)
+            } else {
+                fgColor = this.fgColor.interpolate(this.fgColor, amm)
+            }
+            this.redrawIn(40)
+        } else {
+            if this.isHoveringSep {
+                this._fgColor = this.hoveredFgColor
+            } else {
+                this._fgColor = this.fgColor
+            }
+            fgColor = this._fgColor
+        }
+
+        w.drawRect(pos, size, this.bgColor)
+        w.drawRect([pos[0] + this.separation - 1, pos[1]], [2, size[1]], fgColor)
     }
 
     _init() {
@@ -108,7 +135,15 @@ struct uiHorizontalSeparator extend uiElement {
     minSep: int = 0
     isHoveringSep: bool
     isDraggingSep: bool
+    showTime: uint
+    _bgColor: rgbColor
+    _fgColor: rgbColor
 
+    transitionTime: int = 0
+    //colors
+    bgColor: rgbColor = rgbColor{0,0,0,0}
+    fgColor: rgbColor = ELEMENT_BORDER_COLOR
+    hoveredFgColor: rgbColor = ELEMENT_HOVERED_BORDER_COLOR
     events(event uint32) {
         ui = <ui*>this.window
 
@@ -134,17 +169,20 @@ struct uiHorizontalSeparator extend uiElement {
             } else {
                 if cursorPos[1] >= this.separation - 1 && cursorPos[1] <= this.separation + 1 {
                     if this.isHoveringSep == false {
+                        this.showTime = getTimeUnix()
                         this.cursor = "sb_v_double_arrow"
                         ui.setCursor(this.cursor)
+                        this.isHoveringSep = true
+                        this.redraw()
                     }
-
-                    this.isHoveringSep = true                
                 } else {
                     if this.isHoveringSep {
+                        this.showTime = getTimeUnix()
                         this.cursor = null
                         ui.setCursor(this.cursor)
+                        this.isHoveringSep = false
+                        this.redraw()
                     }
-                    this.isHoveringSep = false                
                 }
             }
         } else if event == uiEventElementMouseDown {
@@ -156,6 +194,7 @@ struct uiHorizontalSeparator extend uiElement {
                 this.isDraggingSep = false
             }
         } else if event == uiEventElementHoverOut || event == uiEventElementFocusOut {
+            this.showTime = getTimeUnix()
             if this.isHoveringSep {
                 this.cursor = null
             }
@@ -165,6 +204,7 @@ struct uiHorizontalSeparator extend uiElement {
     }
 
     draw(w ui*) {
+        now = getTimeUnix()
         if this.backdrop != null {
             this.backdrop(w)
         }
@@ -176,16 +216,34 @@ struct uiHorizontalSeparator extend uiElement {
         size = this.getSize()
 
         this.elements[0].size[1] = pixels(this.separation - 1)
-        this.elements[0].size[0] = pixels(size[0])
         this.elements[0].pos[1]  = pixels(0)
 
         this.elements[1].size[1] = pixels(size[1]) - pixels(this.separation + 1)
-        this.elements[1].size[0] = pixels(size[0])
         this.elements[1].pos[1]  = pixels(this.separation + 1)
 
         pos = this.getPosition()
 
-        w.drawRect([pos[0], pos[1] + this.separation - 1], [size[0], 2], UI_SEPARATOR_COLOR)
+        fgColor = this._fgColor
+
+        if now - this.showTime < this.transitionTime {
+            amm = ((now - this.showTime) * 255) / this.transitionTime
+            if this.isHoveringSep {
+                fgColor = this.fgColor.interpolate(this.hoveredFgColor, amm)
+            } else {
+                fgColor = this.fgColor.interpolate(this.fgColor, amm)
+            }
+            this.redrawIn(40)
+        } else {
+            if this.isHoveringSep {
+                this._fgColor = this.hoveredFgColor
+            } else {
+                this._fgColor = this.fgColor
+            }
+            fgColor = this._fgColor
+        }
+
+        w.drawRect(pos, size, this.bgColor)
+        w.drawRect([pos[0], pos[1] + this.separation - 1], [size[0], 2], fgColor)
     }
 
     _init() {
