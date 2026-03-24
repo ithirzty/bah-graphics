@@ -430,21 +430,22 @@ main(args []str) int {
             //The main part of the window :
             // Browsing history |separator| File list
             new uiVerticalSeparator {
-                pos: [pixels(0), sizeOfElementById("pathBar") + pixels(10)] //offset of the navigation bar height
+                pos: [pixels(0), sizeOfElementById("pathBar")] //offset of the navigation bar height
                 separation: 200 //by default the history list width is 200px
                 minSep: 200 //the history list width cannot be smaller than 200px
                 maxSep: 500 //or larger than 500px
                 fgColor: rgbColor{0,0,0,0}
                 size: [
                     percents(100),
-                    percents(100) - sizeOfElementById("pathBar") - sizeOfElementById("infoBar") - pixels(10)
+                    percents(100) - sizeOfElementById("pathBar") - sizeOfElementById("infoBar")
                 ]
 
                 elements: {
                     new uiBox {
                         padding: [10, 10, 10, 10]
                         bgColor: backgroundColor
-                        size: [percents(100), percents(100) - pixels(10)]
+                        pos: [nullPos, pixels(10)]
+                        size: [percents(100), percents(100) - pixels(20)]
                         radius: 10
 
                         elements: {
