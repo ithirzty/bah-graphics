@@ -291,6 +291,8 @@ struct ui extend window {
     ctxWindow: contextMenuWindow*
     fileDragWindow: fileDragWindow*
 
+    threadId: pthread_t
+
     _init() {
         this.font = getSystemUIfont()
         this.events = __uiHandleEvents
@@ -323,6 +325,7 @@ struct ui extend window {
     }
 
     launch(width uint, height uint, title str) {
+        this.threadId = currentThread()
         this.ctxWindow = new contextMenuWindow {
             parent: this
             font: getSystemUIfont()
@@ -573,12 +576,12 @@ __uiRedrawElement_inner(ui ui*, elem uiElement*, drawType int) {
                         bSize = currBox.getSize()
                         bPos = currBox.getPosition()
 
-                        if currElem.absolutePosition == false {
+                        // if currElem.absolutePosition == false {
                             bPos[0] += currBox.innerMargin[0]
                             bPos[1] += currBox.innerMargin[1]
                             bSize[0] -= (currBox.innerMargin[0] + currBox.innerMargin[2])
                             bSize[1] -= (currBox.innerMargin[1] + currBox.innerMargin[3])
-                        }
+                        // }
 
                         if scissor[2] + scissor[3] == 0 {
                             scissor[0] = bPos[0]
@@ -1003,12 +1006,12 @@ __uiForceDrawElement(ui ui*, elem uiElement*) {
                 bSize = currBox.getSize()
                 bPos = currBox.getPosition()
 
-                if elem.absolutePosition == false {
+                // if elem.absolutePosition == false {
                     bPos[0] += currBox.innerMargin[0]
                     bPos[1] += currBox.innerMargin[1]
                     bSize[0] -= (currBox.innerMargin[0] + currBox.innerMargin[2])
                     bSize[1] -= (currBox.innerMargin[1] + currBox.innerMargin[3])
-                }
+                // }
 
                 if scissor[2] + scissor[3] == 0 {
                     scissor[0] = bPos[0]
@@ -1071,12 +1074,12 @@ __uiStartFileDrag(ui ui*, uri str, elem uiElement*) {
         bSize = currBox.getSize()
         bPos = currBox.getPosition()
 
-        if elem.absolutePosition == false {
+        // if elem.absolutePosition == false {
             bPos[0] += currBox.innerMargin[0]
             bPos[1] += currBox.innerMargin[1]
             bSize[0] -= (currBox.innerMargin[0] + currBox.innerMargin[2])
             bSize[1] -= (currBox.innerMargin[1] + currBox.innerMargin[3])
-        }
+        // }
 
         if scissor[2] + scissor[3] == 0 {
             scissor[0] = bPos[0]
@@ -1631,4 +1634,16 @@ __uiComposeElementTreeRecursively(elem uiElement*) {
         __uiComposeElementTreeRecursively(elem.elements[i])
     }
     __uiForceDrawElement(elem.window, elem)
+}
+
+__uiThreadGuard(elem uiElement*) bool {
+    ui = <ui*>elem.window
+    if ui.threadId != currentThread() {
+        ui.animationsMutex.lock()
+        __uiRedrawElementDelayed(ui, elem, 0)
+        ui.animationsMutex.unlock()
+        return true
+    }
+
+    return false
 }

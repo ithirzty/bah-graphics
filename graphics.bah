@@ -853,39 +853,6 @@ struct window {
         this.drawRect([pos[0] + radi, pos[1]], [size[0] - radi * 2 + 1, radi], color)
         this.drawRect([pos[0] + radi, pos[1] + size[1] - radi + 1], [size[0] - radi * 2 + 1, radi - 1], color)
 
-
-        // center = [pos[0] + size[0] / 2, pos[1] + size[1] / 2]
-        // corners = [size[0] / 2 - radi, size[1] / 2 - radi]
-        // y=pos[1]; for y < pos[1] + size[1], y++ {
-        //     if y >= this.height || y < 0 {
-        //         continue
-        //     }
-        //     x = pos[0]; for x < pos[0] + size[0], x++ {
-        //         if x >= this.width || x < 0 {
-        //             continue
-        //         }
-
-        //         dx = x - center[0]
-        //         dy = y - center[1]
-
-        //         if dx < 0 {
-        //             dx = 0 - dx
-        //         }
-
-        //         if dy < 0 {
-        //             dy = 0 - dy
-        //         }
-
-        //         if dx > corners[0] && dy > corners[1] {
-        //             continue
-        //         }
-
-
-        //         this.setPixel([x,y], color)
-        //     }
-
-        // }
-
         fradi = <float>radi
         
         cPos = [pos[0] + radi - 1, pos[1] + radi - 1]
@@ -896,8 +863,8 @@ struct window {
             y = min[1]
         }
         cMax = cPos[1]
-        if cMax > max[1] {
-            cMax = max[1]
+        if cMax > max[1] - 1 {
+            cMax = max[1] - 1
         }
         
         xMax = cPos[0]
@@ -950,8 +917,8 @@ struct window {
         }
 
         cMax = cPos[1]
-        if cMax > max[1] {
-            cMax = max[1]
+        if cMax > max[1] - 1 {
+            cMax = max[1] - 1
         }
 
         xMin = cPos[0]

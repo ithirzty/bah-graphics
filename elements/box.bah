@@ -52,9 +52,8 @@ struct uiBoxScrollbar extend uiElement {
         } else if evnt == uiEventElementHoverOut {
             if this.thumbDrag[2] == false {
                 this.showTime = getTimeUnix()
-                ui = <ui*>this.window
                 if this.focused {
-                    ui.setFocus(null)
+                    (<ui*>this.window).setFocus(null)
                 }
             }
         } else if evnt == uiEventElementFocusOut {
@@ -220,6 +219,7 @@ struct uiBox extend uiElement {
             w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius - 1], this.radius, this.border + 1, this.borderColor)
             w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, this.borderColor)
             w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, this.borderColor)
+            this.innerMargin = [this.border,this.border,this.border,this.border]
         }
         
         if this.bgColor.a != 0 {

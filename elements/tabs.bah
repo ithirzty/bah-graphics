@@ -90,8 +90,7 @@ struct _uiTabButton extend uiButton {
     }
 
     _init() {
-        btn = <uiButton*>this
-        btn._init()
+        (<uiButton*>this)._init()
         this.bgColor = ELEMENT_SECONDARY_BACKGROUND_COLOR
 
         this._draw = this.draw

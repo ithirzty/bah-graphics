@@ -66,17 +66,12 @@ struct uiFileTarget extend uiBox {
         }
 
         this.isDragging = false //any other event means the file is not being dragged anymore
-
-        //pass all other events to the default uiBox event handler
-        bx = <uiBox*>this
-        bx.events(event)        
     }
 
     _init() {
         //call the default uiBox initializer
         //this is called when a struct of this type is being declared
-        bx = <uiBox*>this
-        bx._init()
+        (<uiBox*>this)._init()
 
         this._events = this.events //register the new events function
         this.dragTarget = true //allow files to be drag and droped on this element

@@ -22,6 +22,7 @@ const __uiElementDrawTypeBackground = 2
 
 #define __uiRedrawElement(ui window*, elem ptr, drawType int)
 #define __uiRedrawElementDelayed(ui window*, elem ptr, ms uint)
+#define __uiThreadGuard(elem ptr) bool
 
 const _uiPosFlagPx        = 1
 const _uiPosFlagPc        = 2
@@ -199,6 +200,9 @@ struct uiElement {
     _draw: function(uiElement*, window*)
 
     find(id str) uiElement* {
+        if this.toRemove {
+            return null
+        }
         if this.id == id {
             return this
         }
@@ -317,6 +321,9 @@ struct uiElement {
 
     redraw() {
         if this.window == null {
+            return
+        }
+        if __uiThreadGuard(this) {
             return
         }
         __uiRedrawElement(this.window, this, __uiElementDrawTypeFull)
