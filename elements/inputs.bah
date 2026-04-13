@@ -185,10 +185,6 @@ struct uiTextInput extend uiElement {
                     if this.carret < len(this.value) {
                         delete(this.value, this.carret)
                     }
-                } else if c == Char_delete {
-                    if this.carret < len(this.value) {
-                        delete(this.value, this.carret)
-                    }
                 } else if c == Char_left_shift || c == Char_right_shift {
 
                 } else if c == Char_Left_CTRL || c == Char_Right_CTRL {
@@ -358,18 +354,13 @@ struct uiTextInput extend uiElement {
             bdColor = this.hoveredBorderColor
         }
 
-        w.drawLine([pos[0] + this.radius, pos[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]], bdColor)
-        w.drawLine([pos[0], pos[1] + this.radius], [pos[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
-        w.drawLine([pos[0] + this.radius, pos[1]  - 1 + size[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]  - 1 + size[1]], bdColor)
-        w.drawLine([pos[0]  - 1 + size[0], pos[1] + this.radius], [pos[0]  - 1 + size[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
-        if this.radius != 0 {
-            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
-            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
-            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
-            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
+        if bgColor.a != 0 {
+            w.drawRoundedRect(pos, size, this.radius, bgColor)
         }
-
-        w.drawRoundedRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], this.radius, bgColor)
+        if this.border != 0 {
+            w.strokeRoundedRect(pos, size, this.radius, this.border, bdColor)
+            this.innerMargin = [this.border,this.border,this.border,this.border]
+        }
 
         fullTextLength = w.measureByteArr(w.font, this.value, 0, len(this.value))[0]
         carretTextLength = w.measureByteArr(w.font, this.value, 0, this.carret)[0]
@@ -627,10 +618,16 @@ struct uiSelectInput extend uiElement {
             if key == Char_arr_down {
                 if this.index+1 < len(this.values) {
                     this.index++
+                    if this.onsubmit != null {
+                        this.onsubmit()
+                    }
                 }
             } else if key == Char_arr_up {
                 if this.index > 0 {
                     this.index--
+                    if this.onsubmit != null {
+                        this.onsubmit()
+                    }
                 }
             }
         }
@@ -684,24 +681,19 @@ struct uiSelectInput extend uiElement {
             bdColor = this.hoveredBorderColor
         }
 
-        w.drawLine([pos[0] + this.radius, pos[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]], bdColor)
-        w.drawLine([pos[0], pos[1] + this.radius], [pos[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
-        w.drawLine([pos[0] + this.radius, pos[1]  - 1 + size[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]  - 1 + size[1]], bdColor)
-        w.drawLine([pos[0]  - 1 + size[0], pos[1] + this.radius], [pos[0]  - 1 + size[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
-        if this.radius != 0 {
-            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
-            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
-            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
-            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
+        if bgColor.a != 0 {
+            w.drawRoundedRect(pos, size, this.radius, bgColor)
         }
-
-        w.drawRoundedRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], this.radius, bgColor)
+        if this.border != 0 {
+            w.strokeRoundedRect(pos, size, this.radius, this.border, bdColor)
+            this.innerMargin = [this.border,this.border,this.border,this.border]
+        }
 
         if len(this.values) != 0 {
             if this.ctxWindow.isRunning == false {
-                w.drawRectImage([pos[0] + size[0] - 22, pos[1] + 14], [14, 7], __graphics_select_triangle_asset)
+                w.drawRectImage([pos[0] + size[0] - 22, pos[1] + size[1] / 2 - 3], [14, 7], __graphics_select_triangle_asset)
             } else {
-                w.drawRectImage([pos[0] + size[0] - 22, pos[1] + 14], [14, 7], __graphics_select_triangle_close_asset)
+                w.drawRectImage([pos[0] + size[0] - 22, pos[1] + size[1] / 2 - 3], [14, 7], __graphics_select_triangle_close_asset)
             }
         }
 
@@ -735,7 +727,7 @@ struct uiSelectInput extend uiElement {
         this.cursor = "hand1"
 
         this.ctxWindow = new contextMenuWindow {
-            font: getSystemUIfont()
+            font: getSystemUIfont("")
             elem: this
             events: function(win contextMenuWindow*, event uint32) {
                 if event == windowEventMouseMove {

@@ -35,6 +35,8 @@ const __graphicsDrawRequestTypeClear = 3
 
 const __graphicsNbDrawers = 3 // Max: 8
 
+__lastActiveWindow ptr
+
 #define floor(x float) float
 #define type256bytes [uint,uint,uint,uint]
 #define type512bytes [uint,uint,uint,uint,uint,uint,uint,uint]
@@ -47,6 +49,7 @@ struct __graphicsDrawRequest {
     type: byte
     n: int
     buff: ptr
+    buff2: ptr
 }
 
 xcb_getAtom(connection ptr, name str) uint32 {
@@ -161,6 +164,8 @@ struct window {
         col = 0
         if this.isKeyModifier(Key_SHIFT) || this.shiftLock {
             col = 1
+        } else if this.isKeyModifier(Key_ALT_GR) {
+            col = 4
         }
         n = xcb_key_symbols_get_keysym(this.keySyms, this.lastKeyCode, col)
         if n == 0 {
@@ -263,7 +268,7 @@ struct window {
             response_type: 33
             format: 32
             window: this.window
-            type: 68
+            type: this.atoms.deleteWindow
         }
 
         xcb_send_event(
@@ -424,7 +429,6 @@ struct window {
                 n += req.ogSize[0]
             }
         }
-
     }
 
     __drawThreadworker(m uint) {
@@ -850,14 +854,24 @@ struct window {
         }
 
         this.drawRect([pos[0], pos[1] + radi], [size[0], size[1] - radi * 2 + 1], color)
-        this.drawRect([pos[0] + radi, pos[1]], [size[0] - radi * 2 + 1, radi], color)
-        this.drawRect([pos[0] + radi, pos[1] + size[1] - radi + 1], [size[0] - radi * 2 + 1, radi - 1], color)
+
+        if min[0] > pos[0] + radi || max[0] < pos[0] + size[0] {
+            this.drawRect([pos[0] + radi, pos[1]], [size[0] - radi * 2 + 2, radi], color)
+            this.drawRect([pos[0] + radi, pos[1] + size[1] - radi], [size[0] - radi * 2 + 2, radi], color)
+            this.drawCircle([pos[0] + size[0] - radi, pos[1] + radi - 1], radi, color)
+            this.drawCircle([pos[0] + size[0] - radi, pos[1] + size[1] - radi], radi, color)
+            this.drawCircle([pos[0] + radi, pos[1] + radi - 1], radi, color)
+            this.drawCircle([pos[0] + radi, pos[1] + size[1] - radi], radi, color)
+            return
+        }
 
         fradi = <float>radi
         
         cPos = [pos[0] + radi - 1, pos[1] + radi - 1]
 
-        y=cPos[1] - radi
+        y=pos[1]
+
+        mx = max[0] + pos[0]
         
         if y < min[1] {
             y = min[1]
@@ -866,8 +880,8 @@ struct window {
         if cMax > max[1] - 1 {
             cMax = max[1] - 1
         }
-        
-        xMax = cPos[0]
+
+        xMax = pos[0] + size[0] - radi
         if xMax > max[0] {
             xMax = max[0]
         }
@@ -883,15 +897,15 @@ struct window {
                 x = min[0]
             }
             
-            for x <= xMax, x++ {
+            dy = <float>y - <float>cPos[1]
+            for x < xMax, x++ {
                 if x >= this.width || x < 0 {
                     continue
                 }
 
                 dx = <float>x - <float>cPos[0]
-                dy = <float>y - <float>cPos[1]
                 d = sqrt(dx*dx + dy*dy)
-                if d > fradi {
+                if d > fradi && x < cPos[0] {
                     continue
                 }
 
@@ -900,62 +914,224 @@ struct window {
                 if fradi - d < 1.0 {
                     rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
                     this.setPixel([x,y], rColor)
+                    this.setPixel([mx - x - 1,y], rColor)
                 } else {
-                    this.__unsafeFastSetPixel(y * this.width + x, cPos[0] - x + 1, color)
+                    this.__unsafeFastSetPixel(y * this.width + x, mx - 2*x, color)
                     break
                 }
 
             }
         }
 
-        cPos = [pos[0] + size[0] - radi, pos[1] + radi - 1]
+        cPos = [pos[0] + radi - 1, pos[1] + size[1] - radi]
 
-        y=cPos[1] - radi
+        y=cPos[1]+1
+
+        if y < min[1] {
+            y = min[1]
+        }
+        cMax = cPos[1] + radi
+        if cMax > max[1] {
+            cMax = max[1]
+        }
+
+        for y < cMax, y++ {
+            if y >= this.height || y < 0 {
+                continue
+            }
+            
+            x = cPos[0] - radi   
+
+            if x < min[0] {
+                x = min[0]
+            }
+
+            dy = <float>y - <float>cPos[1]
+            for x < xMax, x++ {
+                if x >= this.width || x < 0 {
+                    continue
+                }
+
+                dx = <float>x - <float>cPos[0]
+                d = sqrt(dx*dx + dy*dy)
+                if d > fradi && x < cPos[0] {
+                    continue
+                }
+
+                rColor = color
+
+                if fradi - d < 1.0 {
+                    rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
+                    this.setPixel([x,y], rColor)
+                    this.setPixel([mx - x - 1,y], rColor)
+                } else {
+                    this.__unsafeFastSetPixel(y * this.width + x, mx - 2*x, color)
+                    break
+                }
+            }
+        }
+    }
+
+    strokeRoundedRect(pos [int, int], size [int, int], radi int, width int, color rgbColor) {
+        if width == 0 {
+            return
+        }
+
+        if this.isExposed == false || color.a == 0 || size[0] <= 0 || size[1] <= 0 {
+            return
+        }
+
+        this.hasDrawn = true
+        max = [pos[0] + size[0], pos[1] + size[1]]
+        min = pos
+
+        if this.scissor[0] {
+            if pos[0] < this.scissor[1] {
+                min[0] = this.scissor[1]
+            }
+
+            if pos[1] < this.scissor[2] {
+                min[1] = this.scissor[2]
+            }
+
+            if max[0] > this.scissor[3] {
+                max[0] = this.scissor[3]
+            }
+
+            if max[1] > this.scissor[4] {
+                max[1] = this.scissor[4]
+            }
+        }
+
+        if min[0] < 0 {
+            min[0] = 0
+        }
+
+        if min[1] < 0 {
+            min[1] = 0
+        }
+
+        if max[0] > this.width {
+            max[0] = this.width
+        }
+
+        if max[1] > this.height {
+            max[1] = this.height
+        }
+
+        if max[0] <= pos[0] || max[1] <= pos[1] {
+            return
+        }
+
+        this._overlapCheck(pos, size)
+
+        this.hasDrawn = true
+
+        if radi * 2 > size[0] {
+            radi = size[0] / 2
+        }
+
+        if radi * 2 > size[1] {
+            radi = size[1] / 2
+        }
+
+        if min[0] > pos[0] + radi {
+            //TODO
+            return
+        }
+        
+        fradi = <float>radi
+        fradi2 = <float>(radi - width - 1)
+        fwidth = <float>width
+            
+        cPos = [pos[0] + radi - 1, pos[1] + radi - 1]
+
+        y=pos[1]
+
+        mx = max[0] + pos[0]
+
+        widthOffset = 0
+        if size[0] + pos[0] > max[0] {
+            widthOffset = size[0] + pos[0] - max[0]
+        }
         
         if y < min[1] {
             y = min[1]
         }
-
         cMax = cPos[1]
         if cMax > max[1] - 1 {
             cMax = max[1] - 1
         }
-
-        xMin = cPos[0]
-        if xMin < min[0] + 1 {
-            xMin = min[0] + 1
+        
+        xMax = cPos[0]
+        if xMax > max[0] - 1 {
+            xMax = max[0] - 1
         }
+
+        if radi == 0 {
+            this.drawRect(pos, [size[0], width], color)
+            this.drawRect([pos[0], pos[1] + size[1] - width], [size[0], width], color)
+            this.drawRect(pos, [width, size[1]], color)
+            this.drawRect([pos[0] + size[0] - width, pos[1]], [width, size[1]], color)
+            return
+        }
+
+        this.drawRect([pos[0] + radi - 1, pos[1]], [size[0] - 2 * radi + 2 - widthOffset, width], color)
+        this.drawRect([pos[0] + radi - 1, pos[1] + size[1] - width], [size[0] - 2 * radi + 2 - widthOffset, width], color)
+        this.drawRect([pos[0], pos[1] + radi - 1], [width, size[1] - 2 * radi + 2], color)
+        this.drawRect([pos[0] + size[0] - width, pos[1] + radi - 1], [width, size[1] - 2 * radi + 2], color)
+
         for y <= cMax, y++ {
             if y >= this.height || y < 0 {
                 continue
             }
-            x = cPos[0] + radi
 
-            if x > max[0] {
-                x = max[0] - 1
+
+            x = cPos[0] - radi
+            if x < min[0] {
+                x = min[0]
             }
-
-            for x >= xMin, x-- {
+            
+            dy = <float>y - <float>cPos[1]
+            for x < xMax, x++ {
                 if x >= this.width || x < 0 {
                     continue
                 }
 
                 dx = <float>x - <float>cPos[0]
-                dy = <float>y - <float>cPos[1]
                 d = sqrt(dx*dx + dy*dy)
-                if d > fradi {
+
+                dist = fradi - d
+                dist2 = d - fradi2
+                
+                if dist < 0.0 && x < cPos[0] {
                     continue
                 }
 
                 rColor = color
 
-                if fradi - d < 1.0 {
-                    rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
-                    this.setPixel([x,y], rColor)
-                } else {
-                    this.__unsafeFastSetPixel(y * this.width + cPos[0] + 1, x - cPos[0], color)
+                if dist2 < 0.0 {
                     break
                 }
+
+                if dist < fwidth {
+                    d = dist / 1.0
+                    if d > 1.0 {
+                        d = 1.0
+                    }
+                    rColor.a = <byte>(d * <float><uint>color.a)
+                    this.setPixel([x,y], rColor)
+                    this.setPixel([mx - x - 1,y], rColor)
+                } else {
+                    d = (dist2 / 1.0)
+                    if d > 1.0 {
+                        d = 1.0
+                    }
+                    rColor.a = <byte>(d * <float><uint>color.a)
+                    this.setPixel([x,y], rColor)
+                    this.setPixel([mx - x - 1,y], rColor)
+                }
+
             }
         }
 
@@ -972,9 +1148,10 @@ struct window {
         }
 
         xMax = cPos[0]
-        if xMax > max[0] {
-            xMax = max[0]
+        if xMax > max[0] - 1 {
+            xMax = max[0] - 1
         }
+
         for y < cMax, y++ {
             if y >= this.height || y < 0 {
                 continue
@@ -982,91 +1159,50 @@ struct window {
             
             x = cPos[0] - radi   
 
-            x = cPos[0] - radi
             if x < min[0] {
                 x = min[0]
             }
 
-            for x <= xMax, x++ {
+            dy = <float>y - <float>cPos[1]
+            for x < xMax, x++ {
                 if x >= this.width || x < 0 {
                     continue
                 }
 
                 dx = <float>x - <float>cPos[0]
-                dy = <float>y - <float>cPos[1]
                 d = sqrt(dx*dx + dy*dy)
-                if d > fradi {
+                dist = fradi - d
+                dist2 = d - fradi2
+                
+                if dist < 0.0 && x < cPos[0] {
                     continue
                 }
 
                 rColor = color
 
-                if fradi - d < 1.0 {
-                    rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
-                    this.setPixel([x,y], rColor)
-                } else {
-                    this.__unsafeFastSetPixel(y * this.width + x, cPos[0] - x + 1, color)
+                if dist2 < 0.0 {
                     break
                 }
-            }
-        }
 
-        cPos = [pos[0] + size[0] - radi, pos[1] + size[1] - radi]
-
-        y=cPos[1]+1
-
-        if y < min[1] {
-            y = min[1]
-        }
-        cMax = cPos[1] + radi
-        if cMax > max[1] {
-            cMax = max[1]
-        }
-
-
-        xMin = cPos[0]
-        if xMin < min[0] + 1 {
-            xMin = min[0] + 1
-        }
-        
-        for y < cMax, y++ {
-            if y >= this.height || y < 0 {
-                continue
-            }
-            x = cPos[0] + radi
-
-            if x > max[0] {
-                x = max[0] - 1
-            }
-
-            for x >= xMin, x-- {
-                if x >= this.width || x < 0 {
-                    continue
-                }
-
-                dx = <float>x - <float>cPos[0]
-                dy = <float>y - <float>cPos[1]
-                d = sqrt(dx*dx + dy*dy)
-                if d > fradi {
-                    continue
-                }
-
-                rColor = color
-
-                if fradi - d < 1.0 {
-                    rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
+                if dist < fwidth {
+                    d = dist / 1.0
+                    if d > 1.0 {
+                        d = 1.0
+                    }
+                    rColor.a = <byte>(d * <float><uint>color.a)
                     this.setPixel([x,y], rColor)
+                    this.setPixel([mx - x - 1,y], rColor)
                 } else {
-                    this.__unsafeFastSetPixel(y * this.width + cPos[0] + 1, x - cPos[0], color)
-                    break
+                    d = (dist2 / 1.0)
+                    if d > 1.0 {
+                        d = 1.0
+                    }
+                    rColor.a = <byte>(d * <float><uint>color.a)
+                    this.setPixel([x,y], rColor)
+                    this.setPixel([mx - x - 1,y], rColor)
                 }
             }
         }
-
-        // this.drawCircle([pos[0] + radi - 1, pos[1] + radi - 1], radi, color)
-        // this.drawCircle([pos[0] + size[0] - radi, pos[1] + radi - 1], radi, color)
-        // this.drawCircle([pos[0] + radi - 1, pos[1] + size[1] - radi], radi, color)
-        // this.drawCircle([pos[0] + size[0] - radi, pos[1] + size[1] - radi], radi, color)
     }
 
     drawLine(from [int, int], to [int, int], color rgbColor) {
@@ -1088,11 +1224,227 @@ struct window {
 
     }
 
-    drawText(fnt font, text str, color rgbColor, pos [int, int]) [int,int] {
+    drawChar(fntp font*, c uint32, color rgbColor, pos [int,int]) [int,int] {
         if this.isExposed == false {
             return [0,0]
         }
 
+        // TODO: this._overlapCheck(pos, size)
+
+        fnt = *fntp
+        fnt.currX = pos[0]
+        fnt.currY = pos[1]
+        this.hasDrawn = true
+        fnt.writeChar(c, color, this.setPixel, this)
+        return [fnt.currX, fnt.currY]
+    }
+
+    measureByteArr(fntp font*, text []byte, from uint, to uint) [uint, uint] {
+        fnt = *fntp
+        fnt.currX = 0
+        fnt.currY = 0
+        maxx = 0
+        i=from; for i < to, i++ {
+            codePoint = <uint32>text[i]
+
+            if text[i] == <char>10 {
+
+                if fnt.currX > maxx {
+                    maxx = fnt.currX
+                }
+
+                fnt.currX = 0
+                fnt.currY += fnt.fontSize + fnt.fontSize / 2
+                continue
+            }
+
+            if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
+                if text[i] & 0xE0 == 0xC0 {
+                    codePoint = <uint32>((text[i] & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
+                    i++
+                } else if text[i] & 0xF0 == 0xE0 && i+2 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
+                    i += 2
+                } else if text[i] & 0xF8 == 0xF0 && i+3 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
+                    i += 3
+                }
+            }
+
+            fnt.measureChar(codePoint)
+        }
+
+        if fnt.currX > maxx {
+            maxx = fnt.currX
+        }
+
+        res = [maxx, fnt.currY + fnt.fontSize]
+        return res
+    }
+
+    drawByteArr(fnt font*, text []byte, from uint, to uint, color rgbColor, pos [int, int]) [int,int] {
+        if this.isExposed == false {
+            return [0,0]
+        }
+
+        fnt.currX = pos[0]
+        fnt.currY = pos[1]
+        this.hasDrawn = true
+
+        i=from
+
+        if this.scissor[0] && fnt.currY < this.scissor[2] {
+            for i < to, i++ {
+
+                if text[i] == <char>10 {
+                    fnt.currY += fnt.fontSize + fnt.fontSize / 2
+                }
+
+                if fnt.currY >= this.scissor[2] {
+                    i++
+                    break
+                }
+            }
+        }
+
+        for i < to, i++ {
+
+            if this.scissor[0] {
+                if fnt.currY - fnt.fontSize >= this.scissor[4] {
+                    break
+                }
+
+                if fnt.currX >= this.scissor[3] {
+                    i++
+                    for i < len(text), i++ {
+                        if text[i] == <char>10 {
+                            break
+                        }
+                    }
+
+                    if i == len(text) {
+                        break
+                    }
+                }
+            }
+
+
+            codePoint = <uint32>text[i]
+
+            if text[i] == <char>10 {
+                fnt.currX = pos[0]
+                fnt.currY += fnt.fontSize + fnt.fontSize / 2
+                continue
+            }
+
+            if codePoint & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
+                if codePoint & 0xE0 == 0xC0 {
+                    codePoint = <uint32>((codePoint & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
+                    i++
+                } else if codePoint & 0xF0 == 0xE0 && i+2 < len(text) {
+                    codePoint = <uint32>((codePoint & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
+                    i += 2
+                } else if codePoint & 0xF8 == 0xF0 && i+3 < len(text) {
+                    codePoint = <uint32>((codePoint & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
+                    i += 3
+                }
+            }
+
+            sc = fnt.getGlyph(codePoint)
+            slot = <FT_GlyphSlotRec_*>&sc.glyph
+            bitmap = slot.bitmap
+            raw = <byte*>bitmap.buff
+
+            y=0; for y < bitmap.rows, y++ {
+                linePtr = <byte*>(<uint>raw + y * bitmap.pitch)
+                if bitmap.pitch < 0 {
+                    linePtr = <byte*>(<uint>raw + y * (bitmap.rows - 1 - y) * (0 - bitmap.pitch))
+                }
+                x = 0; for x < bitmap.width, x++ {
+                    rColor rgbColor
+
+                    if bitmap.pixel_mode == 1 {
+                        rawC = <byte*>(<uint>linePtr + (x >> 3))
+                        n = 0
+                        mask = 0x80
+                        for n < (x & 7), n++ {
+                            mask = mask >> 1
+                        }
+
+                        if *rawC & mask != 0 {
+                            rColor = color
+                        }
+                    } else {
+                        rColor = color
+                        rColor.a = *<byte*>(<uint>linePtr + x)
+                    }
+
+                    
+                    rx = fnt.currX + x + slot.bitmap_left
+                    ry = fnt.currY + y - slot.bitmap_top
+
+                    this.setPixel([rx, ry], rColor)
+                }
+            }
+
+            fnt.currX += (sc.glyph.advance.x >> 6)
+            fnt.currY += (sc.glyph.advance.y >> 6)
+        }
+
+        return [fnt.currX, fnt.currY]
+    }
+
+    measureText(fntp font*, text str) [uint, uint] {
+        fnt = *fntp
+        maxx = 0
+        fnt.currX = 0
+        fnt.currY = 0
+        i=0; for i < len(text), i++ {
+            codePoint = <uint32>text[i]
+
+            if text[i] == <char>10 {
+
+                if fnt.currX > maxx {
+                    maxx = fnt.currX
+                }
+
+                fnt.currX = 0
+                fnt.currY += fnt.fontSize + fnt.fontSize / 2
+                continue
+            }
+
+            if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
+                if text[i] & 0xE0 == 0xC0 {
+                    codePoint = <uint32>((text[i] & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
+                    i++
+                } else if text[i] & 0xF0 == 0xE0 && i+2 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
+                    i += 2
+                } else if text[i] & 0xF8 == 0xF0 && i+3 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
+                    i += 3
+                }
+            }
+
+            fnt.measureChar(codePoint)
+        }
+
+        if fnt.currX > maxx {
+            maxx = fnt.currX
+        }
+
+        res = [maxx, fnt.currY + fnt.fontSize]
+        return res
+    }
+
+    drawText(fntp font*, text str, color rgbColor, pos [int, int]) [int,int] {
+        if this.isExposed == false {
+            return [0,0]
+        }
+
+        // return this.measureText(fnt, text)
+
+        fnt = *fntp
         fnt.currX = pos[0]
         fnt.currY = pos[1]
         this.hasDrawn = true
@@ -1163,167 +1515,6 @@ struct window {
         }
 
         return [fnt.currX, fnt.currY]
-    }
-
-    drawChar(fnt font, c uint32, color rgbColor, pos [int,int]) [int,int] {
-        if this.isExposed == false {
-            return [0,0]
-        }
-
-        // TODO: this._overlapCheck(pos, size)
-
-        fnt.currX = pos[0]
-        fnt.currY = pos[1]
-        this.hasDrawn = true
-        fnt.writeChar(c, color, this.setPixel, this)
-        return [fnt.currX, fnt.currY]
-    }
-
-    drawByteArr(fnt font, text []byte, from uint, to uint, color rgbColor, pos [int, int]) {
-        if this.isExposed == false {
-            return
-        }
-
-        //TODO: this._overlapCheck(pos, size)
-
-        fnt.currX = pos[0]
-        fnt.currY = pos[1]
-        this.hasDrawn = true
-        i=from; for i < to, i++ {
-            codePoint = <uint32>text[i]
-
-            if this.scissor[0] {
-                if fnt.currY - fnt.fontSize >= this.scissor[4] {
-                    break
-                }
-
-                if fnt.currX >= this.scissor[3] {
-                    i++
-                    for i < len(text), i++ {
-                        if text[i] == <char>10 {
-                            break
-                        }
-                    }
-
-                    if i == len(text) {
-                        break
-                    }
-                }
-            }
-
-            if text[i] == <char>10 {
-                fnt.currX = pos[0]
-                fnt.currY += fnt.fontSize + fnt.fontSize / 2
-                continue
-            }
-
-            if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
-                if text[i] & 0xE0 == 0xC0 {
-                    codePoint = <uint32>((text[i] & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
-                    i++
-                } else if text[i] & 0xF0 == 0xE0 && i+2 < len(text) {
-                    codePoint = <uint32>((text[i] & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
-                    i += 2
-                } else if text[i] & 0xF8 == 0xF0 && i+3 < len(text) {
-                    codePoint = <uint32>((text[i] & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
-                    i += 3
-                }
-            }
-
-            fnt.writeChar(codePoint, color, this.setPixel, this)
-        }
-    }
-
-    measureText(fnt font, text str) [uint, uint] {
-        ocx = fnt.currX
-        ocy = fnt.currY
-        maxx = ocx
-        fnt.currX = 0
-        fnt.currY = 0
-        i=0; for i < len(text), i++ {
-            codePoint = <uint32>text[i]
-
-            if text[i] == <char>10 {
-
-                if fnt.currX > maxx {
-                    maxx = fnt.currX
-                }
-
-                fnt.currX = ocx
-                fnt.currY += fnt.fontSize + fnt.fontSize / 2
-                continue
-            }
-
-            if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
-                if text[i] & 0xE0 == 0xC0 {
-                    codePoint = <uint32>((text[i] & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
-                    i++
-                } else if text[i] & 0xF0 == 0xE0 && i+2 < len(text) {
-                    codePoint = <uint32>((text[i] & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
-                    i += 2
-                } else if text[i] & 0xF8 == 0xF0 && i+3 < len(text) {
-                    codePoint = <uint32>((text[i] & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
-                    i += 3
-                }
-            }
-
-            fnt.measureChar(codePoint)
-        }
-
-        if fnt.currX > maxx {
-            maxx = fnt.currX
-        }
-
-        res = [maxx, fnt.currY + fnt.fontSize]
-        fnt.currX = ocx
-        fnt.currY = ocy
-        return res
-    }
-
-    measureByteArr(fnt font, text []byte, from uint, to uint) [uint, uint] {
-        ocx = fnt.currX
-        ocy = fnt.currY
-        maxx = ocx
-        fnt.currX = 0
-        fnt.currY = 0
-        i=from; for i < to, i++ {
-            codePoint = <uint32>text[i]
-
-            if text[i] == <char>10 {
-
-                if fnt.currX > maxx {
-                    maxx = fnt.currX
-                }
-
-                fnt.currX = ocx
-                fnt.currY += fnt.fontSize + fnt.fontSize / 2
-                continue
-            }
-
-            if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
-                if text[i] & 0xE0 == 0xC0 {
-                    codePoint = <uint32>((text[i] & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
-                    i++
-                } else if text[i] & 0xF0 == 0xE0 && i+2 < len(text) {
-                    codePoint = <uint32>((text[i] & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
-                    i += 2
-                } else if text[i] & 0xF8 == 0xF0 && i+3 < len(text) {
-                    codePoint = <uint32>((text[i] & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
-                    i += 3
-                }
-            }
-
-            fnt.measureChar(codePoint)
-        }
-
-        if fnt.currX > maxx {
-            maxx = fnt.currX
-        }
-
-        res = [maxx, fnt.currY + fnt.fontSize]
-        fnt.currX = ocx
-        fnt.currY = ocy
-        return res
     }
 
     toScreenCoord(pos [int,int]) [int,int] {
@@ -1449,6 +1640,18 @@ struct window {
     }
 
     launch(width uint, height uint, title str) {
+        lastWin = atomic_load(&__lastActiveWindow)
+        atomic_store(&__lastActiveWindow, <uint>this)
+
+        //not very safe....
+        sigact = sigaction{
+            sa_handler: function() {
+                win = <window*>atomic_load(&__lastActiveWindow)
+                win.close()
+            }
+        }
+        sigaction(SIGTERM, &sigact, null)
+
         this.haveFrame.init()
         this.haveFrameMut.init()
         this.clipboardChan = channel()
@@ -1861,6 +2064,8 @@ struct window {
         this.haveFrame.destroy()
         this.haveFrameMut.destroy()
         this.clipboardChan.destroy()
+
+        atomic_store(&__lastActiveWindow, <uint>lastWin)
     }
 
 }

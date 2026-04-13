@@ -7,7 +7,7 @@ SCROLLBAR_THUMB_COLOR = rgbColor{120, 120, 255}
 
 #define __uiBox_hasBothscrollBar(box uiElement*) bool
 
-struct uiBoxScrollbar extend uiElement {
+struct _uiBoxScrollbar extend uiElement {
     trackColor: rgbColor
     trackWidth: uint
     thumbSize: int
@@ -210,20 +210,13 @@ struct uiBox extend uiElement {
         pos = this.getPosition()
         size = this.getSize()
 
-        if this.border != 0 {
-            w.drawLine([pos[0] + this.radius, pos[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]], this.borderColor)
-            w.drawLine([pos[0], pos[1] + this.radius], [pos[0], pos[1]  - 1 + size[1] - this.radius], this.borderColor)
-            w.drawLine([pos[0] + this.radius, pos[1]  - 1 + size[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]  - 1 + size[1]], this.borderColor)
-            w.drawLine([pos[0]  - 1 + size[0], pos[1] + this.radius], [pos[0]  - 1 + size[0], pos[1]  - 1 + size[1] - this.radius], this.borderColor)
-            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + this.radius - 1], this.radius, this.border + 1, this.borderColor)
-            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius - 1], this.radius, this.border + 1, this.borderColor)
-            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, this.borderColor)
-            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, this.borderColor)
-            this.innerMargin = [this.border,this.border,this.border,this.border]
-        }
         
         if this.bgColor.a != 0 {
-            w.drawRoundedRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], this.radius, this.bgColor)
+            w.drawRoundedRect(pos, size, this.radius, this.bgColor)
+        }
+        if this.border != 0 {
+            w.strokeRoundedRect(pos, size, this.radius, this.border, this.borderColor)
+            this.innerMargin = [this.border,this.border,this.border,this.border]
         }
 
         if this.backdrop != null {
@@ -239,7 +232,7 @@ struct uiBox extend uiElement {
 
         if innerSize[1] > size[1] {
             if this.scrollBars[1] == null {
-                this.scrollBars[1] = new uiBoxScrollbar {
+                this.scrollBars[1] = new _uiBoxScrollbar {
                     isVertical: true
                     absolutePosition: true
                     pos: [percents(100).basis(uiBasisEnd), pixels(0)]
@@ -251,13 +244,13 @@ struct uiBox extend uiElement {
             if this.scrollBars[1] != null {
                 this.scrollBars[1].remove()
                 this.scrollBars[1] = null
-                this.offsets[1] = 0
             }
+            this.offsets[1] = 0
         }
 
         if innerSize[0] > size[0] {
             if this.scrollBars[0] == null {
-                this.scrollBars[0] = new uiBoxScrollbar {
+                this.scrollBars[0] = new _uiBoxScrollbar {
                     isVertical: false
                     absolutePosition: true
                     pos: [pixels(0), percents(100).basis(uiBasisEnd)]
@@ -269,8 +262,8 @@ struct uiBox extend uiElement {
             if this.scrollBars[0] != null {
                 this.scrollBars[0].remove()
                 this.scrollBars[0] = null
-                this.offsets[0] = 0
             }
+            this.offsets[0] = 0
         }
     }
 

@@ -80,9 +80,8 @@ struct _uiTabButton extend uiButton {
         if this.radius == 0 {
             w.drawRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], bgColor)
         } else {
-            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
-            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
-            w.drawRoundedRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], this.radius, bgColor)
+            w.drawRoundedRect(pos, size, this.radius, bgColor)
+            w.strokeRoundedRect(pos, size, this.radius, this.border, bdColor)
         }
 
         w.drawRect([pos[0] + this.border, pos[1] + size[1] - this.radius], [size[0] - this.border * 2, this.radius], bgColor)
@@ -105,6 +104,7 @@ struct uiTab {
     name: str
     element: uiElement*
     callback: function(uiTab*, int)
+    parent: ptr
 }
 
 struct uiTabs extend uiElement {
@@ -129,17 +129,76 @@ struct uiTabs extend uiElement {
         w.drawLine([pos[0] + this.radius, pos[1]  - 1 + size[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]  - 1 + size[1]], this.borderColor)
         w.drawLine([pos[0]  - 1 + size[0], pos[1] + 24 + this.radius], [pos[0]  - 1 + size[0], pos[1]  - 1 + size[1] - this.radius], this.borderColor)
 
-        if this.radius != 0 {
+        if this.radius != 0 && this.border != 0 {
             w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius + 23], this.radius, this.border + 1, this.borderColor)
             w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, this.borderColor)
             w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, this.borderColor)
             w.drawRect([pos[0] + this.border, pos[1] + 24 + this.border], [this.radius, this.radius], this.bgColor)
         }
-        w.drawRoundedRect([pos[0] + this.border, pos[1] + 24 + this.border], [size[0] - this.border * 2, size[1] - 24 - this.border * 2], this.radius, this.bgColor)
+        w.drawRoundedRect([pos[0] + this.border, pos[1] + 24 + this.border], [size[0] - this.border * 2, size[1] - 24 - this.border * 2], this.radius - this.border, this.bgColor)
     }
 
     setTab(i int) {
+        if i >= len(this.tabs) {
+            panic("Could not set tab "+intToStr(i))
+        }
         __uiTabsPropagateClick(this.elements[0].elements[0].elements[i])
+    }
+
+    getActiveTab() int {
+        tabBtns = <uiHorizontalArray*>this.elements[0].elements[0]
+        i=0; for i < len(tabBtns.elements), i++ {
+            tabBtn = <_uiTabButton*>tabBtns.elements[i]
+            if tabBtn.active {
+                return 0
+            }
+        }
+        return -1
+    }
+
+    addTab(tb uiTab) {
+        tb.parent = this
+        this.tabs[len(this.tabs)] = tb
+        tabBtn = new _uiTabButton {
+            text: tb.name
+            border: this.border
+            borderColor: this.borderColor
+        }
+
+
+        if len(this.tabs) == 1 {
+            neededPad = this.border
+            if this.radius / 2 > neededPad {
+                neededPad = this.radius / 2
+            }
+            tabBtn.active = true
+            this.addElement(new uiBox {
+                pos: [pixels(0), pixels(24)]
+                size: [percents(100), percents(100) - pixels(24)]
+                padding: [neededPad, neededPad, neededPad, neededPad]
+
+                elements: {
+                    tb.element
+                }
+            })
+        }
+
+        this.elements[0].elements[0].addElementNoRedraw(tabBtn)
+    }
+
+    removeTab(i int) {
+        tabsArray = <uiHorizontalArray*>this.elements[0].elements[0]
+        tabBtn = <_uiTabButton*>tabsArray.elements[i]
+        tabsArray.removeChild(i)
+        delete(this.tabs, i)
+        if len(this.tabs) != 0 {
+            if i > 0 {
+                this.setTab(i-1)
+            } else {
+                this.setTab(0)
+            }
+        }
+        this.redraw()
     }
 
     _init() {
@@ -162,6 +221,7 @@ struct uiTabs extend uiElement {
         }
 
         i=0; for i < len(this.tabs), i++ {
+            this.tabs[i].parent = this
             tabBtn = new _uiTabButton {
                 text: this.tabs[i].name
                 border: this.border
@@ -189,6 +249,7 @@ struct uiTabs extend uiElement {
 __uiTabsPropagateClick(btn _uiTabButton*) {
     tabs = <uiHorizontalArray*>btn.parent
     parent = <uiTabs*>btn.parent.parent.parent
+    tabsContent = <uiBox*>parent.elements[1]
     
     i=0; for i < len(tabs.elements), i++ {
         iterBtn = <_uiTabButton*>tabs.elements[i]
@@ -198,11 +259,14 @@ __uiTabsPropagateClick(btn _uiTabButton*) {
         }
         iterBtn.active = true
 
-        if len(parent.elements) > 1 && len(parent.elements[1].elements) != 0 {
-            parent.elements[1].removeChild(0)
-            parent.elements[1].addElement(parent.tabs[i].element)
+        if len(parent.elements) > 1 && len(tabsContent.elements) != 0 {
+            j = len(tabsContent.elements) - 1
+            for j != -1, j-- {
+                tabsContent.removeChild(j)
+            }
+            tabsContent.addElement(parent.tabs[i].element)
             if parent.tabs[i].callback != null {
-                t = parent.tabs[i]
+                t = &parent.tabs[i]
                 t.callback(i)
             }
         }

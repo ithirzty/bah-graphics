@@ -1,0 +1,126 @@
+const _uiPosFlagPx        = 1
+const _uiPosFlagPc        = 2
+const _uiPosFlagOpAdd     = 4
+const _uiPosFlagOpSub     = 8
+const _uiPosFlagOpMult    = 16
+const _uiPosFlagOpDiv     = 32
+const _uiPosFlagRef       = 64
+const _uiPosFlagRefID     = 128
+const _uiPosFlagInnerSize = 256
+const _uiPosFlagMin       = 512
+const _uiPosFlagMax       = 1024
+
+const uiBasisCenter = 2048
+const uiBasisEnd    = 4096
+
+struct uiPos {
+    ammount: int32
+    flags: int32
+    children: [ptr,ptr]
+
+    basis(bs int32) uiPos {
+        this.flags = this.flags | bs
+        return *this
+    }
+
+    min(x uiPos) uiPos {
+        a = new uiPos
+        *a = *this
+        b = new uiPos
+        *b = x
+        return uiPos {
+            flags: _uiPosFlagMin
+            children: [a,b]
+        }
+    }
+
+    max(x uiPos) uiPos {
+        a = new uiPos
+        *a = *this
+        b = new uiPos
+        *b = x
+        return uiPos {
+            flags: _uiPosFlagMax
+            children: [a,b]
+        }
+    }
+
+    add(x uiPos) uiPos {
+        a = new uiPos
+        *a = *this
+        b = new uiPos
+        *b = x
+        return uiPos {
+            flags: _uiPosFlagOpAdd
+            children: [a, b]
+        }
+    }
+
+    sub(x uiPos) uiPos {
+        a = new uiPos
+        *a = *this
+        b = new uiPos
+        *b = x
+        return uiPos {
+            flags: _uiPosFlagOpSub
+            children: [a, b]
+        }
+    }
+
+    mult(x uiPos) uiPos {
+        a = new uiPos
+        *a = *this
+        b = new uiPos
+        *b = x
+        return uiPos {
+            flags: _uiPosFlagOpMult
+            children: [a, b]
+        }
+    }
+
+    div(x uiPos) uiPos {
+        a = new uiPos
+        *a = *this
+        b = new uiPos
+        *b = x
+        return uiPos {
+            flags: _uiPosFlagOpDiv
+            children: [a, b]
+        }
+    }
+}
+
+const nullPos = uiPos{0}
+const uiInnerSize = uiPos{0, _uiPosFlagInnerSize}
+
+pixels(px int) uiPos {
+    return uiPos {
+        ammount: px
+        flags: _uiPosFlagPx
+    }
+}
+
+percents(pc int) uiPos {
+    return uiPos {
+        ammount: pc
+        flags: _uiPosFlagPc
+    }
+}
+
+sizeOfElement(elem ptr) uiPos {
+    return uiPos {
+        flags: _uiPosFlagRef
+        children: [elem, null]
+    }
+}
+
+sizeOfElementById(id str) uiPos {
+    return uiPos {
+        flags: _uiPosFlagRefID
+        children: [id, null]
+    }
+}
+
+isPosNull(vec uiPos) bool {
+    return vec.flags == 0
+}

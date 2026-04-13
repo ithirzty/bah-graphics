@@ -5,10 +5,15 @@
 struct uiVerticalArray extend uiElement {
     spacing: int
     dynamicSize: bool = true
-    bgColor: rgbColor = rgbColor{0,0,0,0}
+    radius: int = 0
+    border: int = 0
+
+    //colors
+    bgColor: rgbColor = rgbColor{0, 0, 0, 0}
+    borderColor: rgbColor = ELEMENT_BORDER_COLOR
 
     draw(w ui*) {
-        sizeAcc = [this.padding[0], this.padding[1]]
+        sizeAcc = [0,0]
         i=0; for i < len(this.elements), i++ {
             elem = this.elements[i]
             elem.pos[1] = pixels(sizeAcc[1])
@@ -24,7 +29,16 @@ struct uiVerticalArray extend uiElement {
             this.size[0] = pixels(innerSize[0])
         }
 
-        w.drawRect(this.getPosition(), this.getSize(), this.bgColor)
+        pos = this.getPosition()
+        size = this.getSize()
+
+        if this.bgColor.a != 0 {
+            w.drawRoundedRect(pos, size, this.radius, this.bgColor)
+        }
+        if this.border != 0 {
+            w.strokeRoundedRect(pos, size, this.radius, this.border, this.borderColor)
+            this.innerMargin = [this.border,this.border,this.border,this.border]
+        }
     }
 
     _init() {
@@ -36,10 +50,15 @@ struct uiVerticalArray extend uiElement {
 struct uiHorizontalArray extend uiElement {
     spacing: int
     dynamicSize: bool = true
-    bgColor: rgbColor = rgbColor{0,0,0,0}
+    radius: int = 0
+    border: int = 0
+
+    //colors
+    bgColor: rgbColor = rgbColor{0, 0, 0, 0}
+    borderColor: rgbColor = ELEMENT_BORDER_COLOR
 
     draw(w ui*) {
-        sizeAcc = [this.padding[0], this.padding[1]]
+        sizeAcc = [0,0]
         i=0; for i < len(this.elements), i++ {
             elem = this.elements[i]
             elem.pos[0] = pixels(sizeAcc[0])
@@ -54,7 +73,17 @@ struct uiHorizontalArray extend uiElement {
         if this.dynamicSize {
             this.size[1] = pixels(innerSize[1])
         }
-        w.drawRect(this.getPosition(), this.getSize(), this.bgColor)
+
+        pos = this.getPosition()
+        size = this.getSize()
+
+        if this.bgColor.a != 0 {
+            w.drawRoundedRect(pos, size, this.radius, this.bgColor)
+        }
+        if this.border != 0 {
+            w.strokeRoundedRect(pos, size, this.radius, this.border, this.borderColor)
+            this.innerMargin = [this.border,this.border,this.border,this.border]
+        }
     }
 
     _init() {
@@ -66,10 +95,15 @@ struct uiHorizontalArray extend uiElement {
 struct uiVerticalGridArray extend uiElement {
     spacing: int
     dynamicSize: bool = true
+    radius: int = 0
+    border: int = 0
+    
+    //colors
     bgColor: rgbColor = rgbColor{0, 0, 0, 0}
-
+    borderColor: rgbColor = ELEMENT_BORDER_COLOR
+    
     draw(w ui*) {
-        sizeAcc = [this.padding[0], this.padding[1]]
+        sizeAcc = [0,0]
         thisSize = this.getSize()
 
         maxHeight = 0
@@ -79,7 +113,6 @@ struct uiVerticalGridArray extend uiElement {
             elem.pos[0] = pixels(sizeAcc[0])
             elem.pos[1] = pixels(sizeAcc[1])
             size = elem.getSize()
-            pos = elem.getPosition()
 
             if size[1] > maxHeight {
                 maxHeight = size[1]
@@ -87,7 +120,7 @@ struct uiVerticalGridArray extend uiElement {
             sizeAcc[0] += size[0] + this.spacing
 
             if sizeAcc[0] + size[0] + this.padding[2] + this.padding[0] >= thisSize[0] {
-                sizeAcc[0] = this.padding[0]
+                sizeAcc[0] = 0
                 sizeAcc[1] += maxHeight + this.spacing
                 maxHeight = 0
             }
@@ -98,7 +131,17 @@ struct uiVerticalGridArray extend uiElement {
         if this.dynamicSize {
             this.size[1] = pixels(innerSize[1])
         }
-        w.drawRect(this.getPosition(), this.getSize(), this.bgColor)
+
+        pos = this.getPosition()
+        size = this.getSize()
+
+        if this.bgColor.a != 0 {
+            w.drawRoundedRect(pos, size, this.radius, this.bgColor)
+        }
+        if this.border != 0 {
+            w.strokeRoundedRect(pos, size, this.radius, this.border, this.borderColor)
+            this.innerMargin = [this.border,this.border,this.border,this.border]
+        }
     }
 
     _init() {

@@ -33,13 +33,14 @@ struct uiAnimation {
 }
 
 struct uiBorderlessWindow extend window {
-    font: font
+    font: font*
     parent: window*
     lastEvent: xcb_generic_event_t*
 
     launch(x uint, y uint, width uint, height uint) {
         this.haveFrame.init()
         this.haveFrameMut.init()
+        this.atoms.deleteWindow = 68
 
         this.isRunning = true
 
@@ -268,7 +269,7 @@ struct fileDragWindow extend uiBorderlessWindow {
 }
 
 struct ui extend window {
-    font: font
+    font: font*
     elements: []uiElement*
     focusedElement: uiElement*
 
@@ -290,11 +291,12 @@ struct ui extend window {
 
     ctxWindow: contextMenuWindow*
     fileDragWindow: fileDragWindow*
+    contextItems: []uiContextItem
 
     threadId: pthread_t
 
     _init() {
-        this.font = getSystemUIfont()
+        this.font = getSystemUIfont("")
         this.events = __uiHandleEvents
         this.animationsMutex.init()
         this.animationsCond.init()
@@ -328,7 +330,7 @@ struct ui extend window {
         this.threadId = currentThread()
         this.ctxWindow = new contextMenuWindow {
             parent: this
-            font: getSystemUIfont()
+            font: getSystemUIfont("")
             events: function(win contextMenuWindow*, event uint32) {
                 ui = <ui*>win.parent
 
@@ -463,7 +465,7 @@ _uiDrawElementBackground(pos [int,int], size [int,int], currElem uiElement*) {
         }
         __uiRedrawElement_inner(ui, currElem.parent, __uiElementDrawTypeBackground + i)
     } else {
-        ui.clear(WHITE)
+        ui.clear(BLACK)
         i=0; for i < len(ui.elements), i++ {
             if ui.elements[i] == currElem {
                 break
@@ -630,7 +632,6 @@ __uiRedrawElement_inner(ui ui*, elem uiElement*, drawType int) {
 
             drawFn(currElem, ui)
 
-
             max = len(currElem.elements)
             if drawType >= __uiElementDrawTypeBackground {
                 max = drawType - __uiElementDrawTypeBackground
@@ -726,7 +727,6 @@ __uiAnimationHandler(ui ui*) {
     freq = 16
     for ui.isRunning {
         ui.animationsMutex.lock()
-        // println("waiting: "+uintToStr(freq)+"ms")
         for len(ui.animations) == 0 {
             ui.animationsCond.wait(ui.animationsMutex)
         }
@@ -766,6 +766,9 @@ __uiAnimationHandler(ui ui*) {
 }
 
 __uiDispatchEvent(ui ui*, elem uiElement*, event uint32) {
+    if elem.toRemove {
+        return
+    }
     if event == windowEventKeyDown {
         i=0; for i < len(elem.contextItems), i++ {
             ci = &elem.contextItems[i]
@@ -1221,7 +1224,7 @@ __uiHandleEvents(ui ui*, event uint32) {
                 ui.frameStart = getTimeUnix()
                 ui.isDrawing = true
             }
-            ui.clear(WHITE)
+            ui.clear(BLACK)
             i=0; for i < len(ui.elements), i++ {
                 __uiForceDrawElement(ui, ui.elements[i])
             }
@@ -1243,8 +1246,25 @@ __uiHandleEvents(ui ui*, event uint32) {
     }
 
     if event == windowEventKeyDown || event == windowEventKeyUp {
-        if ui.focusedElement != null {
-            __uiDispatchEvent(ui, ui.focusedElement, event)
+        i = 0
+        if event == windowEventKeyDown {
+            for i < len(ui.contextItems), i++ {
+                ci = &ui.contextItems[i]
+                if ci.ctrl != ui.isKeyModifier(Key_CTRL) || ci.shift != ui.isKeyModifier(Key_SHIFT) || ci.alt != ui.isKeyModifier(Key_ALT) {
+                    continue
+                }
+
+                if ci.key == ui.getEventChar() && ci.callback != null {
+                    ci.callback(null)
+                    break
+                }
+            }
+        }
+
+        if event != windowEventKeyDown || i == len(ui.contextItems) {
+            if ui.focusedElement != null {
+                __uiDispatchEvent(ui, ui.focusedElement, event)
+            }
         }
     } else if event == windowEventMouseMove {
         pos = ui.getCursorPosition()
@@ -1622,6 +1642,7 @@ __uiHandleEvents(ui ui*, event uint32) {
 }
 
 __uiConstructElementTreeRecursively(elem uiElement*) {
+    elem.toRemove = false
     i=0; for i < len(elem.elements), i++ {
         elem.elements[i].parent = elem
         elem.elements[i].window = elem.window

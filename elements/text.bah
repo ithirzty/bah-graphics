@@ -13,6 +13,8 @@ struct uiText extend uiElement {
             //pixel coords, text offset
     selBeg: [int, int, int]
     selEnd: [int, int, int]
+    _lastText: ptr
+    _lastSize: int
     isSel: bool
     bold: bool
 
@@ -132,6 +134,7 @@ struct uiText extend uiElement {
 
     setText(s str) {
         this.text = s
+        this._lastText = s
         ui = <ui*>this.window
         ui.font.setSize(this.fontSize)
         b = ui.font.setBold(this.bold)
@@ -152,12 +155,15 @@ struct uiText extend uiElement {
 
         pos = this.getPosition()
 
-        if isPosNull(this.size[0]) || isPosNull(this.size[1]) {
+        if <uint>this._lastText != <uint>this.text || this._lastSize != this.fontSize {
             txtSize = this.window.measureText(w.font, this.text)
+            this.padding[1] = this.fontSize / 2
             this.size = [
                 pixels(txtSize[0] + this.padding[0] * 2),
                 pixels(txtSize[1] + this.padding[1] * 2)
             ]
+            this._lastSize = this.fontSize
+            this._lastText = this.text
         }
         
         size = this.getSize()
@@ -223,9 +229,7 @@ struct uiText extend uiElement {
             this.fontSize = 8
         }
 
-        if this.padding[0] == 0 {
-            this.padding = [0, this.fontSize / 2, 0, 0]
-        }
+        this.padding[1] = this.fontSize / 2
 
         if this.focusable {
             this.cursor = "xterm"

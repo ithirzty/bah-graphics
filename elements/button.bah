@@ -2,13 +2,6 @@
 
 #import "./base.bah"
 
-// ELEMENT_BACKGROUND_COLOR = rgbColor{220, 220, 220}
-// ELEMENT_BACKGROUND_HOVERED_COLOR = rgbColor{191, 191, 255}
-// ELEMENT_BACKGROUND_CLICKED_COLOR = rgbColor{120, 120, 255}
-// ELEMENT_TEXT_COLOR = rgbColor{0,0,0}
-// ELEMENT_CLICKED_TEXT_COLOR = rgbColor{255,255,255}
-// ELEMENT_BORDER_COLOR = rgbColor{255, 255, 255}
-
 struct uiButton extend uiElement {
     text: str = "Button"
     onclick: function(uiButton*)
@@ -18,6 +11,8 @@ struct uiButton extend uiElement {
     bold: bool
     _bgColor: rgbColor
     _fgColor: rgbColor
+    _lastText: str
+    _lastSize: int
     transitionTime: int = ELEMENT_TRANSITION_TIME
     //colors
     bgColor: rgbColor = ELEMENT_BACKGROUND_COLOR
@@ -59,14 +54,21 @@ struct uiButton extend uiElement {
         w.font.setSize(this.fontSize)
         b = w.font.setBold(this.bold)
 
-        textWidth = w.measureText(w.font, this.text)[0]
+        if <uint>this._lastText != <uint>this.text || this._lastSize != this.fontSize {
+            this._lastSize = this.fontSize
+            this._lastText = this.text
+            this.size[0] = nullPos
+            this.size[1] = nullPos
+        }
 
         if isPosNull(this.size[0]) {
-            this.size[0] = pixels(textWidth + this.padding[0] * 2)
+            txtSize = this.window.measureText(w.font, this.text)[0]
+            this.size[0] = pixels(txtSize + this.padding[0] * 2)
         }
 
         if isPosNull(this.size[1]) {
-            this.size[1] = pixels(this.fontSize + this.padding[1] * 2)
+            txtSize = this.window.measureText(w.font, this.text)[1]
+            this.size[1] = pixels(txtSize + this.padding[1] * 2)
         }
 
 
@@ -110,18 +112,13 @@ struct uiButton extend uiElement {
             bdColor = this.hoveredBorderColor
         }
 
-        if this.border != 0 {
-            w.drawLine([pos[0] + this.radius, pos[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]], bdColor)
-            w.drawLine([pos[0], pos[1] + this.radius], [pos[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
-            w.drawLine([pos[0] + this.radius, pos[1]  - 1 + size[1]], [pos[0]  - 1 + size[0] - this.radius, pos[1]  - 1 + size[1]], bdColor)
-            w.drawLine([pos[0]  - 1 + size[0], pos[1] + this.radius], [pos[0]  - 1 + size[0], pos[1]  - 1 + size[1] - this.radius], bdColor)
-            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
-            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + this.radius - 1], this.radius, this.border + 1, bdColor)
-            w.strokeCircle([pos[0] + this.radius - 1, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
-            w.strokeCircle([pos[0] + size[0] - this.radius, pos[1] + size[1] - this.radius], this.radius, this.border + 1, bdColor)
+        if bgColor.a != 0 {
+            w.drawRoundedRect(pos, size, this.radius, bgColor)
         }
-
-        w.drawRoundedRect([pos[0] + this.border, pos[1] + this.border], [size[0] - this.border * 2, size[1] - this.border * 2], this.radius, bgColor)
+        if this.border != 0 {
+            w.strokeRoundedRect(pos, size, this.radius, this.border, bdColor)
+            this.innerMargin = [this.border,this.border,this.border,this.border]
+        }
 
         w.drawText(w.font, this.text, fgColor, [pos[0] + this.padding[0], pos[1]  - 1 + size[1] / 2 + this.fontSize / 2 + 2])
         w.font.bold = b
@@ -131,6 +128,7 @@ struct uiButton extend uiElement {
     _init() {
         this._events = this.events
         this._draw = this.draw
+
         
         this.cursor = "hand1"
 
@@ -138,9 +136,156 @@ struct uiButton extend uiElement {
             this.fontSize = 8
         }
 
+        this._lastSize = this.fontSize
+        this._lastText = this.text
+
         if this.padding[0] == 0 {
             this.padding = [12, 12, 12, 12]
         }
 
+    }
+}
+
+struct uiDropdown extend uiButton {
+    ctxWindow: contextMenuWindow*
+    list: []uiContextItem
+
+    events(evnt uint32) {
+        ui = <ui*>this.window
+
+        if evnt == uiEventElementClicked {
+            if this.ctxWindow.isRunning {
+                this.ctxWindow.close()
+            } else {
+                pos = this.getPosition()
+                pos = ui.toScreenCoord(pos)
+                height = this.getSize()[1]
+
+                maxWidth = 0
+
+                i=0; for i < len(this.list), i++ {
+                    size = ui.ctxWindow.measureText(ui.ctxWindow.font, this.list[i].name)[0] + 40
+
+                    if this.list[i].ctrl {
+                        size += 32
+                    }
+
+                    if this.list[i].shift {
+                        size += 36
+                    }
+
+                    if this.list[i].alt {
+                        size += 25
+                    }
+
+                    if size > maxWidth {
+                        maxWidth = size
+                    }
+                }
+
+                this.ctxWindow.parent = ui
+                if len(this.list) != 0 {
+                    this.ctxWindow.choice = -1
+                    async this.ctxWindow.launch(pos[0], pos[1] + height, maxWidth, len(this.ctxWindow.list) * 31 + 1)
+                }
+            }
+        } else if evnt == uiEventElementFocusOut {
+            if this.ctxWindow.isRunning {
+                this.ctxWindow.close()
+            }
+        }
+
+        (<uiButton*>this).events(evnt)
+    }
+
+    _init() {
+        (<uiButton*>this)._init()
+        this._events = this.events
+
+        this.ctxWindow = new contextMenuWindow {
+            font: getSystemUIfont("")
+            elem: this
+            list: this.list
+            events: function(win contextMenuWindow*, event uint32) {
+                if event == windowEventMouseMove {
+                    win.redraw()
+                } else if event == windowEventDraw || event == windowEventInitialize {
+                    win.clear(BLACK)
+                    win.setCursor("hand1")
+                    win.font.setSize(8)
+
+                    cursorPos = win.getCursorPosition()
+
+                    i=0; for i < len(win.list), i++ {
+                        pos = [1, i * 31 + 1]
+
+                        bgColor = WHITE
+                        fgColor = BLACK
+
+                        if win.choice == i {
+                            fgColor = WHITE
+                            bgColor = rgbColor{120, 120, 255}
+                        } else if cursorPos[1] >= pos[1] && cursorPos[1] < pos[1] + 30 {
+                            bgColor = rgbColor{191, 191, 255}
+                        }
+                        win.drawRect(pos, [win.width - 2, 30], bgColor)
+
+                        win.drawText(win.font, win.list[i].name, fgColor, [pos[0] + 4, pos[1] + 20])
+                        offset = 52
+
+                        if win.list[i].shift {
+                            offset += 36
+                        }
+
+                        if win.list[i].alt {
+                            offset += 25
+                        }
+
+                        cPos = [win.width - offset, pos[1] + 20]
+
+                        if win.list[i].ctrl {
+                            cPos = win.drawText(win.font, "CTRL", rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
+                            cPos = win.drawChar(win.font, '+', rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
+                        }
+                        if win.list[i].shift {
+                            cPos = win.drawText(win.font, "SHIFT", rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
+                            cPos = win.drawChar(win.font, '+', rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
+                        }
+                        if win.list[i].key < 65000 {
+                            win.drawChar(win.font, win.list[i].key, rgbColor{80, 80, 80}, [cPos[0], pos[1] + 20])
+                        }
+                    }
+                } else if event == windowEventMouseDown {
+                    cursorPos = win.getCursorPosition()
+                    i=0; for i < len(win.list), i++ {
+                        pos = [0, i * 31 + 1]
+
+                        if cursorPos[1] >= pos[1] && cursorPos[1] < pos[1] + 30 {
+                            win.choice = i
+                            break
+                        }
+                    }
+                    win.redraw()
+                } else if event == windowEventMouseUp {
+                    cursorPos = win.getCursorPosition()
+                    i=0; for i < len(win.list), i++ {
+                        pos = [0, i * 31 + 1]
+
+                        if cursorPos[1] >= pos[1] && cursorPos[1] < pos[1] + 30 {
+                            break
+                        }
+                    }
+                    if i == win.choice {
+                        win.close()
+                        elem = (<uiDropdown*>win.elem)
+                        itm = &win.list[i]
+                        itm.callback(elem)
+                    } else {
+                        win.choice = -1
+                        win.redraw()
+                    }
+                }
+            }
+        }
     }
 }
