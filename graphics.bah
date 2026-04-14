@@ -35,6 +35,21 @@ const __graphicsDrawRequestTypeClear = 3
 
 const __graphicsNbDrawers = 3 // Max: 8
 
+const __simd_perm_mask_rgba_bgra = []byte {
+    2,1,0,3,  6,5,4,7,  10,9,8,11,  14,13,12,15,
+    2,1,0,3,  6,5,4,7,  10,9,8,11,  14,13,12,15
+}
+
+const __simd_perm_mask_alpha = []byte {
+    3,3,3,3,  7,7,7,7,  11,11,11,11,  15,15,15,15,
+    3,3,3,3,  7,7,7,7,  11,11,11,11,  15,15,15,15
+}
+
+const __simd_perm_mask_alphabits = []byte {
+    0,0,0,0, 1,1,1,1, 2,2,2,2, 3,3,3,3,
+    4,4,4,4, 5,5,5,5, 6,6,6,6, 7,7,7,7
+}
+
 __lastActiveWindow ptr
 
 #define floor(x float) float
@@ -347,10 +362,57 @@ struct window {
 
     __unsafeFastSetPixel(offset uint, l uint, color rgbColor) {
         l += offset
+        v = <uint32>((<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16))
         if color.a != 255 {
+            if l - offset > 15 {
+                $movd(v, $xmm0)
+                $vpbroadcastd($xmm0, $ymm0)
+                $vpxor($ymm15, $ymm15, $ymm15)
+                $vpunpcklbw($ymm15, $ymm0, $ymm2)
+                $vpunpckhbw($ymm15, $ymm0, $ymm3)
+
+                $vmovd(<uint32>color.a, $xmm1)
+                $vpbroadcastw($xmm1, $ymm6)
+
+                $vmovd((255 - <uint32>color.a), $xmm1)
+                $vpbroadcastw($xmm1, $ymm7)
+
+                $movl(<uint32>128, $eax); $vmovd($eax, $xmm1)
+                $vpbroadcastw($xmm1, $ymm8)
+
+                $movl(<uint32>257, $eax); $vmovd($eax, $xmm1)
+                $vpbroadcastw($xmm1, $ymm9)
+
+                lm = l - 7
+                for offset < lm, offset += 8 {
+                    $movq(<uint>this.frameBuffer + offset * 4, $rax)
+                    $vmovdqu(*$rax, $ymm0)
+
+                    $vpxor($ymm15, $ymm15, $ymm15)
+                    $vpunpcklbw($ymm15, $ymm0, $ymm4)
+                    $vpunpckhbw($ymm15, $ymm0, $ymm5)
+
+                    $vpmullw($ymm6, $ymm2, $ymm10)
+                    $vpmullw($ymm7, $ymm4, $ymm11)
+                    $vpaddw($ymm11, $ymm10, $ymm10)
+
+                    $vpaddw($ymm8, $ymm10, $ymm10)
+                    $vpmulhuw($ymm9, $ymm10, $ymm10)
+
+                    $vpmullw($ymm6, $ymm3, $ymm12)
+                    $vpmullw($ymm7, $ymm5, $ymm13)
+                    $vpaddw($ymm13, $ymm12, $ymm12)
+
+                    $vpaddw($ymm8, $ymm12, $ymm12)
+                    $vpmulhuw($ymm9, $ymm12, $ymm12)
+
+                    $vpackuswb($ymm12, $ymm10, $ymm0)
+                    $vmovdqu($ymm0, *$rax)
+                }
+            }
+
             da = <float><uint>color.a / 255.0
             ida = 1.0 - da
-
             for offset < l, offset++ {
                 pOffset = 4 * offset
                 pColor rgbColor
@@ -358,33 +420,171 @@ struct window {
                 pColor.g = <uint>(<float><uint>color.g * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + pOffset + 1)) * ida)
                 pColor.r = <uint>(<float><uint>color.r * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + pOffset + 2)) * ida)
                 v = (<uint32>pColor.b) | (<uint32>pColor.g << 8) | (<uint32>pColor.r << 16)
-                *(<uint32*>(<uint>this.frameBuffer + pOffset)) = v
+                *(<uint32*>(<uint>this.frameBuffer + offset * 4)) = v
             }
-
             return
         }
 
-
-        v = <uint32>((<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16))
-
-        if l - offset > 15 {
-            v2 = <uint>v | (<uint>v << 32)
-            dp = [v2,v2,v2,v2,v2,v2,v2,v2]
-
-            lm = l - 15
-            for offset < lm, offset += 16 {
-                *(<type512bytes*>(<uint>this.frameBuffer + offset * 4)) = dp
-            }
-
-            if l - offset > 7 {
-                *(<type256bytes*>(<uint>this.frameBuffer + offset * 4)) = *(<type256bytes*>&dp)
-                offset += 8
+        if l - offset > 7 {
+            lm = l - 7
+            $movd(v, $xmm0)
+            $vpbroadcastd($xmm0, $ymm0)
+            for offset < lm, offset += 8 {
+                $movq(<uint>this.frameBuffer + offset * 4, $rax)
+                $vmovdqu($ymm0, *$rax)
             }
         }
 
         for offset < l, offset++ {
             *(<uint32*>(<uint>this.frameBuffer + offset * 4)) = v
         }
+    }
+
+    __unsafeScanLine(pos [int,int], from int, length int, colors []rgbColor) {
+        $movq((<Bah_Array_Type*>__simd_perm_mask_rgba_bgra).data, $rax)
+        $vmovdqu(*$rax, $ymm14)
+
+        $movq((<Bah_Array_Type*>__simd_perm_mask_alpha).data, $rax)
+        $vmovdqu(*$rax, $ymm13)
+
+        $movl(128, $ebx); $vmovd($ebx, $xmm8)
+        $vpbroadcastw($xmm8, $ymm8)
+
+        $vpxor($ymm15, $ymm15, $ymm15)
+        $movl(257, $eax); $vmovd($eax, $xmm9)
+        $vpbroadcastw($xmm9, $ymm9)
+
+        $movl(255, $ebx); $vmovd($ebx, $xmm10)
+        $vpbroadcastw($xmm10, $ymm10)
+
+        x = 0; for x < length - 7, x += 8 {
+            offset = pos[1] * this.width + pos[0] + x
+
+            $movq(&colors[from + x], $rax)
+            $vmovdqu(*$rax, $ymm0)
+
+            $movq(<uint>this.frameBuffer + offset * 4, $rax)
+            $vmovdqu(*$rax, $ymm1)
+
+            $vpshufb($ymm14, $ymm0, $ymm0)
+
+            $vpshufb($ymm13, $ymm0, $ymm6)
+            $vpunpckhbw($ymm15, $ymm6, $ymm7)
+            $vpunpcklbw($ymm15, $ymm6, $ymm6)
+
+            $vpunpcklbw($ymm15, $ymm0, $ymm2)
+            $vpunpckhbw($ymm15, $ymm0, $ymm3)
+
+            $vpunpcklbw($ymm15, $ymm1, $ymm4)
+            $vpunpckhbw($ymm15, $ymm1, $ymm5)
+
+            //src * alpha
+            $vpmullw($ymm2, $ymm6, $ymm2)
+            $vpmullw($ymm3, $ymm7, $ymm3)
+
+
+            //inv_alpha = 255 - alpha
+            $vpsubw($ymm6, $ymm10, $ymm6)
+            $vpsubw($ymm7, $ymm10, $ymm7)
+
+            //dist * inv_alpha
+            $vpmullw($ymm4, $ymm6, $ymm4)
+            $vpmullw($ymm5, $ymm7, $ymm5)
+
+            //dist + src
+            $vpaddw($ymm4, $ymm2, $ymm2)
+            $vpaddw($ymm5, $ymm3, $ymm3)
+
+            //rounding bias
+            $vpaddw($ymm8, $ymm2, $ymm2)
+            $vpaddw($ymm8, $ymm3, $ymm3)
+
+            $vpmulhuw($ymm9, $ymm2, $ymm2)
+            $vpmulhuw($ymm9, $ymm3, $ymm3)
+
+            $vpackuswb($ymm3, $ymm2, $ymm0)
+            $vmovdqu($ymm0, *$rax)
+        }
+
+        for x < length, x++ {
+            this.setPixelUnsafe([pos[0] + x, pos[1]], colors[from + x])
+        }
+
+    }
+
+    __unsafeScanLineColorAlpha(pos [int,int], alpha byte*, width int, color rgbColor) {
+        v = <uint32>((<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16))
+
+        $movq((<Bah_Array_Type*>__simd_perm_mask_alphabits).data, $rax)
+        $vmovdqu(*$rax, $ymm13)
+
+        $movl(128, $ebx); $vmovd($ebx, $xmm8)
+        $vpbroadcastw($xmm8, $ymm8)
+
+        $vpxor($ymm15, $ymm15, $ymm15)
+        $movl(257, $eax); $vmovd($eax, $xmm9)
+        $vpbroadcastw($xmm9, $ymm9)
+
+        $movl(255, $ebx); $vmovd($ebx, $xmm10)
+        $vpbroadcastw($xmm10, $ymm10)
+
+        $movd(v, $xmm0)
+        $vpbroadcastd($xmm0, $ymm0)
+        $vpunpcklbw($ymm15, $ymm0, $ymm2)
+        $vpunpckhbw($ymm15, $ymm0, $ymm3)
+
+        x = 0; for x < width - 7, x += 8 {
+            offset = pos[1] * this.width + pos[0] + x
+
+            $movq(<uint>alpha + x, $rax)
+            $vmovq(*$rax, $xmm1)
+            $movdqa($xmm1, $xmm11)
+            $psrldq(4, $xmm11)
+            $vinserti128(0, $xmm1, $ymm11, $ymm11)
+            $vinserti128(1, $xmm11, $ymm11, $ymm11)
+            $movq((<Bah_Array_Type*>__simd_perm_mask_alphabits).data, $rbx)
+            $vpshufb(*$rbx, $ymm11, $ymm11)
+            $vpunpcklbw($ymm15, $ymm11, $ymm6)
+            $vpunpckhbw($ymm15, $ymm11, $ymm7)
+
+            $movq(<uint>this.frameBuffer + offset * 4, $rax)
+            $vmovdqu(*$rax, $ymm1)
+
+            $vpunpcklbw($ymm15, $ymm1, $ymm4)
+            $vpunpckhbw($ymm15, $ymm1, $ymm5)
+
+            //src * alpha
+            $vpmullw($ymm2, $ymm6, $ymm12)
+            $vpmullw($ymm3, $ymm7, $ymm13)
+
+            //inv_alpha = 255 - alpha
+            $vpsubw($ymm6, $ymm10, $ymm6)
+            $vpsubw($ymm7, $ymm10, $ymm7)
+
+            //dist * inv_alpha
+            $vpmullw($ymm4, $ymm6, $ymm4)
+            $vpmullw($ymm5, $ymm7, $ymm5)
+
+            //dist + src
+            $vpaddw($ymm4, $ymm12, $ymm12)
+            $vpaddw($ymm5, $ymm13, $ymm13)
+
+            //rounding bias
+            $vpaddw($ymm8, $ymm12, $ymm12)
+            $vpaddw($ymm8, $ymm13, $ymm13)
+
+            $vpmulhuw($ymm9, $ymm12, $ymm12)
+            $vpmulhuw($ymm9, $ymm13, $ymm13)
+
+            $vpackuswb($ymm13, $ymm12, $ymm0)
+            $vmovdqu($ymm0, *$rax)
+        }
+
+        for x < width, x++ {
+            color.a = *<byte*>(<uint>alpha + x)
+            this.setPixelUnsafe([pos[0] + x, pos[1]], color)
+        }
+
     }
 
     __threadedDrawer(m uint) {
@@ -417,16 +617,9 @@ struct window {
             n = req.n
             buff = <[]rgbColor>req.buff
             y=req.from[1]; for y < req.to[1], y++ {
-                i = 0
-                x = req.from[0]; for x < req.to[0], x++ {
-                    if y < 0 {
-                        i += req.to[0] - req.from[0]
-                        continue
-                    }
-                    this.setPixelUnsafe([x,y], buff[n + i])
-                    i++
-                }
-                n += req.ogSize[0]
+                offset = n + (y - req.from[1]) * req.ogSize[0]
+                l = req.to[0] - req.from[0]
+                this.__unsafeScanLine([req.from[0],y], offset, l, buff)
             }
         }
     }
@@ -649,16 +842,29 @@ struct window {
 
         this._overlapCheck(pos, [max[0] - pos[0], max[1] - pos[1]])
 
+        realSize = [
+            max[0] - pos[0],
+            max[1] - pos[1]
+        ]
 
-        this.__drawRequest(__graphicsDrawRequest{
-            from: pos
-            to: max
-            n: n
-            ogSize: size
-            buff: <ptr>buff
-            type: __graphicsDrawRequestTypeRectImg
-        })
+        if realSize[0] * realSize[1] >= 16384 {
+            this.__drawRequest(__graphicsDrawRequest{
+                from: pos
+                to: max
+                n: n
+                ogSize: size
+                buff: <ptr>buff
+                type: __graphicsDrawRequestTypeRectImg
+            })
+            return
+        }
 
+
+        y=pos[1]; for y < max[1], y++ {
+            offset = n + (y - pos[1]) * size[0]
+            l = max[0] - pos[0]
+            this.__unsafeScanLine([pos[0],y], offset, l, buff)
+        }
 
         //Old single threaded code
         // y=pos[1]; for y < max[1], y++ {
@@ -700,31 +906,58 @@ struct window {
             }
         }
 
+        if rect[0] < 0 {
+            rect[0] = 0
+        }
+
+        if rect[1] < 0 {
+            rect[1] = 0
+        }
+
+        if rect[2] > this.width {
+            rect[2] = this.width
+        }
+
+        if rect[3] > this.height {
+            rect[3] = this.height
+        }
+
         this._overlapCheck([rect[0], rect[1]], [rect[2] - rect[0], rect[3] - rect[1]])
 
-        y = rect[1]; for y < rect[3], y++ {
-            if y >= this.height || y < 0 {
-                continue
-            }
-            x = rect[0]; for x < rect[2], x++ {
-                if x >= this.width || x < 0 {
-                    continue
-                }
-
-                dx = <float>x - <float>pos[0]
-                dy = <float>y - <float>pos[1]
-                d = sqrt(dx*dx + dy*dy)
+        y = pos[1] - radi; for y < rect[3], y++ {
+            x = pos[0] - radi; for x < rect[2], x++ {
+                dx = x - pos[0]
+                dy = y - pos[1]
+                
+                d = sqrt(<float>(dx*dx + dy*dy))
                 if d > fradi {
                     continue
                 }
 
                 rColor = color
-
+                l = (pos[0] - x) * 2
+                p = x
                 if fradi - d < 1.0 {
                     rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
+                    if p >= rect[0] {
+                        this.setPixel([x,y], rColor)
+                    } 
+                    if p + l < rect[2] {
+                        this.setPixel([pos[0] - x + pos[0] - 1,y], rColor)
+                    }
+                } else {
+                    if p + l > rect[2] {
+                        l = rect[2] - p
+                    }
+                    if p < rect[0] {
+                        l -= rect[0] - p
+                        p = rect[0]
+                    }
+                    if y >= rect[1] && y < rect[3] {
+                        this.__unsafeFastSetPixel(y * this.width + p, l, color)
+                    }
+                    break
                 }
-
-                this.setPixel([x,y], rColor)
             }
         }
     }
@@ -855,15 +1088,15 @@ struct window {
 
         this.drawRect([pos[0], pos[1] + radi], [size[0], size[1] - radi * 2 + 1], color)
 
-        if min[0] > pos[0] + radi || max[0] < pos[0] + size[0] {
-            this.drawRect([pos[0] + radi, pos[1]], [size[0] - radi * 2 + 2, radi], color)
-            this.drawRect([pos[0] + radi, pos[1] + size[1] - radi], [size[0] - radi * 2 + 2, radi], color)
-            this.drawCircle([pos[0] + size[0] - radi, pos[1] + radi - 1], radi, color)
-            this.drawCircle([pos[0] + size[0] - radi, pos[1] + size[1] - radi], radi, color)
-            this.drawCircle([pos[0] + radi, pos[1] + radi - 1], radi, color)
-            this.drawCircle([pos[0] + radi, pos[1] + size[1] - radi], radi, color)
-            return
-        }
+        // if min[0] > pos[0] + radi || max[0] < pos[0] + size[0] {
+        //     this.drawRect([pos[0] + radi, pos[1]], [size[0] - radi * 2 + 2, radi], color)
+        //     this.drawRect([pos[0] + radi, pos[1] + size[1] - radi], [size[0] - radi * 2 + 2, radi], color)
+        //     this.drawCircle([pos[0] + size[0] - radi, pos[1] + radi - 1], radi, color)
+        //     this.drawCircle([pos[0] + size[0] - radi, pos[1] + size[1] - radi], radi, color)
+        //     this.drawCircle([pos[0] + radi, pos[1] + radi - 1], radi, color)
+        //     this.drawCircle([pos[0] + radi, pos[1] + size[1] - radi], radi, color)
+        //     return
+        // }
 
         fradi = <float>radi
         
@@ -871,11 +1104,11 @@ struct window {
 
         y=pos[1]
 
-        mx = max[0] + pos[0]
+        mx = size[0] + pos[0]
         
-        if y < min[1] {
-            y = min[1]
-        }
+        // if y < min[1] {
+        //     y = min[1]
+        // }
         cMax = cPos[1]
         if cMax > max[1] - 1 {
             cMax = max[1] - 1
@@ -893,15 +1126,12 @@ struct window {
 
 
             x = cPos[0] - radi
-            if x < min[0] {
-                x = min[0]
-            }
+            // if x < min[0] {
+            //     x = min[0]
+            // }
             
             dy = <float>y - <float>cPos[1]
             for x < xMax, x++ {
-                if x >= this.width || x < 0 {
-                    continue
-                }
 
                 dx = <float>x - <float>cPos[0]
                 d = sqrt(dx*dx + dy*dy)
@@ -911,12 +1141,27 @@ struct window {
 
                 rColor = color
 
+                p = pos[0] + size[0] - (x - pos[0]) - 1
+                l = size[0] - 2 * (x - pos[0])
+
                 if fradi - d < 1.0 {
                     rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
-                    this.setPixel([x,y], rColor)
-                    this.setPixel([mx - x - 1,y], rColor)
+                    if x >= min[0] {
+                        this.setPixel([x,y], rColor)
+                    }
+                    if p < max[0] {
+                        this.setPixel([p, y], rColor)
+                    }
                 } else {
-                    this.__unsafeFastSetPixel(y * this.width + x, mx - 2*x, color)
+                    if x + l >= max[0] {
+                        l = max[0] - x
+                    }
+                    p = x
+                    if x < min[0] {
+                        l -= min[0] - x
+                        p = min[0]
+                    }
+                    this.__unsafeFastSetPixel(y * this.width + p, l, color)
                     break
                 }
 
@@ -926,10 +1171,6 @@ struct window {
         cPos = [pos[0] + radi - 1, pos[1] + size[1] - radi]
 
         y=cPos[1]+1
-
-        if y < min[1] {
-            y = min[1]
-        }
         cMax = cPos[1] + radi
         if cMax > max[1] {
             cMax = max[1]
@@ -942,15 +1183,8 @@ struct window {
             
             x = cPos[0] - radi   
 
-            if x < min[0] {
-                x = min[0]
-            }
-
             dy = <float>y - <float>cPos[1]
             for x < xMax, x++ {
-                if x >= this.width || x < 0 {
-                    continue
-                }
 
                 dx = <float>x - <float>cPos[0]
                 d = sqrt(dx*dx + dy*dy)
@@ -960,12 +1194,27 @@ struct window {
 
                 rColor = color
 
+                p = pos[0] + size[0] - (x - pos[0]) - 1
+                l = size[0] - 2 * (x - pos[0])
+
                 if fradi - d < 1.0 {
                     rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
-                    this.setPixel([x,y], rColor)
-                    this.setPixel([mx - x - 1,y], rColor)
+                    if x >= min[0] {
+                        this.setPixel([x,y], rColor)
+                    }
+                    if p < max[0] {
+                        this.setPixel([p, y], rColor)
+                    }
                 } else {
-                    this.__unsafeFastSetPixel(y * this.width + x, mx - 2*x, color)
+                    if x + l >= max[0] {
+                        l = max[0] - x
+                    }
+                    p = x
+                    if x < min[0] {
+                        l -= min[0] - x
+                        p = min[0]
+                    }
+                    this.__unsafeFastSetPixel(y * this.width + p, l, color)
                     break
                 }
             }
@@ -1354,37 +1603,57 @@ struct window {
             slot = <FT_GlyphSlotRec_*>&sc.glyph
             bitmap = slot.bitmap
             raw = <byte*>bitmap.buff
+            y=0
+            
+            if this.scissor[0] && fnt.currY - slot.bitmap_top < this.scissor[2] {
+                y = this.scissor[2] - fnt.currY + slot.bitmap_top
+            }
+            l = bitmap.rows
 
-            y=0; for y < bitmap.rows, y++ {
+            if this.scissor[0] && fnt.currY + l - slot.bitmap_top >= this.scissor[4] {
+                l = this.scissor[4] - fnt.currY + slot.bitmap_top
+            }
+
+            maxWidth = <int>bitmap.width
+            if this.scissor[0] && fnt.currX + (sc.glyph.advance.x >> 6) > this.scissor[3] {
+                maxWidth = this.scissor[3] - fnt.currX - (sc.glyph.advance.x >> 6) + 1
+                if maxWidth <= 0 {
+                    i++; for i < to, i++ {
+                        if text[i] == <byte>10 {
+                            i--
+                            break
+                        }
+                    }
+                    fnt.currX += (sc.glyph.advance.x >> 6)
+                    continue
+                }
+                if maxWidth > bitmap.width {
+                    maxWidth = bitmap.width
+                }
+            }
+
+            minx = 0
+            if this.scissor[0] && fnt.currX + slot.bitmap_left < this.scissor[1] {
+                minx = this.scissor[1] - fnt.currX + slot.bitmap_left
+
+                if minx >= maxWidth {
+                    fnt.currX += (sc.glyph.advance.x >> 6)
+                    continue
+                }
+            }
+            
+
+            for y < l, y++ {
                 linePtr = <byte*>(<uint>raw + y * bitmap.pitch)
                 if bitmap.pitch < 0 {
                     linePtr = <byte*>(<uint>raw + y * (bitmap.rows - 1 - y) * (0 - bitmap.pitch))
                 }
-                x = 0; for x < bitmap.width, x++ {
-                    rColor rgbColor
-
-                    if bitmap.pixel_mode == 1 {
-                        rawC = <byte*>(<uint>linePtr + (x >> 3))
-                        n = 0
-                        mask = 0x80
-                        for n < (x & 7), n++ {
-                            mask = mask >> 1
-                        }
-
-                        if *rawC & mask != 0 {
-                            rColor = color
-                        }
-                    } else {
-                        rColor = color
-                        rColor.a = *<byte*>(<uint>linePtr + x)
-                    }
-
-                    
-                    rx = fnt.currX + x + slot.bitmap_left
-                    ry = fnt.currY + y - slot.bitmap_top
-
-                    this.setPixel([rx, ry], rColor)
+                rx = fnt.currX + minx + slot.bitmap_left
+                ry = fnt.currY + y - slot.bitmap_top
+                if ry < 0 {
+                    continue
                 }
+                this.__unsafeScanLineColorAlpha([rx, ry], <byte*>(<uint>linePtr + minx), maxWidth, color)
             }
 
             fnt.currX += (sc.glyph.advance.x >> 6)
@@ -1395,126 +1664,21 @@ struct window {
     }
 
     measureText(fntp font*, text str) [uint, uint] {
-        fnt = *fntp
-        maxx = 0
-        fnt.currX = 0
-        fnt.currY = 0
-        i=0; for i < len(text), i++ {
-            codePoint = <uint32>text[i]
-
-            if text[i] == <char>10 {
-
-                if fnt.currX > maxx {
-                    maxx = fnt.currX
-                }
-
-                fnt.currX = 0
-                fnt.currY += fnt.fontSize + fnt.fontSize / 2
-                continue
-            }
-
-            if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
-                if text[i] & 0xE0 == 0xC0 {
-                    codePoint = <uint32>((text[i] & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
-                    i++
-                } else if text[i] & 0xF0 == 0xE0 && i+2 < len(text) {
-                    codePoint = <uint32>((text[i] & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
-                    i += 2
-                } else if text[i] & 0xF8 == 0xF0 && i+3 < len(text) {
-                    codePoint = <uint32>((text[i] & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
-                    i += 3
-                }
-            }
-
-            fnt.measureChar(codePoint)
+        arr = Bah_Array_Type {
+            data: cStr(text)
+            elemSize: 1
+            length: len(text)
         }
-
-        if fnt.currX > maxx {
-            maxx = fnt.currX
-        }
-
-        res = [maxx, fnt.currY + fnt.fontSize]
-        return res
+        return this.measureByteArr(fntp, <[]byte>&arr, 0, len(text))
     }
 
     drawText(fntp font*, text str, color rgbColor, pos [int, int]) [int,int] {
-        if this.isExposed == false {
-            return [0,0]
+        arr = Bah_Array_Type {
+            data: cStr(text)
+            elemSize: 1
+            length: len(text)
         }
-
-        // return this.measureText(fnt, text)
-
-        fnt = *fntp
-        fnt.currX = pos[0]
-        fnt.currY = pos[1]
-        this.hasDrawn = true
-
-        i=0
-
-        if this.scissor[0] && fnt.currY < this.scissor[2] {
-            for i < len(text), i++ {
-
-                if text[i] == <char>10 {
-                    fnt.currY += fnt.fontSize + fnt.fontSize / 2
-                }
-
-                if fnt.currY >= this.scissor[2] {
-                    i++
-                    break
-                }
-            }
-        }
-
-        for i < len(text), i++ {
-
-            if this.scissor[0] {
-                if fnt.currY - fnt.fontSize >= this.scissor[4] {
-                    break
-                }
-
-                if fnt.currX >= this.scissor[3] {
-                    i++
-                    for i < len(text), i++ {
-                        if text[i] == <char>10 {
-                            break
-                        }
-                    }
-
-                    if i == len(text) {
-                        break
-                    }
-                }
-            }
-
-
-            codePoint = <uint32>text[i]
-
-            if text[i] == <char>10 {
-                fnt.currX = pos[0]
-                fnt.currY += fnt.fontSize + fnt.fontSize / 2
-                continue
-            }
-
-            if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
-                if text[i] & 0xE0 == 0xC0 {
-                    codePoint = <uint32>((text[i] & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
-                    i++
-                } else if text[i] & 0xF0 == 0xE0 && i+2 < len(text) {
-                    codePoint = <uint32>((text[i] & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
-                    i += 2
-                } else if text[i] & 0xF8 == 0xF0 && i+3 < len(text) {
-                    codePoint = <uint32>((text[i] & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
-                    i += 3
-                }
-            }
-
-            // TODO: this._overlapCheck()
-
-
-            fnt.writeChar(codePoint, color, this.setPixel, this)
-        }
-
-        return [fnt.currX, fnt.currY]
+        return this.drawByteArr(fntp, <[]byte>&arr, 0, len(text), color, pos)
     }
 
     toScreenCoord(pos [int,int]) [int,int] {
