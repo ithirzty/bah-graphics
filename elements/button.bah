@@ -3,7 +3,7 @@
 #import "./base.bah"
 
 struct uiButton extend uiElement {
-    text: str = "Button"
+    text: str = ""
     onclick: function(uiButton*)
     showTime: uint
     radius: int = 6

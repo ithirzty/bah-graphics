@@ -1,4 +1,5 @@
 #import "./libs/png.bah"
+#import "./libs/jpeg.bah"
 
 #import "iostream.bah"
 
@@ -11,21 +12,7 @@ struct image {
     height: int
     buf: []rgbColor
 
-    load(s str) bool {
-        fs = fileStream{}
-        fs.open(s, "rb")
-
-        if fs.isValid() == false {
-            return false
-        }
-
-        header uint
-        fs.readPtr(&header, 8)
-        if png_sig_cmp(&header, 0, 8) {
-            fs.close()
-            return false
-        }
-
+    _loadPng(fs fileStream) bool {
         pngPtr = png_create_read_struct("1.6.40", null, null, null)
         if pngPtr == null {
             fs.close()
@@ -85,8 +72,73 @@ struct image {
 
         png_destroy_read_struct(pngPtr, null, null)
 
-        fs.close()
+        return true
+    }
+
+    _loadJpeg(fs fileStream) bool {
+        cinfo = jpeg_decompress_struct{}
+        jerr = jpeg_error_mgr{}
+        cinfo.err = jpeg_std_error(&jerr)
+        jpeg_CreateDecompress(&cinfo, 80, sizeof(jpeg_decompress_struct))
+
+        jpeg_stdio_src(&cinfo, fs.handle)
+        jpeg_read_header(&cinfo, 1)
+        jpeg_start_decompress(&cinfo)
+
+        this.width      = cinfo.output_width
+        this.height     = cinfo.output_height
+        
+        channels = cinfo.output_components
+        row_size = this.width * channels
+        allocateArray(this.buf, row_size * this.height)
+
+        line = []byte
+        allocateArray(line, row_size)
+
+        n = 0; for cinfo.output_scanline < this.height, n++ {
+            //NOPE CONVERT PIXELS
+            // rowptr = <uint>cArr(this.buf) + n * row_size
+            jpeg_read_scanlines(&cinfo, <ptr>line, 1) //works because []byte is byte**
+            i=0; for i < this.width, i++ {
+                this.buf[n * this.width + i] = rgbColor{
+                    line[i*3],
+                    line[i*3 + 1],
+                    line[i*3 + 2]
+                }
+            }
+        }
+
+        jpeg_finish_decompress(&cinfo)
+        jpeg_destroy_decompress(&cinfo)
 
         return true
+    }
+
+    load(s str) bool {
+        fs = fileStream{}
+        fs.open(s, "rb")
+
+        if fs.isValid() == false {
+            return false
+        }
+
+        header uint
+        fs.readPtr(&header, 8)
+
+        if png_sig_cmp(&header, 0, 8) == 0 && this._loadPng(fs){
+            fs.close()
+            this.path = s
+            return true
+        }
+
+        fs.setPos(0)
+        if header & 0x000000000000FFFF == 0x000000000000D8FF && this._loadJpeg(fs) {
+            fs.close()
+            this.path = s
+            return true
+        }
+
+        fs.close()
+        return false
     }
 }

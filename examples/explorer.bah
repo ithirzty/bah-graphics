@@ -8,8 +8,6 @@
 
 #define setPath(path str, isNewEntry bool)
 
-const sizeUnits = []str{"bytes", "KiB", "Mib", "Gib", "Tib"}
-
 backgroundColor = rgbColor{50, 50, 70} //main theme color
 
 //images used for the file element
@@ -72,8 +70,58 @@ fileContextItems = []uiContextItem {
 //This creates a file/folder element from a name and a path.
 constructFileElement(file str, fullPath str, isFolder bool) uiBoxFolder* {
 
+    //Create the file element
+    fileBox = new uiBoxFolder {
+        size: [pixels(120), pixels(100)]
+        scrollable: false
+        cursor: "hand1"
+        focusable: true
+        isFolder: isFolder
+        path: fullPath
+        contextItems: fileContextItems
+        fileURI: fullPath //set to allow for dragging files to other windows
+        dragTarget: isFolder //if the element is a folder, allow files to be drag-and-droped on it
+
+        backdrop: (bx uiBoxFolder*, ui ui*) {
+            pos = bx.getPosition()
+            //Draw the background if the element is hovered / focused
+            if bx.focused {
+                ui.drawRoundedRect(pos, bx.getSize(), 8, rgbColor{255, 255, 255, 50})
+            } else if bx.hovered {
+                ui.drawRoundedRect(pos, bx.getSize(), 8, rgbColor{255, 255, 255, 10})
+            }
+
+            //Draw an image only if the current element only has text (no other file preview).
+            if len(bx.elements) == 1 {
+                //Draw the correct image
+                if bx.isFolder {
+                    ui.drawRectImage([pos[0] + 28, pos[1] + 10], [64, 64], folderImg.buf)
+                } else {
+                    ui.drawRectImage([pos[0] + 28, pos[1] + 10], [64, 64], fileImg.buf)
+                }
+            }
+        }
+
+        elements: {
+            new uiText { //add the name of the file / folder
+                focusable: false
+                color: WHITE
+                text: file
+                pos: [
+                    percents(50).basis(uiBasisCenter), //centered horizontally
+                    percents(100).basis(uiBasisEnd) - pixels(8)    //at the bottom most coordinate of the element
+                ]
+            }
+        }
+    }
+
+    //This is done here as the compiler injects a call to fileBox._init() at the end of the previous uiBoxFolder{} declaration.
+    //But, the uiBox._init() method sets .focusable = false and ._events = uiBox.events.
+    //uiBox._init() is called because the uiBoxFolder type does not override it.
+    fileBox.focusable = true
+
     //This lambda will be the new event callback for uiBoxFolder._events (instead of uiBox._events)
-    captureEvents = function(bx uiBoxFolder*, event uint32) {
+    fileBox._events = function(bx uiBoxFolder*, event uint32) {
         if event == uiEventElementClicked {
             now = getTimeUnix()
 
@@ -123,54 +171,6 @@ constructFileElement(file str, fullPath str, isFolder bool) uiBoxFolder* {
         }
     }
 
-    //Create the file element
-    fileBox = new uiBoxFolder {
-        size: [pixels(120), pixels(100)]
-        scrollable: false
-        cursor: "hand1"
-        focusable: true
-        isFolder: isFolder
-        path: fullPath
-        contextItems: fileContextItems
-        fileURI: fullPath //set to allow for dragging files to other windows
-        dragTarget: isFolder //if the element is a folder, allow files to be drag-and-droped on it
-
-        backdrop: (bx uiBoxFolder*, ui ui*) {
-            pos = bx.getPosition()
-            //Draw the background if the element is hovered / focused
-            if bx.focused {
-                ui.drawRoundedRect(pos, bx.getSize(), 8, rgbColor{255, 255, 255, 50})
-            } else if bx.hovered {
-                ui.drawRoundedRect(pos, bx.getSize(), 8, rgbColor{255, 255, 255, 10})
-            }
-
-            //Draw the correct image
-            if bx.isFolder {
-                ui.drawRectImage([pos[0] + 28, pos[1] + 10], [64, 64], folderImg.buf)
-            } else {
-                ui.drawRectImage([pos[0] + 28, pos[1] + 10], [64, 64], fileImg.buf)
-            }
-        }
-
-        elements: {
-            new uiText { //add the name of the file / folder
-                focusable: false
-                color: WHITE
-                text: file
-                pos: [
-                    percents(50).basis(uiBasisCenter), //centered horizontally
-                    percents(100).basis(uiBasisEnd) - pixels(8)    //at the bottom most coordinate of the element
-                ]
-            }
-        }
-    }
-
-    //This is done here as the compiler injects a call to fileBox._init() at the end of the previous uiBoxFolder{} declaration.
-    //But, the uiBox._init() method sets .focusable = false and ._events = uiBox.events.
-    //uiBox._init() is called because the uiBoxFolder type does not override it.
-    fileBox.focusable = true
-    fileBox._events = captureEvents
-
     return fileBox
 }
 
@@ -192,6 +192,36 @@ goBack() {
 
     pathHistoryIndex--
     setPath(pathHistory[pathHistoryIndex], false)
+}
+
+loadPreviewImages() {
+    ui = <ui*>fileList.window
+    currPath = currentPath
+    i=0; for i < len(fileList.elements), i++ {
+        elem = <uiBoxFolder*>fileList.elements[i]
+        if strHasSuffix(elem.fileURI, ".png") || strHasSuffix(elem.fileURI, ".jpg") || strHasSuffix(elem.fileURI, ".jpeg") || strHasSuffix(elem.fileURI, ".PNG") || strHasSuffix(elem.fileURI, ".JPG") || strHasSuffix(elem.fileURI, ".JPEG") {
+            prevImage = new image
+            if prevImage.load(elem.fileURI) {
+                if currPath != currentPath {
+                    break
+                }
+                size = [64, 64]
+                if prevImage.width > prevImage.height {
+                    size[1] = (prevImage.height * 64) / prevImage.width
+                } else {
+                    size[0] = (prevImage.width * 64) / prevImage.height
+                }
+
+                vertSize = percents(100) - pixels(12)
+                elem.addElement(new uiImage {
+                    pos: [percents(50).basis(uiBasisCenter), vertSize / pixels(2) - pixels(size[1] / 2)]
+                    size: [pixels(size[0]), pixels(size[1])]
+                    image: prevImage
+                }) 
+                ui.redraw()
+            }
+        }
+    }
 }
 
 //Sets the current explorer window folder path.
@@ -295,7 +325,6 @@ setPath(path str, isNewEntry bool) {
     }
 
     size = 0.0
-    tmpFs = fileStream{}
     numElems = [0,0]
 
     //For every file in the folder
@@ -310,10 +339,6 @@ setPath(path str, isNewEntry bool) {
 
         isFldr = isFolder(fullPath)
 
-        tmpFs.open(fullPath, "rb")
-        size += <float>tmpFs.getSize()
-        tmpFs.close()
-
         if isFldr {
             numElems[1]++
         } else {
@@ -324,22 +349,15 @@ setPath(path str, isNewEntry bool) {
         fileList.addElementNoRedraw(constructFileElement(files[i], fullPath, isFldr))
     }
 
+    async loadPreviewImages()
+
     //Could redraw the entire list: fileList.redraw()
     //But instead, set focus on its parent as it will not only redraw the list but also
     //make it possible to use keyboard shortcuts without having to click the background of the file box
     ui.setFocus(ui.find("fileContainer"))
 
-    sizeIndex = 0
-    for size / 1024.0 > 1.0 {
-        size = size / 1024.0
-        sizeIndex++
-    }
-
-    size = <float>(<int>(size * 100.0) / 100) 
-
-    sizeUnit = sizeUnits[sizeIndex]
     infoText = <uiText*>ui.find("infoText")
-    infoText.setText(intToStr(numElems[1])+" folders, "+intToStr(numElems[0])+" files, "+floatToStr(size)+" "+sizeUnit)
+    infoText.setText(intToStr(numElems[1])+" folders, "+intToStr(numElems[0])+" files.")
 }
 
 main(args []str) int {
@@ -488,6 +506,13 @@ main(args []str) int {
 
                                 callback: (itm uiContextItem*, el uiElement*) {
                                     setPath(currentPath, false)
+                                }
+                            },
+                            uiContextItem {
+                                name: "Collect"
+                                ctrl: false
+                                callback: (itm uiContextItem*, el uiElement*) {
+                                    GC_collect()
                                 }
                             },
                             uiContextItem {

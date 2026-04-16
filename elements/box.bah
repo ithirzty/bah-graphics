@@ -210,7 +210,52 @@ struct uiBox extend uiElement {
         pos = this.getPosition()
         size = this.getSize()
 
-        
+        if this.scrollable {
+            innerSize = this.getInnerSize()
+
+            if innerSize[1] > size[1] {
+                if this.scrollBars[1] == null {
+                    this.scrollBars[1] = new _uiBoxScrollbar {
+                        isVertical: true
+                        absolutePosition: true
+                        pos: [percents(100).basis(uiBasisEnd), pixels(0)]
+                        size: [pixels(8), percents(100)]
+                    }
+                    this.addElementNoRedraw(this.scrollBars[1])
+                }
+            } else {
+                if this.scrollBars[1] != null {
+                    this.scrollBars[1].remove()
+                    this.scrollBars[1] = null
+                }
+                if this.offsets[1] != 0 {
+                    this.offsets[1] = 0
+                    this.redraw()
+                }
+            }
+
+            if innerSize[0] > size[0] {
+                if this.scrollBars[0] == null {
+                    this.scrollBars[0] = new _uiBoxScrollbar {
+                        isVertical: false
+                        absolutePosition: true
+                        pos: [pixels(0), percents(100).basis(uiBasisEnd)]
+                        size: [percents(100), pixels(8)]
+                    }
+                    this.addElementNoRedraw(this.scrollBars[0])
+                }
+            } else {
+                if this.scrollBars[0] != null {
+                    this.scrollBars[0].remove()
+                    this.scrollBars[0] = null
+                }
+                if this.offsets[0] != 0 {
+                    this.offsets[0] = 0
+                    this.redraw()
+                }
+            }
+        }
+
         if this.bgColor.a != 0 {
             w.drawRoundedRect(pos, size, this.radius, this.bgColor)
         }
@@ -222,48 +267,6 @@ struct uiBox extend uiElement {
         if this.backdrop != null {
             bd = this.backdrop
             bd(this, w)
-        }
-
-        if this.scrollable == false {
-            return
-        }
-
-        innerSize = this.getInnerSize()
-
-        if innerSize[1] > size[1] {
-            if this.scrollBars[1] == null {
-                this.scrollBars[1] = new _uiBoxScrollbar {
-                    isVertical: true
-                    absolutePosition: true
-                    pos: [percents(100).basis(uiBasisEnd), pixels(0)]
-                    size: [pixels(8), percents(100)]
-                }
-                this.addElementNoRedraw(this.scrollBars[1])
-            }
-        } else {
-            if this.scrollBars[1] != null {
-                this.scrollBars[1].remove()
-                this.scrollBars[1] = null
-            }
-            this.offsets[1] = 0
-        }
-
-        if innerSize[0] > size[0] {
-            if this.scrollBars[0] == null {
-                this.scrollBars[0] = new _uiBoxScrollbar {
-                    isVertical: false
-                    absolutePosition: true
-                    pos: [pixels(0), percents(100).basis(uiBasisEnd)]
-                    size: [percents(100), pixels(8)]
-                }
-                this.addElementNoRedraw(this.scrollBars[0])
-            }
-        } else {
-            if this.scrollBars[0] != null {
-                this.scrollBars[0].remove()
-                this.scrollBars[0] = null
-            }
-            this.offsets[0] = 0
         }
     }
 

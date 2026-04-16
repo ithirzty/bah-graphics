@@ -101,6 +101,8 @@ struct xAtoms {
     deleteWindow: uint32
     XdndActionList: uint32
     WMicon: uint32
+    UTF8_STRING: uint32
+    STRING: uint32
 }
 
 struct window {
@@ -217,16 +219,15 @@ struct window {
 
     getClipboard(callback function(window*, str, ptr), data ptr) {
         clipboard = xcb_getAtom(this.connection, "CLIPBOARD")
-        utf8 = xcb_getAtom(this.connection, "UTF8_STRING")
         prop = xcb_getAtom(this.connection, "XSEL_DATA")
 
-        this.tmpClipboardAtoms = [prop, utf8]
+        this.tmpClipboardAtoms = [prop, this.atoms.UTF8_STRING]
 
         xcb_convert_selection(
             this.connection,
             this.window,
             clipboard,
-            utf8,
+            this.atoms.UTF8_STRING,
             prop,
             0
         )
@@ -274,6 +275,9 @@ struct window {
     }
 
     redraw() {
+        if this.isRunning == false {
+            return
+        }
         xcb_clear_area(this.connection, 1, this.window, 0, 0, 0, 0)
         xcb_flush(this.connection)
     }
@@ -298,6 +302,21 @@ struct window {
 
     setScissor(pos [int,int], size [int, int]) {
         this.scissor = [true, pos[0], pos[1], pos[0] + size[0], pos[1] + size[1]]
+        if this.scissor[1] < 0 {
+            this.scissor[1] = 0
+        }
+
+        if this.scissor[2] < 0 {
+            this.scissor[2] = 0
+        }
+
+        if this.scissor[3] > this.width {
+            this.scissor[3] = this.width
+        }
+
+        if this.scissor[4] > this.height {
+            this.scissor[4] = this.height
+        }
     }
 
     disableScissor() {
@@ -320,31 +339,7 @@ struct window {
 
     }
 
-    setPixel(pos [int,int], color rgbColor) {
-        offset = (pos[1] * this.width + pos[0]) * 4
-
-        if offset < 0 || offset >= this.width * this.height * 4 {
-            return
-        }
-
-        if this.scissor[0] && (pos[0] < this.scissor[1] || pos[0] >= this.scissor[3] || pos[1] < this.scissor[2] || pos[1] >= this.scissor[4]) {
-            return
-        }
-
-        if color.a != 255 {
-            da = <float><uint>color.a / 255.0
-            ida = 1.0 - da
-
-            color.b = <uint>(<float><uint>color.b * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset))     * ida)
-            color.g = <uint>(<float><uint>color.g * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset + 1)) * ida)
-            color.r = <uint>(<float><uint>color.r * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset + 2)) * ida)
-        }
-
-        v = (<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16)
-        *(<uint32*>(<uint>this.frameBuffer + offset)) = v
-    }
-
-    setPixelUnsafe(pos [int,int], color rgbColor) {
+    _setPixel(pos [int,int], color rgbColor) {
         offset = (pos[1] * this.width + pos[0]) * 4
 
         if color.a != 255 {
@@ -360,11 +355,11 @@ struct window {
         *(<uint32*>(<uint>this.frameBuffer + offset)) = v
     }
 
-    __unsafeFastSetPixel(offset uint, l uint, color rgbColor) {
+    _scanLineFromColor(offset uint, l uint, color rgbColor) {
         l += offset
         v = <uint32>((<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16))
         if color.a != 255 {
-            if l - offset > 15 {
+            if l - offset > 7 {
                 $movd(v, $xmm0)
                 $vpbroadcastd($xmm0, $ymm0)
                 $vpxor($ymm15, $ymm15, $ymm15)
@@ -388,7 +383,6 @@ struct window {
                     $movq(<uint>this.frameBuffer + offset * 4, $rax)
                     $vmovdqu(*$rax, $ymm0)
 
-                    $vpxor($ymm15, $ymm15, $ymm15)
                     $vpunpcklbw($ymm15, $ymm0, $ymm4)
                     $vpunpckhbw($ymm15, $ymm0, $ymm5)
 
@@ -425,12 +419,14 @@ struct window {
             return
         }
 
-        if l - offset > 7 {
-            lm = l - 7
+        if l - offset > 15 {
+            lm = l - 15
             $movd(v, $xmm0)
             $vpbroadcastd($xmm0, $ymm0)
-            for offset < lm, offset += 8 {
+            for offset < lm, offset += 16 {
                 $movq(<uint>this.frameBuffer + offset * 4, $rax)
+                $vmovdqu($ymm0, *$rax)
+                $addq(8 * 4, $rax)
                 $vmovdqu($ymm0, *$rax)
             }
         }
@@ -440,7 +436,7 @@ struct window {
         }
     }
 
-    __unsafeScanLine(pos [int,int], from int, length int, colors []rgbColor) {
+    _scanLineFromBuffer(pos [int,int], from int, length int, colors []rgbColor) {
         $movq((<Bah_Array_Type*>__simd_perm_mask_rgba_bgra).data, $rax)
         $vmovdqu(*$rax, $ymm14)
 
@@ -507,12 +503,12 @@ struct window {
         }
 
         for x < length, x++ {
-            this.setPixelUnsafe([pos[0] + x, pos[1]], colors[from + x])
+            this._setPixel([pos[0] + x, pos[1]], colors[from + x])
         }
 
     }
 
-    __unsafeScanLineColorAlpha(pos [int,int], alpha byte*, width int, color rgbColor) {
+    _scanLineFromAlphaBuffer(pos [int,int], alpha byte*, width int, color rgbColor) {
         v = <uint32>((<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16))
 
         $movq((<Bah_Array_Type*>__simd_perm_mask_alphabits).data, $rax)
@@ -582,9 +578,22 @@ struct window {
 
         for x < width, x++ {
             color.a = *<byte*>(<uint>alpha + x)
-            this.setPixelUnsafe([pos[0] + x, pos[1]], color)
+            this._setPixel([pos[0] + x, pos[1]], color)
+        }
+    }
+
+    setPixel(pos [int,int], color rgbColor) {
+        offset = (pos[1] * this.width + pos[0]) * 4
+
+        if offset < 0 || offset >= this.width * this.height * 4 {
+            return
         }
 
+        if this.scissor[0] && (pos[0] < this.scissor[1] || pos[0] >= this.scissor[3] || pos[1] < this.scissor[2] || pos[1] >= this.scissor[4]) {
+            return
+        }
+
+        this._setPixel(pos, color)
     }
 
     __threadedDrawer(m uint) {
@@ -602,7 +611,7 @@ struct window {
                 localTo = req.to[1]
             }
             for y < localTo, y++ {
-                this.__unsafeFastSetPixel(y * this.width + x, l, c)
+                this._scanLineFromColor(y * this.width + x, l, c)
             }
         } else if req.type == __graphicsDrawRequestTypeClear {
             nbLines = (this.height / (__graphicsNbDrawers + 1))
@@ -619,7 +628,7 @@ struct window {
             y=req.from[1]; for y < req.to[1], y++ {
                 offset = n + (y - req.from[1]) * req.ogSize[0]
                 l = req.to[0] - req.from[0]
-                this.__unsafeScanLine([req.from[0],y], offset, l, buff)
+                this._scanLineFromBuffer([req.from[0],y], offset, l, buff)
             }
         }
     }
@@ -691,6 +700,7 @@ struct window {
             }
 
             if y >= this.height {
+
                 break
             }
 
@@ -786,7 +796,7 @@ struct window {
 
         l = max[0] - pos[0]
         y=pos[1]; for y < max[1], y++ {
-            this.__unsafeFastSetPixel(y * this.width + pos[0], l, color)
+            this._scanLineFromColor(y * this.width + pos[0], l, color)
         }
     }
 
@@ -863,18 +873,8 @@ struct window {
         y=pos[1]; for y < max[1], y++ {
             offset = n + (y - pos[1]) * size[0]
             l = max[0] - pos[0]
-            this.__unsafeScanLine([pos[0],y], offset, l, buff)
+            this._scanLineFromBuffer([pos[0],y], offset, l, buff)
         }
-
-        //Old single threaded code
-        // y=pos[1]; for y < max[1], y++ {
-        //     i = 0
-        //     x = pos[0]; for x < max[0], x++ {
-        //         this.setPixelUnsafe([x,y], buff[n + i])
-        //         i++
-        //     }
-        //     n += size[0]
-        // }
     }
 
     drawCircle(pos [int, int], radi int, color rgbColor) {
@@ -924,21 +924,29 @@ struct window {
 
         this._overlapCheck([rect[0], rect[1]], [rect[2] - rect[0], rect[3] - rect[1]])
 
-        y = pos[1] - radi; for y < rect[3], y++ {
+        y = pos[1] - radi
+        if y < rect[1] {
+            y = rect[1]
+        }
+
+        rad2 = radi * radi
+        for y < rect[3], y++ {
             x = pos[0] - radi; for x < rect[2], x++ {
                 dx = x - pos[0]
                 dy = y - pos[1]
-                
-                d = sqrt(<float>(dx*dx + dy*dy))
-                if d > fradi {
+
+                di = dx*dx + dy*dy
+
+                if di > rad2 {
                     continue
                 }
+                d = sqrt(<float>di)
 
                 rColor = color
                 l = (pos[0] - x) * 2
                 p = x
                 if fradi - d < 1.0 {
-                    rColor.a = <byte>((fradi - d) / 1.0 * <float><uint>color.a)
+                    rColor.a = <byte>((fradi - d) * <float><uint>color.a)
                     if p >= rect[0] {
                         this.setPixel([x,y], rColor)
                     } 
@@ -954,7 +962,7 @@ struct window {
                         p = rect[0]
                     }
                     if y >= rect[1] && y < rect[3] {
-                        this.__unsafeFastSetPixel(y * this.width + p, l, color)
+                        this._scanLineFromColor(y * this.width + p, l, color)
                     }
                     break
                 }
@@ -1088,16 +1096,6 @@ struct window {
 
         this.drawRect([pos[0], pos[1] + radi], [size[0], size[1] - radi * 2 + 1], color)
 
-        // if min[0] > pos[0] + radi || max[0] < pos[0] + size[0] {
-        //     this.drawRect([pos[0] + radi, pos[1]], [size[0] - radi * 2 + 2, radi], color)
-        //     this.drawRect([pos[0] + radi, pos[1] + size[1] - radi], [size[0] - radi * 2 + 2, radi], color)
-        //     this.drawCircle([pos[0] + size[0] - radi, pos[1] + radi - 1], radi, color)
-        //     this.drawCircle([pos[0] + size[0] - radi, pos[1] + size[1] - radi], radi, color)
-        //     this.drawCircle([pos[0] + radi, pos[1] + radi - 1], radi, color)
-        //     this.drawCircle([pos[0] + radi, pos[1] + size[1] - radi], radi, color)
-        //     return
-        // }
-
         fradi = <float>radi
         
         cPos = [pos[0] + radi - 1, pos[1] + radi - 1]
@@ -1106,9 +1104,9 @@ struct window {
 
         mx = size[0] + pos[0]
         
-        // if y < min[1] {
-        //     y = min[1]
-        // }
+        if y < min[1] {
+            y = min[1]
+        }
         cMax = cPos[1]
         if cMax > max[1] - 1 {
             cMax = max[1] - 1
@@ -1126,9 +1124,6 @@ struct window {
 
 
             x = cPos[0] - radi
-            // if x < min[0] {
-            //     x = min[0]
-            // }
             
             dy = <float>y - <float>cPos[1]
             for x < xMax, x++ {
@@ -1161,7 +1156,7 @@ struct window {
                         l -= min[0] - x
                         p = min[0]
                     }
-                    this.__unsafeFastSetPixel(y * this.width + p, l, color)
+                    this._scanLineFromColor(y * this.width + p, l, color)
                     break
                 }
 
@@ -1174,6 +1169,10 @@ struct window {
         cMax = cPos[1] + radi
         if cMax > max[1] {
             cMax = max[1]
+        }
+
+        if y < min[1] {
+            y = min[1]
         }
 
         for y < cMax, y++ {
@@ -1214,7 +1213,7 @@ struct window {
                         l -= min[0] - x
                         p = min[0]
                     }
-                    this.__unsafeFastSetPixel(y * this.width + p, l, color)
+                    this._scanLineFromColor(y * this.width + p, l, color)
                     break
                 }
             }
@@ -1557,7 +1556,6 @@ struct window {
         }
 
         for i < to, i++ {
-
             if this.scissor[0] {
                 if fnt.currY - fnt.fontSize >= this.scissor[4] {
                     break
@@ -1604,19 +1602,30 @@ struct window {
             bitmap = slot.bitmap
             raw = <byte*>bitmap.buff
             y=0
-            
-            if this.scissor[0] && fnt.currY - slot.bitmap_top < this.scissor[2] {
-                y = this.scissor[2] - fnt.currY + slot.bitmap_top
+
+            rect = [0, 0, this.width, this.height]
+            if this.scissor[0] {
+                rect = [this.scissor[1], this.scissor[2], this.scissor[3], this.scissor[4]]
             }
+            
+            if fnt.currY - slot.bitmap_top < rect[1] {
+                y = rect[1] - fnt.currY + slot.bitmap_top
+            }
+
             l = bitmap.rows
 
-            if this.scissor[0] && fnt.currY + l - slot.bitmap_top >= this.scissor[4] {
-                l = this.scissor[4] - fnt.currY + slot.bitmap_top
+            if fnt.currY + l - slot.bitmap_top >= rect[3] {
+                l = rect[3] - fnt.currY + slot.bitmap_top
+            }
+
+            minx = 0
+            if fnt.currX + slot.bitmap_left < rect[0] {
+                minx = rect[0] - fnt.currX + slot.bitmap_left
             }
 
             maxWidth = <int>bitmap.width
-            if this.scissor[0] && fnt.currX + (sc.glyph.advance.x >> 6) > this.scissor[3] {
-                maxWidth = this.scissor[3] - fnt.currX - (sc.glyph.advance.x >> 6) + 1
+            if fnt.currX + (sc.glyph.advance.x >> 6) > rect[2] {
+                maxWidth = rect[2] - (fnt.currX + minx + slot.bitmap_left)
                 if maxWidth <= 0 {
                     i++; for i < to, i++ {
                         if text[i] == <byte>10 {
@@ -1632,16 +1641,11 @@ struct window {
                 }
             }
 
-            minx = 0
-            if this.scissor[0] && fnt.currX + slot.bitmap_left < this.scissor[1] {
-                minx = this.scissor[1] - fnt.currX + slot.bitmap_left
-
-                if minx >= maxWidth {
-                    fnt.currX += (sc.glyph.advance.x >> 6)
-                    continue
-                }
-            }
-            
+            if minx > maxWidth {
+                fnt.currX += (sc.glyph.advance.x >> 6)
+                fnt.currY += (sc.glyph.advance.y >> 6)
+                continue
+            }            
 
             for y < l, y++ {
                 linePtr = <byte*>(<uint>raw + y * bitmap.pitch)
@@ -1650,10 +1654,7 @@ struct window {
                 }
                 rx = fnt.currX + minx + slot.bitmap_left
                 ry = fnt.currY + y - slot.bitmap_top
-                if ry < 0 {
-                    continue
-                }
-                this.__unsafeScanLineColorAlpha([rx, ry], <byte*>(<uint>linePtr + minx), maxWidth, color)
+                this._scanLineFromAlphaBuffer([rx, ry], <byte*>(<uint>linePtr + minx), maxWidth, color)
             }
 
             fnt.currX += (sc.glyph.advance.x >> 6)
@@ -1663,22 +1664,97 @@ struct window {
         return [fnt.currX, fnt.currY]
     }
 
-    measureText(fntp font*, text str) [uint, uint] {
-        arr = Bah_Array_Type {
-            data: cStr(text)
-            elemSize: 1
-            length: len(text)
+    measureText(fntp font*, text str) [int, int] {
+        if isStackAddress(<ptr>text) {
+            arr = Bah_Array_Type {
+                data: cStr(text)
+                elemSize: 1
+                length: len(text)
+            }
+            return this.measureByteArr(fntp, <[]byte>&arr, 0, len(text))
         }
-        return this.measureByteArr(fntp, <[]byte>&arr, 0, len(text))
+
+        tc = fntp.getBuffFromBytes(text)
+        s = tc.size
+        return s
     }
 
     drawText(fntp font*, text str, color rgbColor, pos [int, int]) [int,int] {
-        arr = Bah_Array_Type {
-            data: cStr(text)
-            elemSize: 1
-            length: len(text)
+        if this.isExposed == false {
+            return [0,0]
         }
-        return this.drawByteArr(fntp, <[]byte>&arr, 0, len(text), color, pos)
+
+        if isStackAddress(<ptr>text) {
+            arr = Bah_Array_Type {
+                data: cStr(text)
+                elemSize: 1
+                length: len(text)
+            }
+            return this.drawByteArr(fntp, <[]byte>&arr, 0, len(text), color, pos)
+        }
+
+
+        tc = fntp.getBuffFromBytes(text)
+
+        n = 0
+        hs = fntp.fontSize / 2
+        max = [pos[0] + tc.size[0], pos[1] + tc.size[1] - hs]
+
+        pos[1] -= fntp.fontSize + hs
+        this.hasDrawn = true
+
+
+        if this.scissor[0] {
+            if pos[0] < this.scissor[1] {
+                n += this.scissor[1] - pos[0]
+                pos[0] = this.scissor[1]
+            }
+
+            if pos[1] < this.scissor[2] {
+                n += (this.scissor[2] - pos[1]) * tc.size[0]
+                pos[1] = this.scissor[2]
+            }
+
+            if max[0] > this.scissor[3] {
+                max[0] = this.scissor[3]
+            }
+
+            if max[1] > this.scissor[4] {
+                max[1] = this.scissor[4]
+            }
+        }
+
+        if pos[0] < 0 {
+            n += 0 - pos[0]
+            pos[0] = 0
+        }
+
+        if pos[1] < 0 {
+            n += (0 - pos[1]) * tc.size[0]
+            pos[1] = 0
+        }
+
+        if max[0] > this.width {
+            max[0] = this.width
+        }
+
+        if max[1] > this.height {
+            max[1] = this.height
+        }
+
+        if max[0] == pos[0] || max[1] == pos[1] {
+            return max
+        }
+
+        this._overlapCheck(pos, [max[0] - pos[0], max[1] - pos[1]])
+        
+        y=pos[1]; for y < max[1], y++ {
+            offset = n + (y - pos[1]) * tc.size[0]
+            l = max[0] - pos[0]
+            this._scanLineFromAlphaBuffer([pos[0],y], &tc.buff[offset], l, color)
+        }
+
+        return max
     }
 
     toScreenCoord(pos [int,int]) [int,int] {
@@ -1926,6 +2002,8 @@ struct window {
         this.atoms.deleteWindow = xcb_getAtom(this.connection, "WM_DELETE_WINDOW")
         this.atoms.XdndActionList = xcb_getAtom(this.connection, "XdndActionList")
         this.atoms.WMicon = xcb_getAtom(this.connection, "_NET_WM_ICON")
+        this.atoms.UTF8_STRING = xcb_getAtom(this.connection, "UTF8_STRING")
+        this.atoms.STRING = xcb_getAtom(this.connection, "STRING")
 
         xcb_change_property(this.connection,
             XCB_PROP_MODE_REPLACE,
@@ -2101,8 +2179,6 @@ struct window {
                     *(<uint32*>(<uint>m.data + 4)) = 1
                     *(<uint32*>(<uint>m.data + 12)) = this.atoms.XdndActionCopy
 
-
-
                     xcb_send_event(this.connection, 0, *(<uint32*>&cm.data), XCB_EVENT_MASK_NO_EVENT, <ptr>&m)
                     xcb_flush(this.connection)
                 } else if cm.type == this.atoms.XdndDrop {
@@ -2120,44 +2196,62 @@ struct window {
                     action = *<uint32*>(<uint>cm.data + 16)
                 }
 
-            } else if eventType == 30 {
-                req = <xcb_selection_request_event_t*>event
-                notify = xcb_selection_notify_event_t {
-                    response_type: 31
-                    time: req.time
-                    requestor: req.requestor
-                    selection: req.selection
-                    target: req.target
-                    property: req.property
-                }
+                } else if eventType == 30 {
+                    req = <xcb_selection_request_event_t*>event
+                    notify = xcb_selection_notify_event_t {
+                        response_type: 31
+                        time: req.time
+                        requestor: req.requestor
+                        selection: req.selection
+                        target: req.target
+                        property: req.property
+                    }
 
-                if req.selection == this.atoms.XdndSelection {
-                    xcb_change_property(
-                        this.connection,
-                        XCB_PROP_MODE_REPLACE,
-                        req.requestor,
-                        req.property,
-                        req.target,
-                        8,
-                        len(this.tmpFileURI),
-                        cStr(this.tmpFileURI)
-                    )
-                } else {
-                    xcb_change_property(
-                        this.connection,
-                        XCB_PROP_MODE_REPLACE,
-                        req.requestor,
-                        req.property,
-                        req.target,
-                        8,
-                        len(this.tmpClipboard),
-                        cStr(this.tmpClipboard)
-                    )
-                }
+                    if req.selection == this.atoms.XdndSelection {
+                        xcb_change_property(
+                            this.connection,
+                            XCB_PROP_MODE_REPLACE,
+                            req.requestor,
+                            req.property,
+                            req.target,
+                            8,
+                            len(this.tmpFileURI),
+                            cStr(this.tmpFileURI)
+                        )
+                    } else {
+                        if req.target == this.atoms.TARGETS {
+                            targets = [
+                                this.atoms.UTF8_STRING,
+                                this.atoms.STRING,
+                                this.atoms.TARGETS
+                            ]
+                            xcb_change_property(
+                                this.connection,
+                                XCB_PROP_MODE_REPLACE,
+                                req.requestor,
+                                req.property,
+                                XCB_ATOM_ATOM,
+                                32,
+                                3,
+                                &targets
+                            )
+                        } else {
+                            xcb_change_property(
+                                this.connection,
+                                XCB_PROP_MODE_REPLACE,
+                                req.requestor,
+                                req.property,
+                                req.target,
+                                8,
+                                len(this.tmpClipboard),
+                                cStr(this.tmpClipboard)
+                            )
+                        }
+                    }
 
-                xcb_send_event(this.connection, 0, req.requestor, XCB_EVENT_MASK_NO_EVENT, <ptr>&notify)
-                xcb_flush(this.connection)
-            } else if eventType == 31 {
+                    xcb_send_event(this.connection, 0, req.requestor, XCB_EVENT_MASK_NO_EVENT, <ptr>&notify)
+                    xcb_flush(this.connection)
+                } else if eventType == 31 {
                 sn = <xcb_selection_notify_event_t*>event
 
                 if sn.selection == this.atoms.XdndSelection {
@@ -2176,9 +2270,6 @@ struct window {
                             free(prop)
                             continue
                         }
-
-                        // l -= 8 //remove file:// and \r\n at the end
-
                         data = memoryAllocSTR_NZ(l + 5)
                         *(<uint32*>data) = l
                         memcpy(<ptr>(<uint>data + 4), <ptr>(<uint>xcb_get_property_value(prop) + 7), l)
@@ -2225,6 +2316,7 @@ struct window {
         xcb_key_symbols_free(this.keySyms)
         xcb_disconnect(this.connection)
 
+        //TODO: may need to count exiting threads to not destroy cond before a thread gets updated
         this.haveFrame.destroy()
         this.haveFrameMut.destroy()
         this.clipboardChan.destroy()

@@ -1,0 +1,513 @@
+// Bindings automatically generated
+// using https://github.com/ithirzty/ctobah
+
+#cLib "ljpeg"
+
+// Original file: /usr/include/jpeglib.h
+// Bindings of exclusively: /usr/include
+
+//Location: /usr/include/jpeglib.h:81
+struct JQUANT_TBL {
+	quantval: buffer:128
+	sent_table: int32
+}
+
+//Location: /usr/include/jpeglib.h:98
+struct JHUFF_TBL {
+	bits: buffer:17
+	huffval: buffer:256
+	sent_table: int32
+}
+
+//Location: /usr/include/jpeglib.h:114
+struct jpeg_component_info {
+	component_id: int32
+	component_index: int32
+	h_samp_factor: int32
+	v_samp_factor: int32
+	quant_tbl_no: int32
+	dc_tbl_no: int32
+	ac_tbl_no: int32
+	width_in_blocks: uint32
+	height_in_blocks: uint32
+	DCT_h_scaled_size: int32
+	DCT_v_scaled_size: int32
+	downsampled_width: uint32
+	downsampled_height: uint32
+	component_needed: int32
+	MCU_width: int32
+	MCU_height: int32
+	MCU_blocks: int32
+	MCU_sample_width: int32
+	last_col_width: int32
+	last_row_height: int32
+	quant_table: JQUANT_TBL*
+	dct_table: ptr
+}
+
+//Location: /usr/include/jpeglib.h:235
+struct jpeg_scan_info {
+	comps_in_scan: int32
+	component_index: buffer:16
+	Ss: int32
+	Se: int32
+	Ah: int32
+	Al: int32
+}
+
+//Location: /usr/include/jpeglib.h:250
+struct jpeg_marker_struct {
+	next: ptr
+	marker: byte
+	original_length: uint32
+	data_length: uint32
+	data: byte*
+}
+
+const JCS_UNKNOWN = 0
+const JCS_GRAYSCALE = 1
+const JCS_RGB = 2
+const JCS_YCbCr = 3
+const JCS_CMYK = 4
+const JCS_YCCK = 5
+const JCS_EXT_RGB = 6
+const JCS_EXT_RGBX = 7
+const JCS_EXT_BGR = 8
+const JCS_EXT_BGRX = 9
+const JCS_EXT_XBGR = 10
+const JCS_EXT_XRGB = 11
+const JCS_EXT_RGBA = 12
+const JCS_EXT_BGRA = 13
+const JCS_EXT_ABGR = 14
+const JCS_EXT_ARGB = 15
+const JCS_RGB565 = 16
+
+const JDCT_ISLOW = 0
+const JDCT_IFAST = 1
+const JDCT_FLOAT = 2
+
+const JDITHER_NONE = 0
+const JDITHER_ORDERED = 1
+const JDITHER_FS = 2
+
+struct jpeg_error_mgr {
+    error_exit: function(ptr)
+    emit_message: function(ptr, int32)
+    output_message: function(ptr)
+    format_message: function(ptr, ptr)
+    reset_error_mgr: function(ptr)
+    msg_code: int32
+    msg_parm: buffer:80
+    trace_level: int32
+    num_warnings: int
+    jpeg_message_table: byte*
+    last_jpeg_message: int32
+    addon_message_table: byte*
+    first_addon_message: int32
+    last_addon_message: int32
+
+}
+
+//Location: /usr/include/jpeglib.h:330
+struct jpeg_common_struct {
+	err: jpeg_error_mgr*
+	mem: ptr
+	progress: ptr
+	client_data: ptr
+	is_decompressor: int32
+	global_state: int32
+}
+
+//Location: /usr/include/jpeglib.h:345
+struct jpeg_compress_struct {
+	err: jpeg_error_mgr*
+	mem: ptr
+	progress: ptr
+	client_data: ptr
+	is_decompressor: int32
+	global_state: int32
+	dest: ptr
+	image_width: uint32
+	image_height: uint32
+	input_components: int32
+	in_color_space: int32
+	input_gamma: float
+	scale_num: uint32
+	scale_denom: uint32
+	jpeg_width: uint32
+	jpeg_height: uint32
+	data_precision: int32
+	num_components: int32
+	jpeg_color_space: int32
+	comp_info: jpeg_component_info*
+	quant_tbl_ptrs: buffer:32
+	q_scale_factor: buffer:16
+	dc_huff_tbl_ptrs: buffer:32
+	ac_huff_tbl_ptrs: buffer:32
+	arith_dc_L: buffer:16
+	arith_dc_U: buffer:16
+	arith_ac_K: buffer:16
+	num_scans: int32
+	scan_info: jpeg_scan_info*
+	raw_data_in: int32
+	arith_code: int32
+	optimize_coding: int32
+	CCIR601_sampling: int32
+	do_fancy_downsampling: int32
+	smoothing_factor: int32
+	dct_method: int32
+	restart_interval: uint32
+	restart_in_rows: int32
+	write_JFIF_header: int32
+	JFIF_major_version: byte
+	JFIF_minor_version: byte
+	density_unit: byte
+	X_density: uint16
+	Y_density: uint16
+	write_Adobe_marker: int32
+	next_scanline: uint32
+	progressive_mode: int32
+	max_h_samp_factor: int32
+	max_v_samp_factor: int32
+	min_DCT_h_scaled_size: int32
+	min_DCT_v_scaled_size: int32
+	total_iMCU_rows: uint32
+	comps_in_scan: int32
+	cur_comp_info: buffer:32
+	MCUs_per_row: uint32
+	MCU_rows_in_scan: uint32
+	blocks_in_MCU: int32
+	MCU_membership: buffer:40
+	Ss: int32
+	Se: int32
+	Ah: int32
+	Al: int32
+	block_size: int32
+	natural_order: int32*
+	lim_Se: int32
+	master: ptr
+	main: ptr
+	prep: ptr
+	coef: ptr
+	marker: ptr
+	cconvert: ptr
+	downsample: ptr
+	fdct: ptr
+	entropy: ptr
+	script_space: jpeg_scan_info*
+	script_space_size: int32
+}
+
+//Location: /usr/include/jpeglib.h:523
+struct jpeg_decompress_struct {
+	err: jpeg_error_mgr*
+	mem: ptr
+	progress: ptr
+	client_data: ptr
+	is_decompressor: int32
+	global_state: int32
+	src: ptr
+	image_width: uint32
+	image_height: uint32
+	num_components: int32
+	jpeg_color_space: int32
+	out_color_space: int32
+	scale_num: uint32
+	scale_denom: uint32
+	output_gamma: float
+	buffered_image: int32
+	raw_data_out: int32
+	dct_method: int32
+	do_fancy_upsampling: int32
+	do_block_smoothing: int32
+	quantize_colors: int32
+	dither_mode: int32
+	two_pass_quantize: int32
+	desired_number_of_colors: int32
+	enable_1pass_quant: int32
+	enable_external_quant: int32
+	enable_2pass_quant: int32
+	output_width: uint32
+	output_height: uint32
+	out_color_components: int32
+	output_components: int32
+	rec_outbuf_height: int32
+	actual_number_of_colors: int32
+	colormap: byte**
+	output_scanline: uint32
+	input_scan_number: int32
+	input_iMCU_row: uint32
+	output_scan_number: int32
+	output_iMCU_row: uint32
+	coef_bits: ptr
+    _rest: buffer:456
+}
+
+//Location: /usr/include/jpeglib.h:759
+struct jpeg_decomp_master {
+}
+
+//Location: /usr/include/jpeglib.h:761
+struct jpeg_d_coef_controller {
+}
+
+//Location: /usr/include/jpeglib.h:763
+struct jpeg_input_controller {
+}
+
+//Location: /usr/include/jpeglib.h:765
+struct jpeg_entropy_decoder {
+}
+
+//Location: /usr/include/jpeglib.h:767
+struct jpeg_upsampler {
+}
+
+//Location: /usr/include/jpeglib.h:769
+struct jpeg_color_quantizer {
+}
+
+//Location: /usr/include/jpeglib.h:841
+struct jpeg_progress_mgr {
+	progress_monitor: function(jpeg_common_struct*)
+	pass_counter: int
+	pass_limit: int
+	completed_passes: int32
+	total_passes: int32
+}
+
+//Location: /usr/include/jpeglib.h:853
+struct jpeg_destination_mgr {
+	next_output_byte: byte*
+	free_in_buffer: uint
+	init_destination: function(ptr)
+	empty_output_buffer: function(ptr) int32
+	term_destination: function(ptr)
+}
+
+//Location: /usr/include/jpeglib.h:865
+struct jpeg_source_mgr {
+	next_input_byte: byte*
+	bytes_in_buffer: uint
+	init_source: function(ptr)
+	fill_input_buffer: function(ptr) int32
+	skip_input_data: function(ptr, int)
+	resync_to_restart: function(ptr, int32) int32
+	term_source: function(ptr)
+}
+
+//Location: /usr/include/jpeglib.h:896
+struct jpeg_memory_mgr {
+	alloc_small: function(jpeg_common_struct*, int32, ) ptr
+	alloc_large: function(jpeg_common_struct*, int32, ) ptr
+	alloc_sarray: function(jpeg_common_struct*, int32, uint32, uint32) byte**
+	alloc_barray: function(jpeg_common_struct*, int32, uint32, uint32) ptr*
+	request_virt_sarray: function(jpeg_common_struct*, int32, int32, uint32, uint32, uint32) ptr
+	request_virt_barray: function(jpeg_common_struct*, int32, int32, uint32, uint32, uint32) ptr
+	realize_virt_arrays: function(jpeg_common_struct*)
+	access_virt_sarray: function(jpeg_common_struct*, ptr, uint32, uint32, int32) byte**
+	access_virt_barray: function(jpeg_common_struct*, ptr, uint32, uint32, int32) ptr*
+	free_pool: function(jpeg_common_struct*, int32)
+	self_destruct: function(jpeg_common_struct*)
+	max_memory_to_use: int
+	max_alloc_chunk: int
+}
+
+//Location: /usr/include/jpeglib.h:959
+#define jpeg_std_error(err ptr) ptr
+
+//Location: /usr/include/jpeglib.h:974
+#define jpeg_CreateCompress(cinfo ptr, version int32, ss uint)
+
+//Location: /usr/include/jpeglib.h:976
+#define jpeg_CreateDecompress(cinfo ptr, version int32, ss uint)
+
+//Location: /usr/include/jpeglib.h:979
+#define jpeg_destroy_compress(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:980
+#define jpeg_destroy_decompress(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:984
+#define jpeg_stdio_dest(cinfo ptr, outfile ptr)
+
+//Location: /usr/include/jpeglib.h:985
+#define jpeg_stdio_src(cinfo ptr, infile ptr)
+
+//Location: /usr/include/jpeglib.h:988
+#define jpeg_mem_dest(cinfo ptr, outbuffer byte**, outsize uint*)
+
+//Location: /usr/include/jpeglib.h:990
+#define jpeg_mem_src(cinfo ptr, inbuffer byte*, insize uint)
+
+//Location: /usr/include/jpeglib.h:994
+#define jpeg_set_defaults(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:996
+#define jpeg_set_colorspace(cinfo ptr, colorspace int32)
+
+//Location: /usr/include/jpeglib.h:998
+#define jpeg_default_colorspace(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:999
+#define jpeg_set_quality(cinfo ptr, quality int32, force_baseline int32)
+
+//Location: /usr/include/jpeglib.h:1001
+#define jpeg_set_linear_quality(cinfo ptr, scale_factor int32, force_baseline int32)
+
+//Location: /usr/include/jpeglib.h:1004
+#define jpeg_default_qtables(cinfo ptr, force_baseline int32)
+
+//Location: /usr/include/jpeglib.h:1007
+#define jpeg_add_quant_table(cinfo ptr, which_tbl int32, basic_table uint32*, scale_factor int32, force_baseline int32)
+
+//Location: /usr/include/jpeglib.h:1010
+#define jpeg_quality_scaling(quality int32) int32
+
+//Location: /usr/include/jpeglib.h:1011
+#define jpeg_enable_lossless(cinfo ptr, predictor_selection_value int32, point_transform int32)
+
+//Location: /usr/include/jpeglib.h:1014
+#define jpeg_simple_progression(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:1015
+#define jpeg_suppress_tables(cinfo ptr, suppress int32)
+
+//Location: /usr/include/jpeglib.h:1016
+#define jpeg_alloc_quant_table(cinfo jpeg_common_struct*) JQUANT_TBL*
+
+//Location: /usr/include/jpeglib.h:1017
+#define jpeg_alloc_huff_table(cinfo jpeg_common_struct*) JHUFF_TBL*
+
+//Location: /usr/include/jpeglib.h:1020
+#define jpeg_start_compress(cinfo ptr, write_all_tables int32)
+
+//Location: /usr/include/jpeglib.h:1022
+#define jpeg_write_scanlines(cinfo ptr, scanlines byte**, num_lines uint32) uint32
+
+//Location: /usr/include/jpeglib.h:1025
+#define jpeg12_write_scanlines(cinfo ptr, scanlines int16**, num_lines uint32) uint32
+
+//Location: /usr/include/jpeglib.h:1028
+#define jpeg16_write_scanlines(cinfo ptr, scanlines uint16**, num_lines uint32) uint32
+
+//Location: /usr/include/jpeglib.h:1031
+#define jpeg_finish_compress(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:1035
+#define jpeg_calc_jpeg_dimensions(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:1039
+#define jpeg_write_raw_data(cinfo ptr, data byte***, num_lines uint32) uint32
+
+//Location: /usr/include/jpeglib.h:1041
+#define jpeg12_write_raw_data(cinfo ptr, data int16***, num_lines uint32) uint32
+
+//Location: /usr/include/jpeglib.h:1046
+#define jpeg_write_marker(cinfo ptr, marker int32, dataptr byte*, datalen uint32)
+
+//Location: /usr/include/jpeglib.h:1049
+#define jpeg_write_m_header(cinfo ptr, marker int32, datalen uint32)
+
+//Location: /usr/include/jpeglib.h:1051
+#define jpeg_write_m_byte(cinfo ptr, val int32)
+
+//Location: /usr/include/jpeglib.h:1054
+#define jpeg_write_tables(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:1057
+#define jpeg_write_icc_profile(cinfo ptr, icc_data_ptr byte*, icc_data_len uint32)
+
+//Location: /usr/include/jpeglib.h:1063
+#define jpeg_read_header(cinfo ptr, require_image int32) int32
+
+//Location: /usr/include/jpeglib.h:1075
+#define jpeg_start_decompress(cinfo ptr) int32
+
+//Location: /usr/include/jpeglib.h:1076
+#define jpeg_read_scanlines(cinfo ptr, scanlines byte**, max_lines uint32) uint32
+
+//Location: /usr/include/jpeglib.h:1079
+#define jpeg12_read_scanlines(cinfo ptr, scanlines int16**, max_lines uint32) uint32
+
+//Location: /usr/include/jpeglib.h:1082
+#define jpeg16_read_scanlines(cinfo ptr, scanlines uint16**, max_lines uint32) uint32
+
+//Location: /usr/include/jpeglib.h:1085
+#define jpeg_skip_scanlines(cinfo ptr, num_lines uint32) uint32
+
+//Location: /usr/include/jpeglib.h:1087
+#define jpeg12_skip_scanlines(cinfo ptr, num_lines uint32) uint32
+
+//Location: /usr/include/jpeglib.h:1089
+#define jpeg_crop_scanline(cinfo ptr, xoffset uint32*, width uint32*)
+
+//Location: /usr/include/jpeglib.h:1091
+#define jpeg12_crop_scanline(cinfo ptr, xoffset uint32*, width uint32*)
+
+//Location: /usr/include/jpeglib.h:1093
+#define jpeg_finish_decompress(cinfo ptr) int32
+
+//Location: /usr/include/jpeglib.h:1096
+#define jpeg_read_raw_data(cinfo ptr, data byte***, max_lines uint32) uint32
+
+//Location: /usr/include/jpeglib.h:1098
+#define jpeg12_read_raw_data(cinfo ptr, data int16***, max_lines uint32) uint32
+
+//Location: /usr/include/jpeglib.h:1103
+#define jpeg_has_multiple_scans(cinfo ptr) int32
+
+//Location: /usr/include/jpeglib.h:1104
+#define jpeg_start_output(cinfo ptr, scan_number int32) int32
+
+//Location: /usr/include/jpeglib.h:1105
+#define jpeg_finish_output(cinfo ptr) int32
+
+//Location: /usr/include/jpeglib.h:1106
+#define jpeg_input_complete(cinfo ptr) int32
+
+//Location: /usr/include/jpeglib.h:1107
+#define jpeg_new_colormap(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:1108
+#define jpeg_consume_input(cinfo ptr) int32
+
+//Location: /usr/include/jpeglib.h:1118
+#define jpeg_core_output_dimensions(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:1120
+#define jpeg_calc_output_dimensions(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:1123
+#define jpeg_save_markers(cinfo ptr, marker_code int32, length_limit uint32)
+
+//Location: /usr/include/jpeglib.h:1127
+#define jpeg_set_marker_processor(cinfo ptr, marker_code int32, routine function(ptr) int32)
+
+//Location: /usr/include/jpeglib.h:1132
+#define jpeg_read_coefficients(cinfo ptr) ptr*
+
+//Location: /usr/include/jpeglib.h:1133
+#define jpeg_write_coefficients(cinfo ptr, coef_arrays ptr*)
+
+//Location: /usr/include/jpeglib.h:1135
+#define jpeg_copy_critical_parameters(srcinfo ptr, dstinfo ptr)
+
+//Location: /usr/include/jpeglib.h:1144
+#define jpeg_abort_compress(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:1145
+#define jpeg_abort_decompress(cinfo ptr)
+
+//Location: /usr/include/jpeglib.h:1150
+#define jpeg_abort(cinfo jpeg_common_struct*)
+
+//Location: /usr/include/jpeglib.h:1151
+#define jpeg_destroy(cinfo jpeg_common_struct*)
+
+//Location: /usr/include/jpeglib.h:1154
+#define jpeg_resync_to_restart(cinfo ptr, desired int32) int32
+
+//Location: /usr/include/jpeglib.h:1157
+#define jpeg_read_icc_profile(cinfo ptr, icc_data_ptr byte**, icc_data_len uint32*) int32
+

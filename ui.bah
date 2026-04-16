@@ -10,3 +10,4 @@
 #import "./elements/arrays.bah"
 #import "./elements/separators.bah"
 #import "./elements/tabs.bah"
+#import "./elements/image.bah"

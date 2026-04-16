@@ -1,0 +1,66 @@
+#import "../ui_struct.bah"
+
+#import "./base.bah"
+
+struct uiImage extend uiElement {
+    image: image*
+    _buf: []rgbColor
+    _size: [int,int]
+    _currPath: str
+
+    draw(w ui*) {
+
+        if this.image == null {
+            return
+        }
+
+        pos = this.getPosition()
+        size = this.getSize()
+
+        if size[0] != this._size[0] || size[1] != this._size[1] || this._currPath != this.image.path {
+            this._currPath = this.image.path
+            this._size = size
+            if size[0] == this.image.width && size[1] == this.image.height {
+                this._buf = this.image.buf
+            } else {
+                if this._buf = this.image.buf {
+                    this._buf = []rgbColor
+                } else {
+                    clear(this._buf)
+                }
+
+                allocateArray(this._buf, size[0] * size[1])
+
+                ratio = [this.image.width / size[0]]
+
+                y=0; for y < size[1], y++ {
+                    iy = (this.image.height * y) / size[1]
+                    x = 0; for x < size[0], x++ {
+                        ix = (this.image.width * x) / size[0]
+                        this._buf[y * size[0] + x] = this.image.buf[iy * this.image.width + ix]
+                    }
+                }
+            }
+        }
+
+        w.drawRectImage(pos, size, this._buf)
+
+    }
+
+    _init() {
+        this._draw = this.draw
+        this.focusable = false
+
+        if this.image != null {
+            if isPosNull(this.size[0]) && isPosNull(this.size[1]) {
+                this.size = [pixels(this.image.width), pixels(this.image.height)]
+            } else if isPosNull(this.size[0]) && isPosNull(this.size[1]) == false {
+                s = this.getSize()
+                this.size[0] = pixels((this.image.width * s[1]) / this.image.height)
+            } else if isPosNull(this.size[0]) == false && isPosNull(this.size[1]) {
+                s = this.getSize()
+                this.size[1] = pixels((this.image.height * s[0]) / this.image.width)
+            }
+        }
+    }
+}

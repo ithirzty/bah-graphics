@@ -1,16 +1,26 @@
+#import "map.bah"
+
 #import "./libs/freetype.bah"
 #import "./libs/fontconfig.bah"
 
 #import "./colors.bah"
 
-struct __fontGlyphCache {
+struct _fontGlyphCache {
     codepoint: uint32
     size: uint32
     bold: bool
     glyph: FT_GlyphSlotRec_
 }
 
-__fonts_sort_slotsCache(a __fontGlyphCache*, b __fontGlyphCache*) int {
+//TODO: add multiple buffers for diff fontSize / bold
+struct _fontTextCache {
+    buff: []byte
+    size: [int,int]
+    fontSize: uint32
+    bold: bool
+}
+
+_fonts_sort_slotsCache(a _fontGlyphCache*, b _fontGlyphCache*) int {
     if a.codepoint > b.codepoint {
         return 1
     }
@@ -23,6 +33,7 @@ __fonts_sort_slotsCache(a __fontGlyphCache*, b __fontGlyphCache*) int {
 }
 
 struct font {
+    path: str
     fontSize: uint
     bold: bool
 
@@ -30,8 +41,10 @@ struct font {
     face: FT_FaceRec_*
     currX: int
     currY: int
-    slotsCache: []__fontGlyphCache
+    slotsCache: []_fontGlyphCache
     slotsMutex: mutex
+    textCache: mapWrapper*
+    maxTextCache: int = 1024
 
     load(path str) bool {
         this.slotsMutex = mutex()
@@ -50,6 +63,9 @@ struct font {
             panic("error loading font")
             return false
         }
+
+        this.textCache = mapWrapper()
+        this.path = path
 
         return true
     }
@@ -77,9 +93,7 @@ struct font {
         return wasBold
     }
 
-    getGlyph(c uint32) __fontGlyphCache* {
-        slot = this.face.glyph
-
+    getGlyph(c uint32) _fontGlyphCache* {
         this.slotsMutex.lock()
 
         low = 0
@@ -93,24 +107,12 @@ struct font {
             if sc.codepoint == c && sc.size == this.fontSize && sc.bold == this.bold {
                 this.slotsMutex.unlock()
                 return sc
-                // i=mid; for i < len(this.slotsCache), i++ {
-                //     sc = &this.slotsCache[i]
-                //     if sc.codepoint != c {
-                //         break
-                //     }
-                //     if sc.size == this.fontSize && sc.bold == this.bold {
-                //         this.slotsMutex.unlock()
-                //         return sc
-                //     }
-                // }
-                // break
-            }
-
-            if atomic && sc.codepoint != c {
-                break
             }
 
             if c < sc.codepoint {
+                if atomic {
+                    break
+                }
                 high = mid - 1
             } else if c > sc.codepoint {
                 low = mid + 1
@@ -119,7 +121,6 @@ struct font {
                 low = mid + 1
                 high = mid + 1
             }
-
         }
 
         err = FT_Load_Char(this.face, c, 4)
@@ -127,6 +128,7 @@ struct font {
             panic("error loading char")
         }
 
+        slot = this.face.glyph
         absPitch = slot.bitmap.pitch
         if absPitch < 0 {
             absPitch = 0 - absPitch
@@ -142,7 +144,7 @@ struct font {
 
         i = len(this.slotsCache)
 
-        this.slotsCache[i] = __fontGlyphCache {
+        this.slotsCache[i] = _fontGlyphCache {
             codepoint: c
             glyph: *slot
             size: this.fontSize
@@ -153,7 +155,7 @@ struct font {
             this.slotsCache[i].glyph.bitmap = bitmap
         }
 
-        qsort(cArr(this.slotsCache), len(this.slotsCache), sizeof(__fontGlyphCache), __fonts_sort_slotsCache)
+        qsort(cArr(this.slotsCache), len(this.slotsCache), sizeof(_fontGlyphCache), _fonts_sort_slotsCache)
 
         this.slotsMutex.unlock()
         return this.getGlyph(c)
@@ -207,6 +209,136 @@ struct font {
 
         this.currX += (slot.advance.x >> 6)
         this.currY += (slot.advance.y >> 6)
+    }
+
+    measureText(text str) [int,int] {
+        this.currX = 0
+        this.currY = 0
+        maxx = 0
+        i=0; for i < len(text), i++ {
+            codePoint = <uint32>text[i]
+
+            if text[i] == <char>10 {
+
+                if this.currX > maxx {
+                    maxx = this.currX
+                }
+
+                this.currX = 0
+                this.currY += this.fontSize + this.fontSize / 2
+                continue
+            }
+
+            if text[i] & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
+                if text[i] & 0xE0 == 0xC0 {
+                    codePoint = <uint32>((text[i] & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
+                    i++
+                } else if text[i] & 0xF0 == 0xE0 && i+2 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
+                    i += 2
+                } else if text[i] & 0xF8 == 0xF0 && i+3 < len(text) {
+                    codePoint = <uint32>((text[i] & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
+                    i += 3
+                }
+            }
+
+            this.measureChar(codePoint)
+        }
+
+        if this.currX > maxx {
+            maxx = this.currX
+        }
+
+        res = [maxx, this.currY + this.fontSize]
+        return res
+    }
+
+    getBuffFromBytes(text str) _fontTextCache* {
+        tcA = <[]_fontTextCache*>this.textCache.get(text)
+
+        if tcA != null {
+            i=0; for i < len(tcA), i++ {
+                if tcA[i].fontSize == this.fontSize && tcA[i].bold == this.bold {
+                    return tcA[i]
+                }
+            }
+        }
+
+
+        tc = new _fontTextCache {
+            fontSize: this.fontSize
+            bold: this.bold
+        }
+        tc.size = this.measureText(text)
+        allocateArray(tc.buff, tc.size[0] * (tc.size[1] + this.fontSize))
+        
+        this.currX = 0
+        this.currY = this.fontSize + this.fontSize / 2
+        i=0; for i < len(text), i++ {
+            codePoint = <uint32>text[i]
+
+            if text[i] == <char>10 {
+                this.currX = 0
+                this.currY += this.fontSize + this.fontSize / 2
+                continue
+            }
+
+            if codePoint & 0x80 != 0 && i+1 < len(text) && text[i+1] & 0xC0 == 0x80 {
+                if codePoint & 0xE0 == 0xC0 {
+                    codePoint = <uint32>((codePoint & 0x1F) << 6) | <uint32>(text[i+1] & 0x3F)
+                    i++
+                } else if codePoint & 0xF0 == 0xE0 && i+2 < len(text) {
+                    codePoint = <uint32>((codePoint & 0x0F) << 12) | <uint32>((text[i+1] & 0x1F) << 6) | <uint32>(text[i+2] & 0x3F)
+                    i += 2
+                } else if codePoint & 0xF8 == 0xF0 && i+3 < len(text) {
+                    codePoint = <uint32>((codePoint & 0x07) << 18) | <uint32>((text[i+1] & 0x0F) << 12) | <uint32>((text[i+2] & 0x1F) << 6) | <uint32>(text[i+3] & 0x3F)
+                    i += 3
+                }
+            }
+
+            sc = this.getGlyph(codePoint)
+            slot = <FT_GlyphSlotRec_*>&sc.glyph
+            bitmap = slot.bitmap
+            raw = <byte*>bitmap.buff
+            
+            y=0; for y < bitmap.rows, y++ {
+                linePtr = <byte*>(<uint>raw + y * bitmap.pitch)
+                if bitmap.pitch < 0 {
+                    linePtr = <byte*>(<uint>raw + y * (bitmap.rows - 1 - y) * (0 - bitmap.pitch))
+                }
+                rx = this.currX + slot.bitmap_left
+                ry = this.currY + y - slot.bitmap_top
+
+                #debug {
+                    if ry * tc.size[0] + rx + bitmap.width >= len(tc.buff) {
+                        panic("Fonts: Wrong text cache buffer size "+intToStr(ry * tc.size[0] + rx + bitmap.width)+"/"+intToStr(len(tc.buff))+" font: "+this.path)
+                    }
+                }
+
+                memcpy(&tc.buff[ry * tc.size[0] + rx], linePtr, bitmap.width)
+            }
+
+            this.currX += (sc.glyph.advance.x >> 6)
+            this.currY += (sc.glyph.advance.y >> 6)
+        }
+
+        if this.textCache.length > this.maxTextCache {
+            #debug {
+                println("Fonts: clearing cache ("+intToStr(this.textCache.length)+"/"+intToStr(this.maxTextCache)+") font: "+this.path)
+            }
+            this.textCache = new mapWrapper
+        }
+
+        if tcA == null {
+            tcA = []_fontTextCache* {
+                tc
+            }
+            tcA[len(tcA)] = tc
+            this.textCache.set(text, tcA)
+        } else {
+            tcA[len(tcA)] = tc
+        }
+        return tc
     }
 
 }

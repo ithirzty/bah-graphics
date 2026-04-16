@@ -13,6 +13,7 @@ struct uiVerticalArray extend uiElement {
     borderColor: rgbColor = ELEMENT_BORDER_COLOR
 
     draw(w ui*) {
+        oldSize = this.getSize()
         sizeAcc = [0,0]
         i=0; for i < len(this.elements), i++ {
             elem = this.elements[i]
@@ -31,6 +32,11 @@ struct uiVerticalArray extend uiElement {
 
         pos = this.getPosition()
         size = this.getSize()
+
+        if this.parent != null && oldSize[0] != size[0] && oldSize[1] != size[1] {
+            this.parent.redrawIn(0)
+            return
+        }
 
         if this.bgColor.a != 0 {
             w.drawRoundedRect(pos, size, this.radius, this.bgColor)
@@ -58,6 +64,7 @@ struct uiHorizontalArray extend uiElement {
     borderColor: rgbColor = ELEMENT_BORDER_COLOR
 
     draw(w ui*) {
+        oldSize = this.getSize()
         sizeAcc = [0,0]
         i=0; for i < len(this.elements), i++ {
             elem = this.elements[i]
@@ -76,6 +83,11 @@ struct uiHorizontalArray extend uiElement {
 
         pos = this.getPosition()
         size = this.getSize()
+
+        if this.parent != null && oldSize[0] != size[0] && oldSize[1] != size[1] {
+            this.parent.redrawIn(0)
+            return
+        }
 
         if this.bgColor.a != 0 {
             w.drawRoundedRect(pos, size, this.radius, this.bgColor)

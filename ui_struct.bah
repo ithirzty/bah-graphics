@@ -296,6 +296,7 @@ struct ui extend window {
     threadId: pthread_t
 
     _init() {
+        this.threadId = currentThread()
         this.font = getSystemUIfont("")
         this.events = __uiHandleEvents
         this.animationsMutex.init()
@@ -303,10 +304,19 @@ struct ui extend window {
     }
 
     addElement(elem uiElement*) {
+        foreignThread = this.threadId != currentThread()
+        if foreignThread {
+            this.animationsMutex.lock()
+        }
         elem.window = this
         this.elements[len(this.elements)] = elem
 
         __uiConstructElementTreeRecursively(elem)
+
+        if foreignThread {
+            this.animationsMutex.unlock()
+            return
+        }
 
         if this.isExposed {
             if this.isDrawing == false {
@@ -319,11 +329,26 @@ struct ui extend window {
     }
 
     setFocus(elem uiElement*) {
+        foreignThread = this.threadId != currentThread()
+        if foreignThread {
+            this.animationsMutex.lock()
+        }
         __uiSetElementOnFocus(this, elem)
+        if foreignThread {
+            this.animationsMutex.unlock()
+        }
     }
 
     find(id str) uiElement* {
-        return __uiFindElement(this, id)
+        foreignThread = this.threadId != currentThread()
+        if foreignThread {
+            this.animationsMutex.lock()
+        }
+        e = __uiFindElement(this, id)
+        if foreignThread {
+            this.animationsMutex.unlock()
+        }
+        return e
     }
 
     launch(width uint, height uint, title str) {
@@ -733,6 +758,10 @@ __uiAnimationHandler(ui ui*) {
         ui.animationsMutex.unlock()
         usleep(freq * 1000)
         ui.animationsMutex.lock()
+        if ui.isRunning == false {
+            ui.animationsMutex.unlock()
+            break
+        }
 
         if ui.needsRedraw {
             ui.animationsMutex.unlock()
@@ -762,7 +791,6 @@ __uiAnimationHandler(ui ui*) {
     }
     ui.animationsMutex.destroy()
     ui.animationsCond.destroy()
-
 }
 
 __uiDispatchEvent(ui ui*, elem uiElement*, event uint32) {
@@ -1120,15 +1148,14 @@ __uiStartFileDrag(ui ui*, uri str, elem uiElement*) {
 
     imgBuf = []rgbColor
     ui.getRect([ui.scissor[1], ui.scissor[2]], [ui.scissor[3] - ui.scissor[1], ui.scissor[4] - ui.scissor[2]], imgBuf)
-    ui.scissor = os
 
     bdlWindow = new fileDragWindow {
         parent: ui
         image: imgBuf
         elem: elem
         offsets: [
-            curs[0] - scissor[0],
-            curs[1] - scissor[1]
+            curs[0] - ui.scissor[1],
+            curs[1] - ui.scissor[2]
         ]
     }
     
@@ -1150,7 +1177,13 @@ __uiStartFileDrag(ui ui*, uri str, elem uiElement*) {
     ui.fileDragWindow = bdlWindow
 
     elemSize = elem.getSize()
-    
+    if ui.scissor[0] {
+        elemSize[0] = ui.scissor[3] - ui.scissor[1]
+        elemSize[1] = ui.scissor[4] - ui.scissor[2]
+    }
+
+    ui.scissor = os
+
     async bdlWindow.launch(screenPosCurs[0] - bdlWindow.offsets[0], screenPosCurs[1] - bdlWindow.offsets[1], elemSize[0], elemSize[1])
 
 }
@@ -1659,12 +1692,30 @@ __uiComposeElementTreeRecursively(elem uiElement*) {
 
 __uiThreadGuard(elem uiElement*) bool {
     ui = <ui*>elem.window
+    if ui == null {
+        return false
+    }
     if ui.threadId != currentThread() {
         ui.animationsMutex.lock()
-        __uiRedrawElementDelayed(ui, elem, 0)
-        ui.animationsMutex.unlock()
         return true
     }
 
     return false
+}
+
+__uiReturnThreadGuard(elem uiElement*) {
+    ui = <ui*>elem.window
+    ui.animationsMutex.unlock()
+}
+
+#debug {
+    __uiDenyMultithread(elem uiElement*) {
+        ui = <ui*>elem.window
+        if ui == null {
+            return
+        }
+        if ui.threadId != currentThread() {
+            panic("UI: This routine is not thread safe and was called from a different thread that the 'ui.launch()' one.")
+        }
+    }
 }
