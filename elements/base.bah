@@ -10,11 +10,13 @@ ELEMENT_CLICKED_BACKGROUND_COLOR = rgbColor{120, 120, 255}
 ELEMENT_INVALID_BACKGROUND_COLOR = rgbColor{255, 191, 191}
 ELEMENT_PLACEHOLDER_TEXT_COLOR = rgbColor{60,60,60}
 ELEMENT_TEXT_COLOR = rgbColor{0,0,0}
+ELEMENT_HOVERED_TEXT_COLOR = rgbColor{0,0,0}
 ELEMENT_TEXT_SELECTION_COLOR = rgbColor{120, 120, 255}
 ELEMENT_CLICKED_TEXT_COLOR = rgbColor{255,255,255}
 ELEMENT_BORDER_COLOR = rgbColor{140, 140, 140}
 ELEMENT_HOVERED_BORDER_COLOR = rgbColor{120, 120, 255}
 ELEMENT_SECONDARY_BACKGROUND_COLOR = rgbColor{160, 160, 160}
+ELEMENT_SECONDARY_BORDER_COLOR = rgbColor{100, 100, 100}
 BACKGROUND_COLOR = rgbColor{255, 255, 255}
 ELEMENT_TRANSITION_TIME = 240000000
 
@@ -79,51 +81,39 @@ struct uiElement {
     _events: function(uiElement*, uint32)
     _draw: function(uiElement*, window*)
 
-    find(id str) uiElement* {
-        guarded = __uiThreadGuard(this)
-
+    _find(id str) uiElement* {
         if this.toRemove {
-            if guarded {
-                __uiReturnThreadGuard(this)
-            }
             return null
         }
         if this.id == id {
-            if guarded {
-                __uiReturnThreadGuard(this)
-            }
             return this
         }
 
         i=0; for i < len(this.elements), i++ {
-            f = this.elements[i].find(id)
+            f = this.elements[i]._find(id)
             if f != null {
-                if guarded {
-                    __uiReturnThreadGuard(this)
-                }
                 return f
             }
-        }
-
-        if guarded {
-            __uiReturnThreadGuard(this)
         }
         return null
     }
 
-    getSize() [int,int] {
-        #debug {
-            __uiDenyMultithread(this)
-        }
+    find(id str) uiElement* {
+        guarded = __uiThreadGuard(this)
 
+        r = this._find(id)
+
+        if guarded {
+            __uiReturnThreadGuard(this)
+        }
+        return r
+    }
+
+    getSize() [int,int] {
         return __uiCalculateElemPosVec(this, this.size, false)
     }
 
     getPosition() [int,int] {
-        #debug {
-            __uiDenyMultithread(this)
-        }
-
         r = __uiCalculateElemPosVec(this, this.pos, true)
         
         if this.parent != null {
@@ -140,10 +130,6 @@ struct uiElement {
     }
 
     getInnerSize() [uint,uint] {
-        #debug {
-            __uiDenyMultithread(this)
-        }
-
         innerSize = [0,0]
         thisPos = this.getPosition()
         i=0; for i < len(this.elements), i++ {
@@ -182,7 +168,7 @@ struct uiElement {
     removeChild(index uint) {
         guarded = __uiThreadGuard(this)
         if index < len(this.elements) {
-            this.elements[index].remove()
+            this.elements[index].toRemove = true
             delete(this.elements, index)
         }
         if guarded {

@@ -77,3 +77,6 @@ const GREEN = rgbColor{0, 255, 0}
 const BLUE = rgbColor{0, 0, 255}
 const BLACK = rgbColor{0, 0, 0}
 const WHITE = rgbColor{255,255,255}
+const YELLOW = rgbColor{255, 255, 0}
+const ORANGE = rgbColor{255, 128, 0}
+const PURPLE = rgbColor{128, 0, 255}

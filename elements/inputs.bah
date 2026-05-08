@@ -427,7 +427,7 @@ struct uiTextInput extend uiElement {
 
             if now - this.lastAction < 250 || now / 500 % 2 == 0 {
                 textSizeToCarret = w.measureByteArr(w.font, this.value, textMin, this.carret)[0]
-                w.drawRect([pos[0] + this.padding[0] + textSizeToCarret, pos[1] + size[1] / 2 - this.fontSize], [1, this.fontSize * 2], BLACK)
+                w.drawRect([pos[0] + this.padding[0] + textSizeToCarret, pos[1] + size[1] / 2 - this.fontSize], [1, this.fontSize * 2], ELEMENT_TEXT_COLOR)
             }
 
             this.redrawIn(250) //for carret animation
@@ -742,14 +742,14 @@ struct uiSelectInput extend uiElement {
                     i=0; for i < len(win.list), i++ {
                         pos = [1, i * 31 + 1]
 
-                        bgColor = WHITE
-                        fgColor = BLACK
+                        bgColor = ELEMENT_BACKGROUND_COLOR
+                        fgColor = ELEMENT_TEXT_COLOR
 
                         if win.choice == i {
-                            fgColor = WHITE
-                            bgColor = rgbColor{120, 120, 255}
+                            fgColor = ELEMENT_CLICKED_TEXT_COLOR
+                            bgColor = ELEMENT_FOCUSED_BACKGROUND_COLOR
                         } else if cursorPos[1] >= pos[1] && cursorPos[1] < pos[1] + 30 {
-                            bgColor = rgbColor{191, 191, 255}
+                            bgColor = ELEMENT_HOVERED_BACKGROUND_COLOR
                         }
                         win.drawRect(pos, [win.width - 2, 30], bgColor)
 

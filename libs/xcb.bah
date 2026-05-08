@@ -1,7 +1,7 @@
 // Bindings automatically generated
 // using https://github.com/ithirzty/ctobah
 
-#cLib "lxcb-image" "lxcb-shm" "lxcb-keysyms" "lxcb-cursor" "lxcb-shape" "lxcb-icccm" "lxcb-render" "lxcb"
+#cLib "lxcb-image" "lxcb-shm" "lxcb-keysyms" "lxcb-cursor" "lxcb-shape" "lxcb-icccm" "lxcb"
 
 // Original file: /usr/include/xcb/xcb_image.h
 // Bindings of exclusively: /usr/include/xcb
@@ -5686,270 +5686,270 @@ struct xcb_auth_info_t {
 //Location: /usr/include/xcb/xcb.h:632
 #define xcb_total_written(c ptr) uint
 
-//Location: /usr/include/xcb/shm.h:32
-struct xcb_shm_seg_iterator_t {
-	data: uint32*
-	rem: int32
-	index: int32
-}
+// //Location: /usr/include/xcb/shm.h:32
+// struct xcb_shm_seg_iterator_t {
+// 	data: uint32*
+// 	rem: int32
+// 	index: int32
+// }
 
-//Location: /usr/include/xcb/shm.h:44
-struct xcb_shm_completion_event_t {
-	response_type: byte
-	pad0: byte
-	sequence: uint16
-	drawable: uint32
-	minor_event: uint16
-	major_event: byte
-	pad1: byte
-	shmseg: uint32
-	offset: uint32
-}
+// //Location: /usr/include/xcb/shm.h:44
+// struct xcb_shm_completion_event_t {
+// 	response_type: byte
+// 	pad0: byte
+// 	sequence: uint16
+// 	drawable: uint32
+// 	minor_event: uint16
+// 	major_event: byte
+// 	pad1: byte
+// 	shmseg: uint32
+// 	offset: uint32
+// }
 
-//Location: /usr/include/xcb/shm.h:59
-struct xcb_shm_bad_seg_error_t {
-	response_type: byte
-	error_code: byte
-	sequence: uint16
-	bad_value: uint32
-	minor_opcode: uint16
-	major_opcode: byte
-	pad0: byte
-}
+// //Location: /usr/include/xcb/shm.h:59
+// struct xcb_shm_bad_seg_error_t {
+// 	response_type: byte
+// 	error_code: byte
+// 	sequence: uint16
+// 	bad_value: uint32
+// 	minor_opcode: uint16
+// 	major_opcode: byte
+// 	pad0: byte
+// }
 
-//Location: /usr/include/xcb/shm.h:64
-struct xcb_shm_query_version_cookie_t {
-	sequence: uint32
-}
+// //Location: /usr/include/xcb/shm.h:64
+// struct xcb_shm_query_version_cookie_t {
+// 	sequence: uint32
+// }
 
-//Location: /usr/include/xcb/shm.h:74
-struct xcb_shm_query_version_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-}
+// //Location: /usr/include/xcb/shm.h:74
+// struct xcb_shm_query_version_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// }
 
-//Location: /usr/include/xcb/shm.h:83
-struct xcb_shm_query_version_reply_t {
-	response_type: byte
-	shared_pixmaps: byte
-	sequence: uint16
-	length: uint32
-	major_version: uint16
-	minor_version: uint16
-	uid: uint16
-	gid: uint16
-	pixmap_format: byte
-	pad0: buffer:15
-}
+// //Location: /usr/include/xcb/shm.h:83
+// struct xcb_shm_query_version_reply_t {
+// 	response_type: byte
+// 	shared_pixmaps: byte
+// 	sequence: uint16
+// 	length: uint32
+// 	major_version: uint16
+// 	minor_version: uint16
+// 	uid: uint16
+// 	gid: uint16
+// 	pixmap_format: byte
+// 	pad0: buffer:15
+// }
 
-//Location: /usr/include/xcb/shm.h:102
-struct xcb_shm_attach_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	shmseg: uint32
-	shmid: uint32
-	read_only: byte
-	pad0: buffer:3
-}
+// //Location: /usr/include/xcb/shm.h:102
+// struct xcb_shm_attach_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	shmseg: uint32
+// 	shmid: uint32
+// 	read_only: byte
+// 	pad0: buffer:3
+// }
 
-//Location: /usr/include/xcb/shm.h:118
-struct xcb_shm_detach_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	shmseg: uint32
-}
+// //Location: /usr/include/xcb/shm.h:118
+// struct xcb_shm_detach_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	shmseg: uint32
+// }
 
-//Location: /usr/include/xcb/shm.h:131
-struct xcb_shm_put_image_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	drawable: uint32
-	gc: uint32
-	total_width: uint16
-	total_height: uint16
-	src_x: uint16
-	src_y: uint16
-	src_width: uint16
-	src_height: uint16
-	dst_x: int16
-	dst_y: int16
-	depth: byte
-	format: byte
-	send_event: byte
-	pad0: byte
-	shmseg: uint32
-	offset: uint32
-}
+// //Location: /usr/include/xcb/shm.h:131
+// struct xcb_shm_put_image_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	drawable: uint32
+// 	gc: uint32
+// 	total_width: uint16
+// 	total_height: uint16
+// 	src_x: uint16
+// 	src_y: uint16
+// 	src_width: uint16
+// 	src_height: uint16
+// 	dst_x: int16
+// 	dst_y: int16
+// 	depth: byte
+// 	format: byte
+// 	send_event: byte
+// 	pad0: byte
+// 	shmseg: uint32
+// 	offset: uint32
+// }
 
-//Location: /usr/include/xcb/shm.h:156
-struct xcb_shm_get_image_cookie_t {
-	sequence: uint32
-}
+// //Location: /usr/include/xcb/shm.h:156
+// struct xcb_shm_get_image_cookie_t {
+// 	sequence: uint32
+// }
 
-//Location: /usr/include/xcb/shm.h:166
-struct xcb_shm_get_image_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	drawable: uint32
-	x: int16
-	y: int16
-	width: uint16
-	height: uint16
-	plane_mask: uint32
-	format: byte
-	pad0: buffer:3
-	shmseg: uint32
-	offset: uint32
-}
+// //Location: /usr/include/xcb/shm.h:166
+// struct xcb_shm_get_image_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	drawable: uint32
+// 	x: int16
+// 	y: int16
+// 	width: uint16
+// 	height: uint16
+// 	plane_mask: uint32
+// 	format: byte
+// 	pad0: buffer:3
+// 	shmseg: uint32
+// 	offset: uint32
+// }
 
-//Location: /usr/include/xcb/shm.h:185
-struct xcb_shm_get_image_reply_t {
-	response_type: byte
-	depth: byte
-	sequence: uint16
-	length: uint32
-	visual: uint32
-	size: uint32
-}
+// //Location: /usr/include/xcb/shm.h:185
+// struct xcb_shm_get_image_reply_t {
+// 	response_type: byte
+// 	depth: byte
+// 	sequence: uint16
+// 	length: uint32
+// 	visual: uint32
+// 	size: uint32
+// }
 
-//Location: /usr/include/xcb/shm.h:200
-struct xcb_shm_create_pixmap_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	pid: uint32
-	drawable: uint32
-	width: uint16
-	height: uint16
-	depth: byte
-	pad0: buffer:3
-	shmseg: uint32
-	offset: uint32
-}
+// //Location: /usr/include/xcb/shm.h:200
+// struct xcb_shm_create_pixmap_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	pid: uint32
+// 	drawable: uint32
+// 	width: uint16
+// 	height: uint16
+// 	depth: byte
+// 	pad0: buffer:3
+// 	shmseg: uint32
+// 	offset: uint32
+// }
 
-//Location: /usr/include/xcb/shm.h:220
-struct xcb_shm_attach_fd_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	shmseg: uint32
-	read_only: byte
-	pad0: buffer:3
-}
+// //Location: /usr/include/xcb/shm.h:220
+// struct xcb_shm_attach_fd_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	shmseg: uint32
+// 	read_only: byte
+// 	pad0: buffer:3
+// }
 
-//Location: /usr/include/xcb/shm.h:232
-struct xcb_shm_create_segment_cookie_t {
-	sequence: uint32
-}
+// //Location: /usr/include/xcb/shm.h:232
+// struct xcb_shm_create_segment_cookie_t {
+// 	sequence: uint32
+// }
 
-//Location: /usr/include/xcb/shm.h:242
-struct xcb_shm_create_segment_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	shmseg: uint32
-	size: uint32
-	read_only: byte
-	pad0: buffer:3
-}
+// //Location: /usr/include/xcb/shm.h:242
+// struct xcb_shm_create_segment_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	shmseg: uint32
+// 	size: uint32
+// 	read_only: byte
+// 	pad0: buffer:3
+// }
 
-//Location: /usr/include/xcb/shm.h:255
-struct xcb_shm_create_segment_reply_t {
-	response_type: byte
-	nfd: byte
-	sequence: uint16
-	length: uint32
-	pad0: buffer:24
-}
+// //Location: /usr/include/xcb/shm.h:255
+// struct xcb_shm_create_segment_reply_t {
+// 	response_type: byte
+// 	nfd: byte
+// 	sequence: uint16
+// 	length: uint32
+// 	pad0: buffer:24
+// }
 
-//Location: /usr/include/xcb/shm.h:271
-#define xcb_shm_seg_next(i xcb_shm_seg_iterator_t*)
+// //Location: /usr/include/xcb/shm.h:271
+// #define xcb_shm_seg_next(i xcb_shm_seg_iterator_t*)
 
-//Location: /usr/include/xcb/shm.h:283
-#define xcb_shm_seg_end(i xcb_shm_seg_iterator_t) xcb_generic_iterator_t
+// //Location: /usr/include/xcb/shm.h:283
+// #define xcb_shm_seg_end(i xcb_shm_seg_iterator_t) xcb_generic_iterator_t
 
-//Location: /usr/include/xcb/shm.h:297
-#define xcb_shm_query_version(c ptr) xcb_shm_query_version_cookie_t
+// //Location: /usr/include/xcb/shm.h:297
+// #define xcb_shm_query_version(c ptr) xcb_shm_query_version_cookie_t
 
-//Location: /usr/include/xcb/shm.h:314
-#define xcb_shm_query_version_unchecked(c ptr) xcb_shm_query_version_cookie_t
+// //Location: /usr/include/xcb/shm.h:314
+// #define xcb_shm_query_version_unchecked(c ptr) xcb_shm_query_version_cookie_t
 
-//Location: /usr/include/xcb/shm.h:331
-#define xcb_shm_query_version_reply(c ptr, cookie xcb_shm_query_version_cookie_t, e xcb_generic_error_t**) xcb_shm_query_version_reply_t*
+// //Location: /usr/include/xcb/shm.h:331
+// #define xcb_shm_query_version_reply(c ptr, cookie xcb_shm_query_version_cookie_t, e xcb_generic_error_t**) xcb_shm_query_version_reply_t*
 
-//Location: /usr/include/xcb/shm.h:354
-#define xcb_shm_attach_checked(c ptr, shmseg uint32, shmid uint32, read_only byte) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shm.h:354
+// #define xcb_shm_attach_checked(c ptr, shmseg uint32, shmid uint32, read_only byte) xcb_void_cookie_t
 
 //Location: /usr/include/xcb/shm.h:375
 #define xcb_shm_attach(c ptr, shmseg uint32, shmid uint32, read_only byte) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shm.h:395
-#define xcb_shm_detach_checked(c ptr, shmseg uint32) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shm.h:395
+// #define xcb_shm_detach_checked(c ptr, shmseg uint32) xcb_void_cookie_t
 
 //Location: /usr/include/xcb/shm.h:410
 #define xcb_shm_detach(c ptr, shmseg uint32) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shm.h:451
-#define xcb_shm_put_image_checked(c ptr, drawable uint32, gc uint32, total_width uint16, total_height uint16, src_x uint16, src_y uint16, src_width uint16, src_height uint16, dst_x int16, dst_y int16, depth byte, format byte, send_event byte, shmseg uint32, offset uint32) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shm.h:451
+// #define xcb_shm_put_image_checked(c ptr, drawable uint32, gc uint32, total_width uint16, total_height uint16, src_x uint16, src_y uint16, src_width uint16, src_height uint16, dst_x int16, dst_y int16, depth byte, format byte, send_event byte, shmseg uint32, offset uint32) xcb_void_cookie_t
 
 //Location: /usr/include/xcb/shm.h:503
 #define xcb_shm_put_image(c ptr, drawable uint32, gc uint32, total_width uint16, total_height uint16, src_x uint16, src_y uint16, src_width uint16, src_height uint16, dst_x int16, dst_y int16, depth byte, format byte, send_event byte, shmseg uint32, offset uint32) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shm.h:541
-#define xcb_shm_get_image(c ptr, drawable uint32, x int16, y int16, width uint16, height uint16, plane_mask uint32, format byte, shmseg uint32, offset uint32) xcb_shm_get_image_cookie_t
+// //Location: /usr/include/xcb/shm.h:541
+// #define xcb_shm_get_image(c ptr, drawable uint32, x int16, y int16, width uint16, height uint16, plane_mask uint32, format byte, shmseg uint32, offset uint32) xcb_shm_get_image_cookie_t
 
-//Location: /usr/include/xcb/shm.h:576
-#define xcb_shm_get_image_unchecked(c ptr, drawable uint32, x int16, y int16, width uint16, height uint16, plane_mask uint32, format byte, shmseg uint32, offset uint32) xcb_shm_get_image_cookie_t
+// //Location: /usr/include/xcb/shm.h:576
+// #define xcb_shm_get_image_unchecked(c ptr, drawable uint32, x int16, y int16, width uint16, height uint16, plane_mask uint32, format byte, shmseg uint32, offset uint32) xcb_shm_get_image_cookie_t
 
-//Location: /usr/include/xcb/shm.h:602
-#define xcb_shm_get_image_reply(c ptr, cookie xcb_shm_get_image_cookie_t, e xcb_generic_error_t**) xcb_shm_get_image_reply_t*
+// //Location: /usr/include/xcb/shm.h:602
+// #define xcb_shm_get_image_reply(c ptr, cookie xcb_shm_get_image_cookie_t, e xcb_generic_error_t**) xcb_shm_get_image_reply_t*
 
-//Location: /usr/include/xcb/shm.h:628
-#define xcb_shm_create_pixmap_checked(c ptr, pid uint32, drawable uint32, width uint16, height uint16, depth byte, shmseg uint32, offset uint32) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shm.h:628
+// #define xcb_shm_create_pixmap_checked(c ptr, pid uint32, drawable uint32, width uint16, height uint16, depth byte, shmseg uint32, offset uint32) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shm.h:656
-#define xcb_shm_create_pixmap(c ptr, pid uint32, drawable uint32, width uint16, height uint16, depth byte, shmseg uint32, offset uint32) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shm.h:656
+// #define xcb_shm_create_pixmap(c ptr, pid uint32, drawable uint32, width uint16, height uint16, depth byte, shmseg uint32, offset uint32) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shm.h:683
-#define xcb_shm_attach_fd_checked(c ptr, shmseg uint32, shm_fd int32, read_only byte) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shm.h:683
+// #define xcb_shm_attach_fd_checked(c ptr, shmseg uint32, shm_fd int32, read_only byte) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shm.h:703
-#define xcb_shm_attach_fd(c ptr, shmseg uint32, shm_fd int32, read_only byte) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shm.h:703
+// #define xcb_shm_attach_fd(c ptr, shmseg uint32, shm_fd int32, read_only byte) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shm.h:722
-#define xcb_shm_create_segment(c ptr, shmseg uint32, size uint32, read_only byte) xcb_shm_create_segment_cookie_t
+// //Location: /usr/include/xcb/shm.h:722
+// #define xcb_shm_create_segment(c ptr, shmseg uint32, size uint32, read_only byte) xcb_shm_create_segment_cookie_t
 
-//Location: /usr/include/xcb/shm.h:744
-#define xcb_shm_create_segment_unchecked(c ptr, shmseg uint32, size uint32, read_only byte) xcb_shm_create_segment_cookie_t
+// //Location: /usr/include/xcb/shm.h:744
+// #define xcb_shm_create_segment_unchecked(c ptr, shmseg uint32, size uint32, read_only byte) xcb_shm_create_segment_cookie_t
 
-//Location: /usr/include/xcb/shm.h:764
-#define xcb_shm_create_segment_reply(c ptr, cookie xcb_shm_create_segment_cookie_t, e xcb_generic_error_t**) xcb_shm_create_segment_reply_t*
+// //Location: /usr/include/xcb/shm.h:764
+// #define xcb_shm_create_segment_reply(c ptr, cookie xcb_shm_create_segment_cookie_t, e xcb_generic_error_t**) xcb_shm_create_segment_reply_t*
 
-//Location: /usr/include/xcb/shm.h:779
-#define xcb_shm_create_segment_reply_fds(c ptr, reply xcb_shm_create_segment_reply_t*) int32*
+// //Location: /usr/include/xcb/shm.h:779
+// #define xcb_shm_create_segment_reply_fds(c ptr, reply xcb_shm_create_segment_reply_t*) int32*
 
-//Location: /usr/include/xcb/xcb_image.h:92
-struct xcb_image_t {
-	width: uint16
-	height: uint16
-	format: xcb_image_format_t
-	scanline_pad: byte
-	depth: byte
-	bpp: byte
-	unit: byte
-	plane_mask: uint32
-	byte_order: xcb_image_order_t
-	bit_order: xcb_image_order_t
-	stride: uint32
-	size: uint32
-	base: ptr
-	data: byte*
-}
+// //Location: /usr/include/xcb/xcb_image.h:92
+// struct xcb_image_t {
+// 	width: uint16
+// 	height: uint16
+// 	format: xcb_image_format_t
+// 	scanline_pad: byte
+// 	depth: byte
+// 	bpp: byte
+// 	unit: byte
+// 	plane_mask: uint32
+// 	byte_order: xcb_image_order_t
+// 	bit_order: xcb_image_order_t
+// 	stride: uint32
+// 	size: uint32
+// 	base: ptr
+// 	data: byte*
+// }
 
 //Location: /usr/include/xcb/xcb_image.h:164
 struct xcb_shm_segment_info_t {
@@ -5958,50 +5958,50 @@ struct xcb_shm_segment_info_t {
 	shmaddr: byte*
 }
 
-//Location: /usr/include/xcb/xcb_image.h:181
-#define xcb_image_annotate(image ptr)
+// //Location: /usr/include/xcb/xcb_image.h:181
+// #define xcb_image_annotate(image ptr)
 
-//Location: /usr/include/xcb/xcb_image.h:214
-#define xcb_image_create(width uint16, height uint16, format xcb_image_format_t, xpad byte, depth byte, bpp byte, unit byte, byte_order xcb_image_order_t, bit_order xcb_image_order_t, base ptr, bytes uint32, data byte*) ptr
+// //Location: /usr/include/xcb/xcb_image.h:214
+// #define xcb_image_create(width uint16, height uint16, format xcb_image_format_t, xpad byte, depth byte, bpp byte, unit byte, byte_order xcb_image_order_t, bit_order xcb_image_order_t, base ptr, bytes uint32, data byte*) ptr
 
-//Location: /usr/include/xcb/xcb_image.h:255
-#define xcb_image_create_native(c ptr, width uint16, height uint16, format xcb_image_format_t, depth byte, base ptr, bytes uint32, data byte*) ptr
+// //Location: /usr/include/xcb/xcb_image.h:255
+// #define xcb_image_create_native(c ptr, width uint16, height uint16, format xcb_image_format_t, depth byte, base ptr, bytes uint32, data byte*) ptr
 
-//Location: /usr/include/xcb/xcb_image.h:275
-#define xcb_image_destroy(image ptr)
+// //Location: /usr/include/xcb/xcb_image.h:275
+// #define xcb_image_destroy(image ptr)
 
-//Location: /usr/include/xcb/xcb_image.h:306
-#define xcb_image_get(conn ptr, draw uint32, x int16, y int16, width uint16, height uint16, plane_mask uint32, format xcb_image_format_t) ptr
+// //Location: /usr/include/xcb/xcb_image.h:306
+// #define xcb_image_get(conn ptr, draw uint32, x int16, y int16, width uint16, height uint16, plane_mask uint32, format xcb_image_format_t) ptr
 
-//Location: /usr/include/xcb/xcb_image.h:346
-#define xcb_image_put(conn ptr, draw uint32, gc uint32, image ptr, x int16, y int16, left_pad byte) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_image.h:346
+// #define xcb_image_put(conn ptr, draw uint32, gc uint32, image ptr, x int16, y int16, left_pad byte) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_image.h:378
-#define xcb_image_native(c ptr, image ptr, convert int32) ptr
+// //Location: /usr/include/xcb/xcb_image.h:378
+// #define xcb_image_native(c ptr, image ptr, convert int32) ptr
 
-//Location: /usr/include/xcb/xcb_image.h:397
-#define xcb_image_put_pixel(image ptr, x uint32, y uint32, pixel uint32)
+// //Location: /usr/include/xcb/xcb_image.h:397
+// #define xcb_image_put_pixel(image ptr, x uint32, y uint32, pixel uint32)
 
-//Location: /usr/include/xcb/xcb_image.h:416
-#define xcb_image_get_pixel(image ptr, x uint32, y uint32) uint32
+// //Location: /usr/include/xcb/xcb_image.h:416
+// #define xcb_image_get_pixel(image ptr, x uint32, y uint32) uint32
 
-//Location: /usr/include/xcb/xcb_image.h:441
-#define xcb_image_convert(src ptr, dst ptr) ptr
+// //Location: /usr/include/xcb/xcb_image.h:441
+// #define xcb_image_convert(src ptr, dst ptr) ptr
 
-//Location: /usr/include/xcb/xcb_image.h:467
-#define xcb_image_subimage(image ptr, x uint32, y uint32, width uint32, height uint32, base ptr, bytes uint32, data byte*) ptr
+// //Location: /usr/include/xcb/xcb_image.h:467
+// #define xcb_image_subimage(image ptr, x uint32, y uint32, width uint32, height uint32, base ptr, bytes uint32, data byte*) ptr
 
-//Location: /usr/include/xcb/xcb_image.h:518
-#define xcb_image_shm_put(conn ptr, draw uint32, gc uint32, image ptr, ) ptr
+// //Location: /usr/include/xcb/xcb_image.h:518
+// #define xcb_image_shm_put(conn ptr, draw uint32, gc uint32, image ptr, ) ptr
 
-//Location: /usr/include/xcb/xcb_image.h:556
-#define xcb_image_shm_get(conn ptr, draw uint32, image ptr, ) int32
+// //Location: /usr/include/xcb/xcb_image.h:556
+// #define xcb_image_shm_get(conn ptr, draw uint32, image ptr, ) int32
 
-//Location: /usr/include/xcb/xcb_image.h:577
-#define xcb_image_create_from_bitmap_data(data byte*, width uint32, height uint32) ptr
+// //Location: /usr/include/xcb/xcb_image.h:577
+// #define xcb_image_create_from_bitmap_data(data byte*, width uint32, height uint32) ptr
 
-//Location: /usr/include/xcb/xcb_image.h:606
-#define xcb_create_pixmap_from_bitmap_data(display ptr, d uint32, data byte*, width uint32, height uint32, depth uint32, fg uint32, bg uint32, gcp uint32*) uint32
+// //Location: /usr/include/xcb/xcb_image.h:606
+// #define xcb_create_pixmap_from_bitmap_data(display ptr, d uint32, data byte*, width uint32, height uint32, depth uint32, fg uint32, bg uint32, gcp uint32*) uint32
 
 //Location: /usr/include/xcb/xcb.h:646
 #define xcb_key_symbols_alloc(c ptr) ptr
@@ -6012,38 +6012,38 @@ struct xcb_shm_segment_info_t {
 //Location: /usr/include/xcb/xcb.h:650
 #define xcb_key_symbols_get_keysym(syms ptr, keycode byte, col int32) uint32
 
-//Location: /usr/include/xcb/xcb_keysyms.h:33
-#define xcb_key_symbols_get_keycode(syms ptr, keysym uint32) byte*
+// //Location: /usr/include/xcb/xcb_keysyms.h:33
+// #define xcb_key_symbols_get_keycode(syms ptr, keysym uint32) byte*
 
-//Location: /usr/include/xcb/xcb_keysyms.h:36
-#define xcb_key_press_lookup_keysym(syms ptr, event xcb_key_release_event_t*, col int32) uint32
+// //Location: /usr/include/xcb/xcb_keysyms.h:36
+// #define xcb_key_press_lookup_keysym(syms ptr, event xcb_key_release_event_t*, col int32) uint32
 
-//Location: /usr/include/xcb/xcb_keysyms.h:40
-#define xcb_key_release_lookup_keysym(syms ptr, event xcb_key_release_event_t*, col int32) uint32
+// //Location: /usr/include/xcb/xcb_keysyms.h:40
+// #define xcb_key_release_lookup_keysym(syms ptr, event xcb_key_release_event_t*, col int32) uint32
 
-//Location: /usr/include/xcb/xcb_keysyms.h:44
-#define xcb_refresh_keyboard_mapping(syms ptr, event xcb_mapping_notify_event_t*) int32
+// //Location: /usr/include/xcb/xcb_keysyms.h:44
+// #define xcb_refresh_keyboard_mapping(syms ptr, event xcb_mapping_notify_event_t*) int32
 
-//Location: /usr/include/xcb/xcb_keysyms.h:51
-#define xcb_is_keypad_key(keysym uint32) int32
+// //Location: /usr/include/xcb/xcb_keysyms.h:51
+// #define xcb_is_keypad_key(keysym uint32) int32
 
-//Location: /usr/include/xcb/xcb_keysyms.h:53
-#define xcb_is_private_keypad_key(keysym uint32) int32
+// //Location: /usr/include/xcb/xcb_keysyms.h:53
+// #define xcb_is_private_keypad_key(keysym uint32) int32
 
-//Location: /usr/include/xcb/xcb_keysyms.h:55
-#define xcb_is_cursor_key(keysym uint32) int32
+// //Location: /usr/include/xcb/xcb_keysyms.h:55
+// #define xcb_is_cursor_key(keysym uint32) int32
 
-//Location: /usr/include/xcb/xcb_keysyms.h:57
-#define xcb_is_pf_key(keysym uint32) int32
+// //Location: /usr/include/xcb/xcb_keysyms.h:57
+// #define xcb_is_pf_key(keysym uint32) int32
 
-//Location: /usr/include/xcb/xcb_keysyms.h:59
-#define xcb_is_function_key(keysym uint32) int32
+// //Location: /usr/include/xcb/xcb_keysyms.h:59
+// #define xcb_is_function_key(keysym uint32) int32
 
-//Location: /usr/include/xcb/xcb_keysyms.h:61
-#define xcb_is_misc_function_key(keysym uint32) int32
+// //Location: /usr/include/xcb/xcb_keysyms.h:61
+// #define xcb_is_misc_function_key(keysym uint32) int32
 
-//Location: /usr/include/xcb/xcb_keysyms.h:63
-#define xcb_is_modifier_key(keysym uint32) int32
+// //Location: /usr/include/xcb/xcb_keysyms.h:63
+// #define xcb_is_modifier_key(keysym uint32) int32
 
 //Location: /usr/include/xcb/xcb_cursor.h:93
 #define xcb_cursor_context_new(conn ptr, screen xcb_screen_t*, ctx ptr*) int32
@@ -6054,19 +6054,19 @@ struct xcb_shm_segment_info_t {
 //Location: /usr/include/xcb/xcb_cursor.h:114
 #define xcb_cursor_context_free(ctx ptr)
 
-//Location: /usr/include/xcb/shape.h:24
-struct xcb_shape_op_iterator_t {
-	data: byte*
-	rem: int32
-	index: int32
-}
+// //Location: /usr/include/xcb/shape.h:24
+// struct xcb_shape_op_iterator_t {
+// 	data: byte*
+// 	rem: int32
+// 	index: int32
+// }
 
-//Location: /usr/include/xcb/shape.h:35
-struct xcb_shape_kind_iterator_t {
-	data: byte*
-	rem: int32
-	index: int32
-}
+// //Location: /usr/include/xcb/shape.h:35
+// struct xcb_shape_kind_iterator_t {
+// 	data: byte*
+// 	rem: int32
+// 	index: int32
+// }
 
 //Enum: xcb_shape_so_t
 //Location: /usr/include/xcb/shape.h:41
@@ -6077,63 +6077,63 @@ const XCB_SHAPE_SO_INTERSECT = <xcb_shape_so_t> 2
 const XCB_SHAPE_SO_SUBTRACT = <xcb_shape_so_t> 3
 const XCB_SHAPE_SO_INVERT = <xcb_shape_so_t> 4
 
-//Enum: xcb_shape_sk_t
-//Location: /usr/include/xcb/shape.h:49
-#define xcb_shape_sk_t uint32
-const XCB_SHAPE_SK_BOUNDING = <xcb_shape_sk_t> 0
-const XCB_SHAPE_SK_CLIP = <xcb_shape_sk_t> 1
-const XCB_SHAPE_SK_INPUT = <xcb_shape_sk_t> 2
+// //Enum: xcb_shape_sk_t
+// //Location: /usr/include/xcb/shape.h:49
+// #define xcb_shape_sk_t uint32
+// const XCB_SHAPE_SK_BOUNDING = <xcb_shape_sk_t> 0
+// const XCB_SHAPE_SK_CLIP = <xcb_shape_sk_t> 1
+// const XCB_SHAPE_SK_INPUT = <xcb_shape_sk_t> 2
 
-//Location: /usr/include/xcb/shape.h:61
-struct xcb_shape_notify_event_t {
-	response_type: byte
-	shape_kind: byte
-	sequence: uint16
-	affected_window: uint32
-	extents_x: int16
-	extents_y: int16
-	extents_width: uint16
-	extents_height: uint16
-	server_time: uint32
-	shaped: byte
-	pad0: buffer:11
-}
+// //Location: /usr/include/xcb/shape.h:61
+// struct xcb_shape_notify_event_t {
+// 	response_type: byte
+// 	shape_kind: byte
+// 	sequence: uint16
+// 	affected_window: uint32
+// 	extents_x: int16
+// 	extents_y: int16
+// 	extents_width: uint16
+// 	extents_height: uint16
+// 	server_time: uint32
+// 	shaped: byte
+// 	pad0: buffer:11
+// }
 
-//Location: /usr/include/xcb/shape.h:78
-struct xcb_shape_query_version_cookie_t {
-	sequence: uint32
-}
+// //Location: /usr/include/xcb/shape.h:78
+// struct xcb_shape_query_version_cookie_t {
+// 	sequence: uint32
+// }
 
-//Location: /usr/include/xcb/shape.h:88
-struct xcb_shape_query_version_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-}
+// //Location: /usr/include/xcb/shape.h:88
+// struct xcb_shape_query_version_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// }
 
-//Location: /usr/include/xcb/shape.h:97
-struct xcb_shape_query_version_reply_t {
-	response_type: byte
-	pad0: byte
-	sequence: uint16
-	length: uint32
-	major_version: uint16
-	minor_version: uint16
-}
+// //Location: /usr/include/xcb/shape.h:97
+// struct xcb_shape_query_version_reply_t {
+// 	response_type: byte
+// 	pad0: byte
+// 	sequence: uint16
+// 	length: uint32
+// 	major_version: uint16
+// 	minor_version: uint16
+// }
 
-//Location: /usr/include/xcb/shape.h:112
-struct xcb_shape_rectangles_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	operation: byte
-	destination_kind: byte
-	ordering: byte
-	pad0: byte
-	destination_window: uint32
-	x_offset: int16
-	y_offset: int16
-}
+// //Location: /usr/include/xcb/shape.h:112
+// struct xcb_shape_rectangles_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	operation: byte
+// 	destination_kind: byte
+// 	ordering: byte
+// 	pad0: byte
+// 	destination_window: uint32
+// 	x_offset: int16
+// 	y_offset: int16
+// }
 
 //Location: /usr/include/xcb/shape.h:131
 struct xcb_shape_mask_request_t {
@@ -6149,362 +6149,362 @@ struct xcb_shape_mask_request_t {
 	source_bitmap: uint32
 }
 
-//Location: /usr/include/xcb/shape.h:150
-struct xcb_shape_combine_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	operation: byte
-	destination_kind: byte
-	source_kind: byte
-	pad0: byte
-	destination_window: uint32
-	x_offset: int16
-	y_offset: int16
-	source_window: uint32
-}
+// //Location: /usr/include/xcb/shape.h:150
+// struct xcb_shape_combine_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	operation: byte
+// 	destination_kind: byte
+// 	source_kind: byte
+// 	pad0: byte
+// 	destination_window: uint32
+// 	x_offset: int16
+// 	y_offset: int16
+// 	source_window: uint32
+// }
 
-//Location: /usr/include/xcb/shape.h:170
-struct xcb_shape_offset_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	destination_kind: byte
-	pad0: buffer:3
-	destination_window: uint32
-	x_offset: int16
-	y_offset: int16
-}
+// //Location: /usr/include/xcb/shape.h:170
+// struct xcb_shape_offset_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	destination_kind: byte
+// 	pad0: buffer:3
+// 	destination_window: uint32
+// 	x_offset: int16
+// 	y_offset: int16
+// }
 
-//Location: /usr/include/xcb/shape.h:184
-struct xcb_shape_query_extents_cookie_t {
-	sequence: uint32
-}
+// //Location: /usr/include/xcb/shape.h:184
+// struct xcb_shape_query_extents_cookie_t {
+// 	sequence: uint32
+// }
 
-//Location: /usr/include/xcb/shape.h:194
-struct xcb_shape_query_extents_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	destination_window: uint32
-}
+// //Location: /usr/include/xcb/shape.h:194
+// struct xcb_shape_query_extents_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	destination_window: uint32
+// }
 
-//Location: /usr/include/xcb/shape.h:204
-struct xcb_shape_query_extents_reply_t {
-	response_type: byte
-	pad0: byte
-	sequence: uint16
-	length: uint32
-	bounding_shaped: byte
-	clip_shaped: byte
-	pad1: buffer:2
-	bounding_shape_extents_x: int16
-	bounding_shape_extents_y: int16
-	bounding_shape_extents_width: uint16
-	bounding_shape_extents_height: uint16
-	clip_shape_extents_x: int16
-	clip_shape_extents_y: int16
-	clip_shape_extents_width: uint16
-	clip_shape_extents_height: uint16
-}
+// //Location: /usr/include/xcb/shape.h:204
+// struct xcb_shape_query_extents_reply_t {
+// 	response_type: byte
+// 	pad0: byte
+// 	sequence: uint16
+// 	length: uint32
+// 	bounding_shaped: byte
+// 	clip_shaped: byte
+// 	pad1: buffer:2
+// 	bounding_shape_extents_x: int16
+// 	bounding_shape_extents_y: int16
+// 	bounding_shape_extents_width: uint16
+// 	bounding_shape_extents_height: uint16
+// 	clip_shape_extents_x: int16
+// 	clip_shape_extents_y: int16
+// 	clip_shape_extents_width: uint16
+// 	clip_shape_extents_height: uint16
+// }
 
-//Location: /usr/include/xcb/shape.h:228
-struct xcb_shape_select_input_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	destination_window: uint32
-	enable: byte
-	pad0: buffer:3
-}
+// //Location: /usr/include/xcb/shape.h:228
+// struct xcb_shape_select_input_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	destination_window: uint32
+// 	enable: byte
+// 	pad0: buffer:3
+// }
 
-//Location: /usr/include/xcb/shape.h:240
-struct xcb_shape_input_selected_cookie_t {
-	sequence: uint32
-}
+// //Location: /usr/include/xcb/shape.h:240
+// struct xcb_shape_input_selected_cookie_t {
+// 	sequence: uint32
+// }
 
-//Location: /usr/include/xcb/shape.h:250
-struct xcb_shape_input_selected_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	destination_window: uint32
-}
+// //Location: /usr/include/xcb/shape.h:250
+// struct xcb_shape_input_selected_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	destination_window: uint32
+// }
 
-//Location: /usr/include/xcb/shape.h:260
-struct xcb_shape_input_selected_reply_t {
-	response_type: byte
-	enabled: byte
-	sequence: uint16
-	length: uint32
-}
+// //Location: /usr/include/xcb/shape.h:260
+// struct xcb_shape_input_selected_reply_t {
+// 	response_type: byte
+// 	enabled: byte
+// 	sequence: uint16
+// 	length: uint32
+// }
 
-//Location: /usr/include/xcb/shape.h:270
-struct xcb_shape_get_rectangles_cookie_t {
-	sequence: uint32
-}
+// //Location: /usr/include/xcb/shape.h:270
+// struct xcb_shape_get_rectangles_cookie_t {
+// 	sequence: uint32
+// }
 
-//Location: /usr/include/xcb/shape.h:280
-struct xcb_shape_get_rectangles_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	window: uint32
-	source_kind: byte
-	pad0: buffer:3
-}
+// //Location: /usr/include/xcb/shape.h:280
+// struct xcb_shape_get_rectangles_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	window: uint32
+// 	source_kind: byte
+// 	pad0: buffer:3
+// }
 
-//Location: /usr/include/xcb/shape.h:292
-struct xcb_shape_get_rectangles_reply_t {
-	response_type: byte
-	ordering: byte
-	sequence: uint16
-	length: uint32
-	rectangles_len: uint32
-	pad0: buffer:20
-}
+// //Location: /usr/include/xcb/shape.h:292
+// struct xcb_shape_get_rectangles_reply_t {
+// 	response_type: byte
+// 	ordering: byte
+// 	sequence: uint16
+// 	length: uint32
+// 	rectangles_len: uint32
+// 	pad0: buffer:20
+// }
 
-//Location: /usr/include/xcb/shape.h:317
-#define xcb_shape_op_next(i xcb_shape_op_iterator_t*)
+// //Location: /usr/include/xcb/shape.h:317
+// #define xcb_shape_op_next(i xcb_shape_op_iterator_t*)
 
-//Location: /usr/include/xcb/shape.h:329
-#define xcb_shape_op_end(i xcb_shape_op_iterator_t) xcb_generic_iterator_t
+// //Location: /usr/include/xcb/shape.h:329
+// #define xcb_shape_op_end(i xcb_shape_op_iterator_t) xcb_generic_iterator_t
 
-//Location: /usr/include/xcb/shape.h:340
-#define xcb_shape_kind_next(i xcb_shape_kind_iterator_t*)
+// //Location: /usr/include/xcb/shape.h:340
+// #define xcb_shape_kind_next(i xcb_shape_kind_iterator_t*)
 
-//Location: /usr/include/xcb/shape.h:352
-#define xcb_shape_kind_end(i xcb_shape_kind_iterator_t) xcb_generic_iterator_t
+// //Location: /usr/include/xcb/shape.h:352
+// #define xcb_shape_kind_end(i xcb_shape_kind_iterator_t) xcb_generic_iterator_t
 
-//Location: /usr/include/xcb/shape.h:363
-#define xcb_shape_query_version(c ptr) xcb_shape_query_version_cookie_t
+// //Location: /usr/include/xcb/shape.h:363
+// #define xcb_shape_query_version(c ptr) xcb_shape_query_version_cookie_t
 
-//Location: /usr/include/xcb/shape.h:377
-#define xcb_shape_query_version_unchecked(c ptr) xcb_shape_query_version_cookie_t
+// //Location: /usr/include/xcb/shape.h:377
+// #define xcb_shape_query_version_unchecked(c ptr) xcb_shape_query_version_cookie_t
 
-//Location: /usr/include/xcb/shape.h:394
-#define xcb_shape_query_version_reply(c ptr, cookie xcb_shape_query_version_cookie_t, e xcb_generic_error_t**) xcb_shape_query_version_reply_t*
+// //Location: /usr/include/xcb/shape.h:394
+// #define xcb_shape_query_version_reply(c ptr, cookie xcb_shape_query_version_cookie_t, e xcb_generic_error_t**) xcb_shape_query_version_reply_t*
 
-//Location: /usr/include/xcb/shape.h:399
-#define xcb_shape_rectangles_sizeof(_buffer ptr, rectangles_len uint32) int32
+// //Location: /usr/include/xcb/shape.h:399
+// #define xcb_shape_rectangles_sizeof(_buffer ptr, rectangles_len uint32) int32
 
-//Location: /usr/include/xcb/shape.h:414
-#define xcb_shape_rectangles_checked(c ptr, operation byte, destination_kind byte, ordering byte, destination_window uint32, x_offset int16, y_offset int16, rectangles_len uint32, rectangles xcb_rectangle_t*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shape.h:414
+// #define xcb_shape_rectangles_checked(c ptr, operation byte, destination_kind byte, ordering byte, destination_window uint32, x_offset int16, y_offset int16, rectangles_len uint32, rectangles xcb_rectangle_t*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shape.h:433
-#define xcb_shape_rectangles(c ptr, operation byte, destination_kind byte, ordering byte, destination_window uint32, x_offset int16, y_offset int16, rectangles_len uint32, rectangles xcb_rectangle_t*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shape.h:433
+// #define xcb_shape_rectangles(c ptr, operation byte, destination_kind byte, ordering byte, destination_window uint32, x_offset int16, y_offset int16, rectangles_len uint32, rectangles xcb_rectangle_t*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shape.h:444
-#define xcb_shape_rectangles_rectangles(R xcb_shape_rectangles_request_t*) xcb_rectangle_t*
+// //Location: /usr/include/xcb/shape.h:444
+// #define xcb_shape_rectangles_rectangles(R xcb_shape_rectangles_request_t*) xcb_rectangle_t*
 
-//Location: /usr/include/xcb/shape.h:447
-#define xcb_shape_rectangles_rectangles_length(R xcb_shape_rectangles_request_t*) int32
+// //Location: /usr/include/xcb/shape.h:447
+// #define xcb_shape_rectangles_rectangles_length(R xcb_shape_rectangles_request_t*) int32
 
-//Location: /usr/include/xcb/shape.h:450
-#define xcb_shape_rectangles_rectangles_iterator(R xcb_shape_rectangles_request_t*) xcb_rectangle_iterator_t
+// //Location: /usr/include/xcb/shape.h:450
+// #define xcb_shape_rectangles_rectangles_iterator(R xcb_shape_rectangles_request_t*) xcb_rectangle_iterator_t
 
-//Location: /usr/include/xcb/shape.h:464
-#define xcb_shape_mask_checked(c ptr, operation byte, destination_kind byte, destination_window uint32, x_offset int16, y_offset int16, source_bitmap uint32) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shape.h:464
+// #define xcb_shape_mask_checked(c ptr, operation byte, destination_kind byte, destination_window uint32, x_offset int16, y_offset int16, source_bitmap uint32) xcb_void_cookie_t
 
 //Location: /usr/include/xcb/shape.h:481
 #define xcb_shape_mask(c ptr, operation byte, destination_kind byte, destination_window uint32, x_offset int16, y_offset int16, source_bitmap uint32) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shape.h:501
-#define xcb_shape_combine_checked(c ptr, operation byte, destination_kind byte, source_kind byte, destination_window uint32, x_offset int16, y_offset int16, source_window uint32) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shape.h:501
+// #define xcb_shape_combine_checked(c ptr, operation byte, destination_kind byte, source_kind byte, destination_window uint32, x_offset int16, y_offset int16, source_window uint32) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shape.h:519
-#define xcb_shape_combine(c ptr, operation byte, destination_kind byte, source_kind byte, destination_window uint32, x_offset int16, y_offset int16, source_window uint32) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shape.h:519
+// #define xcb_shape_combine(c ptr, operation byte, destination_kind byte, source_kind byte, destination_window uint32, x_offset int16, y_offset int16, source_window uint32) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shape.h:540
-#define xcb_shape_offset_checked(c ptr, destination_kind byte, destination_window uint32, x_offset int16, y_offset int16) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shape.h:540
+// #define xcb_shape_offset_checked(c ptr, destination_kind byte, destination_window uint32, x_offset int16, y_offset int16) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shape.h:555
-#define xcb_shape_offset(c ptr, destination_kind byte, destination_window uint32, x_offset int16, y_offset int16) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shape.h:555
+// #define xcb_shape_offset(c ptr, destination_kind byte, destination_window uint32, x_offset int16, y_offset int16) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shape.h:570
-#define xcb_shape_query_extents(c ptr, destination_window uint32) xcb_shape_query_extents_cookie_t
+// //Location: /usr/include/xcb/shape.h:570
+// #define xcb_shape_query_extents(c ptr, destination_window uint32) xcb_shape_query_extents_cookie_t
 
-//Location: /usr/include/xcb/shape.h:585
-#define xcb_shape_query_extents_unchecked(c ptr, destination_window uint32) xcb_shape_query_extents_cookie_t
+// //Location: /usr/include/xcb/shape.h:585
+// #define xcb_shape_query_extents_unchecked(c ptr, destination_window uint32) xcb_shape_query_extents_cookie_t
 
-//Location: /usr/include/xcb/shape.h:603
-#define xcb_shape_query_extents_reply(c ptr, cookie xcb_shape_query_extents_cookie_t, e xcb_generic_error_t**) xcb_shape_query_extents_reply_t*
+// //Location: /usr/include/xcb/shape.h:603
+// #define xcb_shape_query_extents_reply(c ptr, cookie xcb_shape_query_extents_cookie_t, e xcb_generic_error_t**) xcb_shape_query_extents_reply_t*
 
-//Location: /usr/include/xcb/shape.h:619
-#define xcb_shape_select_input_checked(c ptr, destination_window uint32, enable byte) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shape.h:619
+// #define xcb_shape_select_input_checked(c ptr, destination_window uint32, enable byte) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shape.h:632
-#define xcb_shape_select_input(c ptr, destination_window uint32, enable byte) xcb_void_cookie_t
+// //Location: /usr/include/xcb/shape.h:632
+// #define xcb_shape_select_input(c ptr, destination_window uint32, enable byte) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/shape.h:645
-#define xcb_shape_input_selected(c ptr, destination_window uint32) xcb_shape_input_selected_cookie_t
+// //Location: /usr/include/xcb/shape.h:645
+// #define xcb_shape_input_selected(c ptr, destination_window uint32) xcb_shape_input_selected_cookie_t
 
-//Location: /usr/include/xcb/shape.h:660
-#define xcb_shape_input_selected_unchecked(c ptr, destination_window uint32) xcb_shape_input_selected_cookie_t
+// //Location: /usr/include/xcb/shape.h:660
+// #define xcb_shape_input_selected_unchecked(c ptr, destination_window uint32) xcb_shape_input_selected_cookie_t
 
-//Location: /usr/include/xcb/shape.h:678
-#define xcb_shape_input_selected_reply(c ptr, cookie xcb_shape_input_selected_cookie_t, e xcb_generic_error_t**) xcb_shape_input_selected_reply_t*
+// //Location: /usr/include/xcb/shape.h:678
+// #define xcb_shape_input_selected_reply(c ptr, cookie xcb_shape_input_selected_cookie_t, e xcb_generic_error_t**) xcb_shape_input_selected_reply_t*
 
-//Location: /usr/include/xcb/shape.h:683
-#define xcb_shape_get_rectangles_sizeof(_buffer ptr) int32
+// //Location: /usr/include/xcb/shape.h:683
+// #define xcb_shape_get_rectangles_sizeof(_buffer ptr) int32
 
-//Location: /usr/include/xcb/shape.h:694
-#define xcb_shape_get_rectangles(c ptr, window uint32, source_kind byte) xcb_shape_get_rectangles_cookie_t
+// //Location: /usr/include/xcb/shape.h:694
+// #define xcb_shape_get_rectangles(c ptr, window uint32, source_kind byte) xcb_shape_get_rectangles_cookie_t
 
-//Location: /usr/include/xcb/shape.h:710
-#define xcb_shape_get_rectangles_unchecked(c ptr, window uint32, source_kind byte) xcb_shape_get_rectangles_cookie_t
+// //Location: /usr/include/xcb/shape.h:710
+// #define xcb_shape_get_rectangles_unchecked(c ptr, window uint32, source_kind byte) xcb_shape_get_rectangles_cookie_t
 
-//Location: /usr/include/xcb/shape.h:715
-#define xcb_shape_get_rectangles_rectangles(R xcb_shape_get_rectangles_reply_t*) xcb_rectangle_t*
+// //Location: /usr/include/xcb/shape.h:715
+// #define xcb_shape_get_rectangles_rectangles(R xcb_shape_get_rectangles_reply_t*) xcb_rectangle_t*
 
-//Location: /usr/include/xcb/shape.h:718
-#define xcb_shape_get_rectangles_rectangles_length(R xcb_shape_get_rectangles_reply_t*) int32
+// //Location: /usr/include/xcb/shape.h:718
+// #define xcb_shape_get_rectangles_rectangles_length(R xcb_shape_get_rectangles_reply_t*) int32
 
-//Location: /usr/include/xcb/shape.h:721
-#define xcb_shape_get_rectangles_rectangles_iterator(R xcb_shape_get_rectangles_reply_t*) xcb_rectangle_iterator_t
+// //Location: /usr/include/xcb/shape.h:721
+// #define xcb_shape_get_rectangles_rectangles_iterator(R xcb_shape_get_rectangles_reply_t*) xcb_rectangle_iterator_t
 
-//Location: /usr/include/xcb/shape.h:738
-#define xcb_shape_get_rectangles_reply(c ptr, cookie xcb_shape_get_rectangles_cookie_t, e xcb_generic_error_t**) xcb_shape_get_rectangles_reply_t*
+// //Location: /usr/include/xcb/shape.h:738
+// #define xcb_shape_get_rectangles_reply(c ptr, cookie xcb_shape_get_rectangles_cookie_t, e xcb_generic_error_t**) xcb_shape_get_rectangles_reply_t*
 
-//Location: /usr/include/xcb/xcb_icccm.h:51
-struct xcb_icccm_get_text_property_reply_t {
-	_reply: xcb_get_property_reply_t*
-	encoding: uint32
-	name_len: uint32
-	name: char*
-	format: byte
-}
+// //Location: /usr/include/xcb/xcb_icccm.h:51
+// struct xcb_icccm_get_text_property_reply_t {
+// 	_reply: xcb_get_property_reply_t*
+// 	encoding: uint32
+// 	name_len: uint32
+// 	name: char*
+// 	format: byte
+// }
 
-//Location: /usr/include/xcb/xcb_icccm.h:75
-#define xcb_icccm_get_text_property(c ptr, window uint32, property uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:75
+// #define xcb_icccm_get_text_property(c ptr, window uint32, property uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:82
-#define xcb_icccm_get_text_property_unchecked(c ptr, window uint32, property uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:82
+// #define xcb_icccm_get_text_property_unchecked(c ptr, window uint32, property uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:102
-#define xcb_icccm_get_text_property_reply(c ptr, cookie xcb_get_property_cookie_t, prop xcb_icccm_get_text_property_reply_t*, e xcb_generic_error_t**) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:102
+// #define xcb_icccm_get_text_property_reply(c ptr, cookie xcb_get_property_cookie_t, prop xcb_icccm_get_text_property_reply_t*, e xcb_generic_error_t**) byte
 
-//Location: /usr/include/xcb/xcb_icccm.h:112
-#define xcb_icccm_get_text_property_reply_wipe(prop xcb_icccm_get_text_property_reply_t*)
+// //Location: /usr/include/xcb/xcb_icccm.h:112
+// #define xcb_icccm_get_text_property_reply_wipe(prop xcb_icccm_get_text_property_reply_t*)
 
-//Location: /usr/include/xcb/xcb_icccm.h:125
-#define xcb_icccm_set_wm_name_checked(c ptr, window uint32, encoding uint32, format byte, name_len uint32, name char*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:125
+// #define xcb_icccm_set_wm_name_checked(c ptr, window uint32, encoding uint32, format byte, name_len uint32, name char*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:135
-#define xcb_icccm_set_wm_name(c ptr, window uint32, encoding uint32, format byte, name_len uint32, name char*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:135
+// #define xcb_icccm_set_wm_name(c ptr, window uint32, encoding uint32, format byte, name_len uint32, name char*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:145
-#define xcb_icccm_get_wm_name(c ptr, window uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:145
+// #define xcb_icccm_get_wm_name(c ptr, window uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:151
-#define xcb_icccm_get_wm_name_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:151
+// #define xcb_icccm_get_wm_name_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:163
-#define xcb_icccm_get_wm_name_reply(c ptr, cookie xcb_get_property_cookie_t, prop xcb_icccm_get_text_property_reply_t*, e xcb_generic_error_t**) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:163
+// #define xcb_icccm_get_wm_name_reply(c ptr, cookie xcb_get_property_cookie_t, prop xcb_icccm_get_text_property_reply_t*, e xcb_generic_error_t**) byte
 
-//Location: /usr/include/xcb/xcb_icccm.h:179
-#define xcb_icccm_set_wm_icon_name_checked(c ptr, window uint32, encoding uint32, format byte, name_len uint32, name char*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:179
+// #define xcb_icccm_set_wm_icon_name_checked(c ptr, window uint32, encoding uint32, format byte, name_len uint32, name char*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:189
-#define xcb_icccm_set_wm_icon_name(c ptr, window uint32, encoding uint32, format byte, name_len uint32, name char*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:189
+// #define xcb_icccm_set_wm_icon_name(c ptr, window uint32, encoding uint32, format byte, name_len uint32, name char*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:202
-#define xcb_icccm_get_wm_icon_name(c ptr, window uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:202
+// #define xcb_icccm_get_wm_icon_name(c ptr, window uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:208
-#define xcb_icccm_get_wm_icon_name_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:208
+// #define xcb_icccm_get_wm_icon_name_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:220
-#define xcb_icccm_get_wm_icon_name_reply(c ptr, cookie xcb_get_property_cookie_t, prop xcb_icccm_get_text_property_reply_t*, e xcb_generic_error_t**) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:220
+// #define xcb_icccm_get_wm_icon_name_reply(c ptr, cookie xcb_get_property_cookie_t, prop xcb_icccm_get_text_property_reply_t*, e xcb_generic_error_t**) byte
 
-//Location: /usr/include/xcb/xcb_icccm.h:236
-#define xcb_icccm_set_wm_colormap_windows_checked(c ptr, window uint32, wm_colormap_windows_atom uint32, list_len uint32, list uint32*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:236
+// #define xcb_icccm_set_wm_colormap_windows_checked(c ptr, window uint32, wm_colormap_windows_atom uint32, list_len uint32, list uint32*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:245
-#define xcb_icccm_set_wm_colormap_windows(c ptr, window uint32, wm_colormap_windows_atom uint32, list_len uint32, list uint32*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:245
+// #define xcb_icccm_set_wm_colormap_windows(c ptr, window uint32, wm_colormap_windows_atom uint32, list_len uint32, list uint32*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:254
-struct xcb_icccm_get_wm_colormap_windows_reply_t {
-	windows_len: uint32
-	windows: uint32*
-	_reply: xcb_get_property_reply_t*
-}
+// //Location: /usr/include/xcb/xcb_icccm.h:254
+// struct xcb_icccm_get_wm_colormap_windows_reply_t {
+// 	windows_len: uint32
+// 	windows: uint32*
+// 	_reply: xcb_get_property_reply_t*
+// }
 
-//Location: /usr/include/xcb/xcb_icccm.h:270
-#define xcb_icccm_get_wm_colormap_windows(c ptr, window uint32, wm_colormap_windows_atom uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:270
+// #define xcb_icccm_get_wm_colormap_windows(c ptr, window uint32, wm_colormap_windows_atom uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:277
-#define xcb_icccm_get_wm_colormap_windows_unchecked(c ptr, window uint32, wm_colormap_windows_atom uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:277
+// #define xcb_icccm_get_wm_colormap_windows_unchecked(c ptr, window uint32, wm_colormap_windows_atom uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:290
-#define xcb_icccm_get_wm_colormap_windows_from_reply(reply xcb_get_property_reply_t*, colormap_windows xcb_icccm_get_wm_colormap_windows_reply_t*) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:290
+// #define xcb_icccm_get_wm_colormap_windows_from_reply(reply xcb_get_property_reply_t*, colormap_windows xcb_icccm_get_wm_colormap_windows_reply_t*) byte
 
-//Location: /usr/include/xcb/xcb_icccm.h:305
-#define xcb_icccm_get_wm_colormap_windows_reply(c ptr, cookie xcb_get_property_cookie_t, windows xcb_icccm_get_wm_colormap_windows_reply_t*, e xcb_generic_error_t**) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:305
+// #define xcb_icccm_get_wm_colormap_windows_reply(c ptr, cookie xcb_get_property_cookie_t, windows xcb_icccm_get_wm_colormap_windows_reply_t*, e xcb_generic_error_t**) byte
 
-//Location: /usr/include/xcb/xcb_icccm.h:315
-#define xcb_icccm_get_wm_colormap_windows_reply_wipe(windows xcb_icccm_get_wm_colormap_windows_reply_t*)
+// //Location: /usr/include/xcb/xcb_icccm.h:315
+// #define xcb_icccm_get_wm_colormap_windows_reply_wipe(windows xcb_icccm_get_wm_colormap_windows_reply_t*)
 
-//Location: /usr/include/xcb/xcb_icccm.h:328
-#define xcb_icccm_set_wm_client_machine_checked(c ptr, window uint32, encoding uint32, format byte, name_len uint32, name char*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:328
+// #define xcb_icccm_set_wm_client_machine_checked(c ptr, window uint32, encoding uint32, format byte, name_len uint32, name char*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:338
-#define xcb_icccm_set_wm_client_machine(c ptr, window uint32, encoding uint32, format byte, name_len uint32, name char*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:338
+// #define xcb_icccm_set_wm_client_machine(c ptr, window uint32, encoding uint32, format byte, name_len uint32, name char*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:351
-#define xcb_icccm_get_wm_client_machine(c ptr, window uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:351
+// #define xcb_icccm_get_wm_client_machine(c ptr, window uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:357
-#define xcb_icccm_get_wm_client_machine_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:357
+// #define xcb_icccm_get_wm_client_machine_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:369
-#define xcb_icccm_get_wm_client_machine_reply(c ptr, cookie xcb_get_property_cookie_t, prop xcb_icccm_get_text_property_reply_t*, e xcb_generic_error_t**) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:369
+// #define xcb_icccm_get_wm_client_machine_reply(c ptr, cookie xcb_get_property_cookie_t, prop xcb_icccm_get_text_property_reply_t*, e xcb_generic_error_t**) byte
 
-//Location: /usr/include/xcb/xcb_icccm.h:392
-#define xcb_icccm_set_wm_class_checked(c ptr, window uint32, class_len uint32, class_name char*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:392
+// #define xcb_icccm_set_wm_class_checked(c ptr, window uint32, class_len uint32, class_name char*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:400
-#define xcb_icccm_set_wm_class(c ptr, window uint32, class_len uint32, class_name char*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:400
+// #define xcb_icccm_set_wm_class(c ptr, window uint32, class_len uint32, class_name char*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:405
-struct xcb_icccm_get_wm_class_reply_t {
-	instance_name: char*
-	class_name: char*
-	_reply: xcb_get_property_reply_t*
-}
+// //Location: /usr/include/xcb/xcb_icccm.h:405
+// struct xcb_icccm_get_wm_class_reply_t {
+// 	instance_name: char*
+// 	class_name: char*
+// 	_reply: xcb_get_property_reply_t*
+// }
 
-//Location: /usr/include/xcb/xcb_icccm.h:421
-#define xcb_icccm_get_wm_class(c ptr, window uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:421
+// #define xcb_icccm_get_wm_class(c ptr, window uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:427
-#define xcb_icccm_get_wm_class_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:427
+// #define xcb_icccm_get_wm_class_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:437
-#define xcb_icccm_get_wm_class_from_reply(prop xcb_icccm_get_wm_class_reply_t*, reply xcb_get_property_reply_t*) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:437
+// #define xcb_icccm_get_wm_class_from_reply(prop xcb_icccm_get_wm_class_reply_t*, reply xcb_get_property_reply_t*) byte
 
-//Location: /usr/include/xcb/xcb_icccm.h:454
-#define xcb_icccm_get_wm_class_reply(c ptr, cookie xcb_get_property_cookie_t, prop xcb_icccm_get_wm_class_reply_t*, e xcb_generic_error_t**) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:454
+// #define xcb_icccm_get_wm_class_reply(c ptr, cookie xcb_get_property_cookie_t, prop xcb_icccm_get_wm_class_reply_t*, e xcb_generic_error_t**) byte
 
-//Location: /usr/include/xcb/xcb_icccm.h:464
-#define xcb_icccm_get_wm_class_reply_wipe(prop xcb_icccm_get_wm_class_reply_t*)
+// //Location: /usr/include/xcb/xcb_icccm.h:464
+// #define xcb_icccm_get_wm_class_reply_wipe(prop xcb_icccm_get_wm_class_reply_t*)
 
-//Location: /usr/include/xcb/xcb_icccm.h:475
-#define xcb_icccm_set_wm_transient_for_checked(c ptr, window uint32, transient_for_window uint32) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:475
+// #define xcb_icccm_set_wm_transient_for_checked(c ptr, window uint32, transient_for_window uint32) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:482
-#define xcb_icccm_set_wm_transient_for(c ptr, window uint32, transient_for_window uint32) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:482
+// #define xcb_icccm_set_wm_transient_for(c ptr, window uint32, transient_for_window uint32) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:492
-#define xcb_icccm_get_wm_transient_for(c ptr, window uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:492
+// #define xcb_icccm_get_wm_transient_for(c ptr, window uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:498
-#define xcb_icccm_get_wm_transient_for_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:498
+// #define xcb_icccm_get_wm_transient_for_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:507
-#define xcb_icccm_get_wm_transient_for_from_reply(prop uint32*, reply xcb_get_property_reply_t*) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:507
+// #define xcb_icccm_get_wm_transient_for_from_reply(prop uint32*, reply xcb_get_property_reply_t*) byte
 
-//Location: /usr/include/xcb/xcb_icccm.h:522
-#define xcb_icccm_get_wm_transient_for_reply(c ptr, cookie xcb_get_property_cookie_t, prop uint32*, e xcb_generic_error_t**) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:522
+// #define xcb_icccm_get_wm_transient_for_reply(c ptr, cookie xcb_get_property_cookie_t, prop uint32*, e xcb_generic_error_t**) byte
 
 const XCB_ICCCM_SIZE_HINT_US_POSITION = 1
 
@@ -6530,1737 +6530,1737 @@ struct xcb_size_hints_t {
 	win_gravity: uint32
 }
 
-//Location: /usr/include/xcb/xcb_icccm.h:578
-#define xcb_icccm_size_hints_set_position(hints xcb_size_hints_t*, user_specified int32, x int32, y int32)
+// //Location: /usr/include/xcb/xcb_icccm.h:578
+// #define xcb_icccm_size_hints_set_position(hints xcb_size_hints_t*, user_specified int32, x int32, y int32)
 
-//Location: /usr/include/xcb/xcb_icccm.h:588
-#define xcb_icccm_size_hints_set_size(hints xcb_size_hints_t*, user_specified int32, width int32, height int32)
+// //Location: /usr/include/xcb/xcb_icccm.h:588
+// #define xcb_icccm_size_hints_set_size(hints xcb_size_hints_t*, user_specified int32, width int32, height int32)
 
-//Location: /usr/include/xcb/xcb_icccm.h:597
-#define xcb_icccm_size_hints_set_min_size(hints xcb_size_hints_t*, min_width int32, min_height int32)
+// //Location: /usr/include/xcb/xcb_icccm.h:597
+// #define xcb_icccm_size_hints_set_min_size(hints xcb_size_hints_t*, min_width int32, min_height int32)
 
-//Location: /usr/include/xcb/xcb_icccm.h:606
-#define xcb_icccm_size_hints_set_max_size(hints xcb_size_hints_t*, max_width int32, max_height int32)
+// //Location: /usr/include/xcb/xcb_icccm.h:606
+// #define xcb_icccm_size_hints_set_max_size(hints xcb_size_hints_t*, max_width int32, max_height int32)
 
-//Location: /usr/include/xcb/xcb_icccm.h:615
-#define xcb_icccm_size_hints_set_resize_inc(hints xcb_size_hints_t*, width_inc int32, height_inc int32)
+// //Location: /usr/include/xcb/xcb_icccm.h:615
+// #define xcb_icccm_size_hints_set_resize_inc(hints xcb_size_hints_t*, width_inc int32, height_inc int32)
 
-//Location: /usr/include/xcb/xcb_icccm.h:626
-#define xcb_icccm_size_hints_set_aspect(hints xcb_size_hints_t*, min_aspect_num int32, min_aspect_den int32, max_aspect_num int32, max_aspect_den int32)
+// //Location: /usr/include/xcb/xcb_icccm.h:626
+// #define xcb_icccm_size_hints_set_aspect(hints xcb_size_hints_t*, min_aspect_num int32, min_aspect_den int32, max_aspect_num int32, max_aspect_den int32)
 
-//Location: /usr/include/xcb/xcb_icccm.h:636
-#define xcb_icccm_size_hints_set_base_size(hints xcb_size_hints_t*, base_width int32, base_height int32)
+// //Location: /usr/include/xcb/xcb_icccm.h:636
+// #define xcb_icccm_size_hints_set_base_size(hints xcb_size_hints_t*, base_width int32, base_height int32)
 
-//Location: /usr/include/xcb/xcb_icccm.h:644
-#define xcb_icccm_size_hints_set_win_gravity(hints xcb_size_hints_t*, win_gravity xcb_gravity_t)
+// //Location: /usr/include/xcb/xcb_icccm.h:644
+// #define xcb_icccm_size_hints_set_win_gravity(hints xcb_size_hints_t*, win_gravity xcb_gravity_t)
 
-//Location: /usr/include/xcb/xcb_icccm.h:654
-#define xcb_icccm_set_wm_size_hints_checked(c ptr, window uint32, property uint32, hints xcb_size_hints_t*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:654
+// #define xcb_icccm_set_wm_size_hints_checked(c ptr, window uint32, property uint32, hints xcb_size_hints_t*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:662
-#define xcb_icccm_set_wm_size_hints(c ptr, window uint32, property uint32, hints xcb_size_hints_t*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:662
+// #define xcb_icccm_set_wm_size_hints(c ptr, window uint32, property uint32, hints xcb_size_hints_t*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:674
-#define xcb_icccm_get_wm_size_hints(c ptr, window uint32, property uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:674
+// #define xcb_icccm_get_wm_size_hints(c ptr, window uint32, property uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:681
-#define xcb_icccm_get_wm_size_hints_unchecked(c ptr, window uint32, property uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:681
+// #define xcb_icccm_get_wm_size_hints_unchecked(c ptr, window uint32, property uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:697
-#define xcb_icccm_get_wm_size_hints_reply(c ptr, cookie xcb_get_property_cookie_t, hints xcb_size_hints_t*, e xcb_generic_error_t**) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:697
+// #define xcb_icccm_get_wm_size_hints_reply(c ptr, cookie xcb_get_property_cookie_t, hints xcb_size_hints_t*, e xcb_generic_error_t**) byte
 
-//Location: /usr/include/xcb/xcb_icccm.h:710
-#define xcb_icccm_set_wm_normal_hints_checked(c ptr, window uint32, hints xcb_size_hints_t*) xcb_void_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:710
+// #define xcb_icccm_set_wm_normal_hints_checked(c ptr, window uint32, hints xcb_size_hints_t*) xcb_void_cookie_t
 
 //Location: /usr/include/xcb/xcb_icccm.h:717
 #define xcb_icccm_set_wm_normal_hints(c ptr, window uint32, hints xcb_size_hints_t*) xcb_void_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:727
-#define xcb_icccm_get_wm_normal_hints(c ptr, window uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:727
+// #define xcb_icccm_get_wm_normal_hints(c ptr, window uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:733
-#define xcb_icccm_get_wm_normal_hints_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
+// //Location: /usr/include/xcb/xcb_icccm.h:733
+// #define xcb_icccm_get_wm_normal_hints_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
 
-//Location: /usr/include/xcb/xcb_icccm.h:742
-#define xcb_icccm_get_wm_size_hints_from_reply(hints xcb_size_hints_t*, reply xcb_get_property_reply_t*) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:742
+// #define xcb_icccm_get_wm_size_hints_from_reply(hints xcb_size_hints_t*, reply xcb_get_property_reply_t*) byte
 
-//Location: /usr/include/xcb/xcb_icccm.h:758
-#define xcb_icccm_get_wm_normal_hints_reply(c ptr, cookie xcb_get_property_cookie_t, hints xcb_size_hints_t*, e xcb_generic_error_t**) byte
+// //Location: /usr/include/xcb/xcb_icccm.h:758
+// #define xcb_icccm_get_wm_normal_hints_reply(c ptr, cookie xcb_get_property_cookie_t, hints xcb_size_hints_t*, e xcb_generic_error_t**) byte
 
-//Location: /usr/include/xcb/xcb_icccm.h:768
-struct xcb_icccm_wm_hints_t {
-	flags: int32
-	input: uint32
-	initial_state: int32
-	icon_pixmap: uint32
-	icon_window: uint32
-	icon_x: int32
-	icon_y: int32
-	icon_mask: uint32
-	window_group: uint32
-}
+// //Location: /usr/include/xcb/xcb_icccm.h:768
+// struct xcb_icccm_wm_hints_t {
+// 	flags: int32
+// 	input: uint32
+// 	initial_state: int32
+// 	icon_pixmap: uint32
+// 	icon_window: uint32
+// 	icon_x: int32
+// 	icon_y: int32
+// 	icon_mask: uint32
+// 	window_group: uint32
+// }
 
-const XCB_ICCCM_WM_STATE_WITHDRAWN = 0
-const XCB_ICCCM_WM_STATE_NORMAL = 1
-const XCB_ICCCM_WM_STATE_ICONIC = 3
+// const XCB_ICCCM_WM_STATE_WITHDRAWN = 0
+// const XCB_ICCCM_WM_STATE_NORMAL = 1
+// const XCB_ICCCM_WM_STATE_ICONIC = 3
 
-const XCB_ICCCM_WM_HINT_INPUT = 1
+// const XCB_ICCCM_WM_HINT_INPUT = 1
 
-//Location: /usr/include/xcb/xcb_icccm.h:821
-#define xcb_icccm_wm_hints_get_urgency(hints xcb_icccm_wm_hints_t*) uint32
+// //Location: /usr/include/xcb/xcb_icccm.h:821
+// #define xcb_icccm_wm_hints_get_urgency(hints xcb_icccm_wm_hints_t*) uint32
 
-//Location: /usr/include/xcb/xcb_icccm.h:828
-#define xcb_icccm_wm_hints_set_input(hints xcb_icccm_wm_hints_t*, input byte)
+// //Location: /usr/include/xcb/xcb_icccm.h:828
+// #define xcb_icccm_wm_hints_set_input(hints xcb_icccm_wm_hints_t*, input byte)
 
-//Location: /usr/include/xcb/xcb_icccm.h:834
-#define xcb_icccm_wm_hints_set_iconic(hints xcb_icccm_wm_hints_t*)
-
-//Location: /usr/include/xcb/xcb_icccm.h:840
-#define xcb_icccm_wm_hints_set_normal(hints xcb_icccm_wm_hints_t*)
-
-//Location: /usr/include/xcb/xcb_icccm.h:846
-#define xcb_icccm_wm_hints_set_withdrawn(hints xcb_icccm_wm_hints_t*)
-
-//Location: /usr/include/xcb/xcb_icccm.h:852
-#define xcb_icccm_wm_hints_set_none(hints xcb_icccm_wm_hints_t*)
-
-//Location: /usr/include/xcb/xcb_icccm.h:859
-#define xcb_icccm_wm_hints_set_icon_pixmap(hints xcb_icccm_wm_hints_t*, icon_pixmap uint32)
-
-//Location: /usr/include/xcb/xcb_icccm.h:867
-#define xcb_icccm_wm_hints_set_icon_mask(hints xcb_icccm_wm_hints_t*, icon_mask uint32)
-
-//Location: /usr/include/xcb/xcb_icccm.h:874
-#define xcb_icccm_wm_hints_set_icon_window(hints xcb_icccm_wm_hints_t*, icon_window uint32)
-
-//Location: /usr/include/xcb/xcb_icccm.h:882
-#define xcb_icccm_wm_hints_set_window_group(hints xcb_icccm_wm_hints_t*, window_group uint32)
-
-//Location: /usr/include/xcb/xcb_icccm.h:889
-#define xcb_icccm_wm_hints_set_urgency(hints xcb_icccm_wm_hints_t*)
-
-//Location: /usr/include/xcb/xcb_icccm.h:897
-#define xcb_icccm_set_wm_hints_checked(c ptr, window uint32, hints xcb_icccm_wm_hints_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/xcb_icccm.h:904
-#define xcb_icccm_set_wm_hints(c ptr, window uint32, hints xcb_icccm_wm_hints_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/xcb_icccm.h:914
-#define xcb_icccm_get_wm_hints(c ptr, window uint32) xcb_get_property_cookie_t
-
-//Location: /usr/include/xcb/xcb_icccm.h:920
-#define xcb_icccm_get_wm_hints_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
-
-//Location: /usr/include/xcb/xcb_icccm.h:929
-#define xcb_icccm_get_wm_hints_from_reply(hints xcb_icccm_wm_hints_t*, reply xcb_get_property_reply_t*) byte
-
-//Location: /usr/include/xcb/xcb_icccm.h:945
-#define xcb_icccm_get_wm_hints_reply(c ptr, cookie xcb_get_property_cookie_t, hints xcb_icccm_wm_hints_t*, e xcb_generic_error_t**) byte
-
-//Location: /usr/include/xcb/xcb_icccm.h:960
-#define xcb_icccm_set_wm_protocols_checked(c ptr, window uint32, wm_protocols uint32, list_len uint32, list uint32*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/xcb_icccm.h:969
-#define xcb_icccm_set_wm_protocols(c ptr, window uint32, wm_protocols uint32, list_len uint32, list uint32*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/xcb_icccm.h:978
-struct xcb_icccm_get_wm_protocols_reply_t {
-	atoms_len: uint32
-	atoms: uint32*
-	_reply: xcb_get_property_reply_t*
-}
-
-//Location: /usr/include/xcb/xcb_icccm.h:994
-#define xcb_icccm_get_wm_protocols(c ptr, window uint32, wm_protocol_atom uint32) xcb_get_property_cookie_t
-
-//Location: /usr/include/xcb/xcb_icccm.h:1001
-#define xcb_icccm_get_wm_protocols_unchecked(c ptr, window uint32, wm_protocol_atom uint32) xcb_get_property_cookie_t
-
-//Location: /usr/include/xcb/xcb_icccm.h:1014
-#define xcb_icccm_get_wm_protocols_from_reply(reply xcb_get_property_reply_t*, protocols xcb_icccm_get_wm_protocols_reply_t*) byte
-
-//Location: /usr/include/xcb/xcb_icccm.h:1029
-#define xcb_icccm_get_wm_protocols_reply(c ptr, cookie xcb_get_property_cookie_t, protocols xcb_icccm_get_wm_protocols_reply_t*, e xcb_generic_error_t**) byte
-
-//Location: /usr/include/xcb/xcb_icccm.h:1039
-#define xcb_icccm_get_wm_protocols_reply_wipe(protocols xcb_icccm_get_wm_protocols_reply_t*)
-
-//Enum: xcb_render_pict_type_t
-//Location: /usr/include/xcb/render.h:19
-#define xcb_render_pict_type_t uint32
-const XCB_RENDER_PICT_TYPE_INDEXED = <xcb_render_pict_type_t> 0
-const XCB_RENDER_PICT_TYPE_DIRECT = <xcb_render_pict_type_t> 1
-
-//Enum: xcb_render_picture_enum_t
-//Location: /usr/include/xcb/render.h:24
-#define xcb_render_picture_enum_t uint32
-const XCB_RENDER_PICTURE_NONE = <xcb_render_picture_enum_t> 0
-
-//Enum: xcb_render_pict_op_t
-//Location: /usr/include/xcb/render.h:28
-#define xcb_render_pict_op_t uint32
-const XCB_RENDER_PICT_OP_CLEAR = <xcb_render_pict_op_t> 0
-const XCB_RENDER_PICT_OP_SRC = <xcb_render_pict_op_t> 1
-const XCB_RENDER_PICT_OP_DST = <xcb_render_pict_op_t> 2
-const XCB_RENDER_PICT_OP_OVER = <xcb_render_pict_op_t> 3
-const XCB_RENDER_PICT_OP_OVER_REVERSE = <xcb_render_pict_op_t> 4
-const XCB_RENDER_PICT_OP_IN = <xcb_render_pict_op_t> 5
-const XCB_RENDER_PICT_OP_IN_REVERSE = <xcb_render_pict_op_t> 6
-const XCB_RENDER_PICT_OP_OUT = <xcb_render_pict_op_t> 7
-const XCB_RENDER_PICT_OP_OUT_REVERSE = <xcb_render_pict_op_t> 8
-const XCB_RENDER_PICT_OP_ATOP = <xcb_render_pict_op_t> 9
-const XCB_RENDER_PICT_OP_ATOP_REVERSE = <xcb_render_pict_op_t> 10
-const XCB_RENDER_PICT_OP_XOR = <xcb_render_pict_op_t> 11
-const XCB_RENDER_PICT_OP_ADD = <xcb_render_pict_op_t> 12
-const XCB_RENDER_PICT_OP_SATURATE = <xcb_render_pict_op_t> 13
-const XCB_RENDER_PICT_OP_DISJOINT_CLEAR = <xcb_render_pict_op_t> 16
-const XCB_RENDER_PICT_OP_DISJOINT_SRC = <xcb_render_pict_op_t> 17
-const XCB_RENDER_PICT_OP_DISJOINT_DST = <xcb_render_pict_op_t> 18
-const XCB_RENDER_PICT_OP_DISJOINT_OVER = <xcb_render_pict_op_t> 19
-const XCB_RENDER_PICT_OP_DISJOINT_OVER_REVERSE = <xcb_render_pict_op_t> 20
-const XCB_RENDER_PICT_OP_DISJOINT_IN = <xcb_render_pict_op_t> 21
-const XCB_RENDER_PICT_OP_DISJOINT_IN_REVERSE = <xcb_render_pict_op_t> 22
-const XCB_RENDER_PICT_OP_DISJOINT_OUT = <xcb_render_pict_op_t> 23
-const XCB_RENDER_PICT_OP_DISJOINT_OUT_REVERSE = <xcb_render_pict_op_t> 24
-const XCB_RENDER_PICT_OP_DISJOINT_ATOP = <xcb_render_pict_op_t> 25
-const XCB_RENDER_PICT_OP_DISJOINT_ATOP_REVERSE = <xcb_render_pict_op_t> 26
-const XCB_RENDER_PICT_OP_DISJOINT_XOR = <xcb_render_pict_op_t> 27
-const XCB_RENDER_PICT_OP_CONJOINT_CLEAR = <xcb_render_pict_op_t> 32
-const XCB_RENDER_PICT_OP_CONJOINT_SRC = <xcb_render_pict_op_t> 33
-const XCB_RENDER_PICT_OP_CONJOINT_DST = <xcb_render_pict_op_t> 34
-const XCB_RENDER_PICT_OP_CONJOINT_OVER = <xcb_render_pict_op_t> 35
-const XCB_RENDER_PICT_OP_CONJOINT_OVER_REVERSE = <xcb_render_pict_op_t> 36
-const XCB_RENDER_PICT_OP_CONJOINT_IN = <xcb_render_pict_op_t> 37
-const XCB_RENDER_PICT_OP_CONJOINT_IN_REVERSE = <xcb_render_pict_op_t> 38
-const XCB_RENDER_PICT_OP_CONJOINT_OUT = <xcb_render_pict_op_t> 39
-const XCB_RENDER_PICT_OP_CONJOINT_OUT_REVERSE = <xcb_render_pict_op_t> 40
-const XCB_RENDER_PICT_OP_CONJOINT_ATOP = <xcb_render_pict_op_t> 41
-const XCB_RENDER_PICT_OP_CONJOINT_ATOP_REVERSE = <xcb_render_pict_op_t> 42
-const XCB_RENDER_PICT_OP_CONJOINT_XOR = <xcb_render_pict_op_t> 43
-const XCB_RENDER_PICT_OP_MULTIPLY = <xcb_render_pict_op_t> 48
-const XCB_RENDER_PICT_OP_SCREEN = <xcb_render_pict_op_t> 49
-const XCB_RENDER_PICT_OP_OVERLAY = <xcb_render_pict_op_t> 50
-const XCB_RENDER_PICT_OP_DARKEN = <xcb_render_pict_op_t> 51
-const XCB_RENDER_PICT_OP_LIGHTEN = <xcb_render_pict_op_t> 52
-const XCB_RENDER_PICT_OP_COLOR_DODGE = <xcb_render_pict_op_t> 53
-const XCB_RENDER_PICT_OP_COLOR_BURN = <xcb_render_pict_op_t> 54
-const XCB_RENDER_PICT_OP_HARD_LIGHT = <xcb_render_pict_op_t> 55
-const XCB_RENDER_PICT_OP_SOFT_LIGHT = <xcb_render_pict_op_t> 56
-const XCB_RENDER_PICT_OP_DIFFERENCE = <xcb_render_pict_op_t> 57
-const XCB_RENDER_PICT_OP_EXCLUSION = <xcb_render_pict_op_t> 58
-const XCB_RENDER_PICT_OP_HSL_HUE = <xcb_render_pict_op_t> 59
-const XCB_RENDER_PICT_OP_HSL_SATURATION = <xcb_render_pict_op_t> 60
-const XCB_RENDER_PICT_OP_HSL_COLOR = <xcb_render_pict_op_t> 61
-const XCB_RENDER_PICT_OP_HSL_LUMINOSITY = <xcb_render_pict_op_t> 62
-
-//Enum: xcb_render_poly_edge_t
-//Location: /usr/include/xcb/render.h:84
-#define xcb_render_poly_edge_t uint32
-const XCB_RENDER_POLY_EDGE_SHARP = <xcb_render_poly_edge_t> 0
-const XCB_RENDER_POLY_EDGE_SMOOTH = <xcb_render_poly_edge_t> 1
-
-//Enum: xcb_render_poly_mode_t
-//Location: /usr/include/xcb/render.h:89
-#define xcb_render_poly_mode_t uint32
-const XCB_RENDER_POLY_MODE_PRECISE = <xcb_render_poly_mode_t> 0
-const XCB_RENDER_POLY_MODE_IMPRECISE = <xcb_render_poly_mode_t> 1
-
-//Enum: xcb_render_cp_t
-//Location: /usr/include/xcb/render.h:94
-#define xcb_render_cp_t uint32
-const XCB_RENDER_CP_REPEAT = <xcb_render_cp_t> 1
-const XCB_RENDER_CP_ALPHA_MAP = <xcb_render_cp_t> 2
-const XCB_RENDER_CP_ALPHA_X_ORIGIN = <xcb_render_cp_t> 4
-const XCB_RENDER_CP_ALPHA_Y_ORIGIN = <xcb_render_cp_t> 8
-const XCB_RENDER_CP_CLIP_X_ORIGIN = <xcb_render_cp_t> 16
-const XCB_RENDER_CP_CLIP_Y_ORIGIN = <xcb_render_cp_t> 32
-const XCB_RENDER_CP_CLIP_MASK = <xcb_render_cp_t> 64
-const XCB_RENDER_CP_GRAPHICS_EXPOSURE = <xcb_render_cp_t> 128
-const XCB_RENDER_CP_SUBWINDOW_MODE = <xcb_render_cp_t> 256
-const XCB_RENDER_CP_POLY_EDGE = <xcb_render_cp_t> 512
-const XCB_RENDER_CP_POLY_MODE = <xcb_render_cp_t> 1024
-const XCB_RENDER_CP_DITHER = <xcb_render_cp_t> 2048
-const XCB_RENDER_CP_COMPONENT_ALPHA = <xcb_render_cp_t> 4096
-
-//Enum: xcb_render_sub_pixel_t
-//Location: /usr/include/xcb/render.h:110
-#define xcb_render_sub_pixel_t uint32
-const XCB_RENDER_SUB_PIXEL_UNKNOWN = <xcb_render_sub_pixel_t> 0
-const XCB_RENDER_SUB_PIXEL_HORIZONTAL_RGB = <xcb_render_sub_pixel_t> 1
-const XCB_RENDER_SUB_PIXEL_HORIZONTAL_BGR = <xcb_render_sub_pixel_t> 2
-const XCB_RENDER_SUB_PIXEL_VERTICAL_RGB = <xcb_render_sub_pixel_t> 3
-const XCB_RENDER_SUB_PIXEL_VERTICAL_BGR = <xcb_render_sub_pixel_t> 4
-const XCB_RENDER_SUB_PIXEL_NONE = <xcb_render_sub_pixel_t> 5
-
-//Enum: xcb_render_repeat_t
-//Location: /usr/include/xcb/render.h:119
-#define xcb_render_repeat_t uint32
-const XCB_RENDER_REPEAT_NONE = <xcb_render_repeat_t> 0
-const XCB_RENDER_REPEAT_NORMAL = <xcb_render_repeat_t> 1
-const XCB_RENDER_REPEAT_PAD = <xcb_render_repeat_t> 2
-const XCB_RENDER_REPEAT_REFLECT = <xcb_render_repeat_t> 3
-
-//Location: /usr/include/xcb/render.h:131
-struct xcb_render_glyph_iterator_t {
-	data: uint32*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:142
-struct xcb_render_glyphset_iterator_t {
-	data: uint32*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:153
-struct xcb_render_picture_iterator_t {
-	data: uint32*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:164
-struct xcb_render_pictformat_iterator_t {
-	data: uint32*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:175
-struct xcb_render_fixed_iterator_t {
-	data: int32*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:187
-struct xcb_render_pict_format_error_t {
-	response_type: byte
-	error_code: byte
-	sequence: uint16
-	bad_value: uint32
-	minor_opcode: uint16
-	major_opcode: byte
-}
-
-//Location: /usr/include/xcb/render.h:202
-struct xcb_render_picture_error_t {
-	response_type: byte
-	error_code: byte
-	sequence: uint16
-	bad_value: uint32
-	minor_opcode: uint16
-	major_opcode: byte
-}
-
-//Location: /usr/include/xcb/render.h:217
-struct xcb_render_pict_op_error_t {
-	response_type: byte
-	error_code: byte
-	sequence: uint16
-	bad_value: uint32
-	minor_opcode: uint16
-	major_opcode: byte
-}
-
-//Location: /usr/include/xcb/render.h:232
-struct xcb_render_glyph_set_error_t {
-	response_type: byte
-	error_code: byte
-	sequence: uint16
-	bad_value: uint32
-	minor_opcode: uint16
-	major_opcode: byte
-}
-
-//Location: /usr/include/xcb/render.h:247
-struct xcb_render_glyph_error_t {
-	response_type: byte
-	error_code: byte
-	sequence: uint16
-	bad_value: uint32
-	minor_opcode: uint16
-	major_opcode: byte
-}
-
-//Location: /usr/include/xcb/render.h:259
-struct xcb_render_directformat_t {
-	red_shift: uint16
-	red_mask: uint16
-	green_shift: uint16
-	green_mask: uint16
-	blue_shift: uint16
-	blue_mask: uint16
-	alpha_shift: uint16
-	alpha_mask: uint16
-}
-
-//Location: /usr/include/xcb/render.h:273
-struct xcb_render_directformat_iterator_t {
-	data: xcb_render_directformat_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:282
-struct xcb_render_pictforminfo_t {
-	id: uint32
-	type: byte
-	depth: byte
-	pad0: buffer:2
-	direct: xcb_render_directformat_t
-	colormap: uint32
-}
-
-//Location: /usr/include/xcb/render.h:294
-struct xcb_render_pictforminfo_iterator_t {
-	data: xcb_render_pictforminfo_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:303
-struct xcb_render_pictvisual_t {
-	visual: uint32
-	format: uint32
-}
-
-//Location: /usr/include/xcb/render.h:311
-struct xcb_render_pictvisual_iterator_t {
-	data: xcb_render_pictvisual_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:320
-struct xcb_render_pictdepth_t {
-	depth: byte
-	pad0: byte
-	num_visuals: uint16
-	pad1: buffer:4
-}
-
-//Location: /usr/include/xcb/render.h:330
-struct xcb_render_pictdepth_iterator_t {
-	data: xcb_render_pictdepth_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:339
-struct xcb_render_pictscreen_t {
-	num_depths: uint32
-	fallback: uint32
-}
-
-//Location: /usr/include/xcb/render.h:347
-struct xcb_render_pictscreen_iterator_t {
-	data: xcb_render_pictscreen_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:356
-struct xcb_render_indexvalue_t {
-	pixel: uint32
-	red: uint16
-	green: uint16
-	blue: uint16
-	alpha: uint16
-}
-
-//Location: /usr/include/xcb/render.h:367
-struct xcb_render_indexvalue_iterator_t {
-	data: xcb_render_indexvalue_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:376
-struct xcb_render_color_t {
-	red: uint16
-	green: uint16
-	blue: uint16
-	alpha: uint16
-}
-
-//Location: /usr/include/xcb/render.h:386
-struct xcb_render_color_iterator_t {
-	data: xcb_render_color_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:395
-struct xcb_render_pointfix_t {
-	x: int32
-	y: int32
-}
-
-//Location: /usr/include/xcb/render.h:403
-struct xcb_render_pointfix_iterator_t {
-	data: xcb_render_pointfix_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:412
-struct xcb_render_linefix_t {
-	p1: xcb_render_pointfix_t
-	p2: xcb_render_pointfix_t
-}
-
-//Location: /usr/include/xcb/render.h:420
-struct xcb_render_linefix_iterator_t {
-	data: xcb_render_linefix_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:429
-struct xcb_render_triangle_t {
-	p1: xcb_render_pointfix_t
-	p2: xcb_render_pointfix_t
-	p3: xcb_render_pointfix_t
-}
-
-//Location: /usr/include/xcb/render.h:438
-struct xcb_render_triangle_iterator_t {
-	data: xcb_render_triangle_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:447
-struct xcb_render_trapezoid_t {
-	top: int32
-	bottom: int32
-	left: xcb_render_linefix_t
-	right: xcb_render_linefix_t
-}
-
-//Location: /usr/include/xcb/render.h:457
-struct xcb_render_trapezoid_iterator_t {
-	data: xcb_render_trapezoid_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:466
-struct xcb_render_glyphinfo_t {
-	width: uint16
-	height: uint16
-	x: int16
-	y: int16
-	x_off: int16
-	y_off: int16
-}
-
-//Location: /usr/include/xcb/render.h:478
-struct xcb_render_glyphinfo_iterator_t {
-	data: xcb_render_glyphinfo_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:487
-struct xcb_render_query_version_cookie_t {
-	sequence: uint32
-}
-
-//Location: /usr/include/xcb/render.h:497
-struct xcb_render_query_version_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	client_major_version: uint32
-	client_minor_version: uint32
-}
-
-//Location: /usr/include/xcb/render.h:508
-struct xcb_render_query_version_reply_t {
-	response_type: byte
-	pad0: byte
-	sequence: uint16
-	length: uint32
-	major_version: uint32
-	minor_version: uint32
-	pad1: buffer:16
-}
-
-//Location: /usr/include/xcb/render.h:521
-struct xcb_render_query_pict_formats_cookie_t {
-	sequence: uint32
-}
-
-//Location: /usr/include/xcb/render.h:531
-struct xcb_render_query_pict_formats_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-}
-
-//Location: /usr/include/xcb/render.h:540
-struct xcb_render_query_pict_formats_reply_t {
-	response_type: byte
-	pad0: byte
-	sequence: uint16
-	length: uint32
-	num_formats: uint32
-	num_screens: uint32
-	num_depths: uint32
-	num_visuals: uint32
-	num_subpixel: uint32
-	pad1: buffer:4
-}
-
-//Location: /usr/include/xcb/render.h:556
-struct xcb_render_query_pict_index_values_cookie_t {
-	sequence: uint32
-}
-
-//Location: /usr/include/xcb/render.h:566
-struct xcb_render_query_pict_index_values_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	format: uint32
-}
-
-//Location: /usr/include/xcb/render.h:576
-struct xcb_render_query_pict_index_values_reply_t {
-	response_type: byte
-	pad0: byte
-	sequence: uint16
-	length: uint32
-	num_values: uint32
-	pad1: buffer:20
-}
-
-//Location: /usr/include/xcb/render.h:588
-struct xcb_render_create_picture_value_list_t {
-	repeat: uint32
-	alphamap: uint32
-	alphaxorigin: int32
-	alphayorigin: int32
-	clipxorigin: int32
-	clipyorigin: int32
-	clipmask: uint32
-	graphicsexposure: uint32
-	subwindowmode: uint32
-	polyedge: uint32
-	polymode: uint32
-	dither: uint32
-	componentalpha: uint32
-}
-
-//Location: /usr/include/xcb/render.h:610
-struct xcb_render_create_picture_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	pid: uint32
-	drawable: uint32
-	format: uint32
-	value_mask: uint32
-}
-
-//Location: /usr/include/xcb/render.h:623
-struct xcb_render_change_picture_value_list_t {
-	repeat: uint32
-	alphamap: uint32
-	alphaxorigin: int32
-	alphayorigin: int32
-	clipxorigin: int32
-	clipyorigin: int32
-	clipmask: uint32
-	graphicsexposure: uint32
-	subwindowmode: uint32
-	polyedge: uint32
-	polymode: uint32
-	dither: uint32
-	componentalpha: uint32
-}
-
-//Location: /usr/include/xcb/render.h:645
-struct xcb_render_change_picture_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	picture: uint32
-	value_mask: uint32
-}
-
-//Location: /usr/include/xcb/render.h:659
-struct xcb_render_set_picture_clip_rectangles_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	picture: uint32
-	clip_x_origin: int16
-	clip_y_origin: int16
-}
-
-//Location: /usr/include/xcb/render.h:674
-struct xcb_render_free_picture_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	picture: uint32
-}
-
-//Location: /usr/include/xcb/render.h:687
-struct xcb_render_composite_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	op: byte
-	pad0: buffer:3
-	src: uint32
-	mask: uint32
-	dst: uint32
-	src_x: int16
-	src_y: int16
-	mask_x: int16
-	mask_y: int16
-	dst_x: int16
-	dst_y: int16
-	width: uint16
-	height: uint16
-}
-
-//Location: /usr/include/xcb/render.h:712
-struct xcb_render_trapezoids_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	op: byte
-	pad0: buffer:3
-	src: uint32
-	dst: uint32
-	mask_format: uint32
-	src_x: int16
-	src_y: int16
-}
-
-//Location: /usr/include/xcb/render.h:731
-struct xcb_render_triangles_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	op: byte
-	pad0: buffer:3
-	src: uint32
-	dst: uint32
-	mask_format: uint32
-	src_x: int16
-	src_y: int16
-}
-
-//Location: /usr/include/xcb/render.h:750
-struct xcb_render_tri_strip_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	op: byte
-	pad0: buffer:3
-	src: uint32
-	dst: uint32
-	mask_format: uint32
-	src_x: int16
-	src_y: int16
-}
-
-//Location: /usr/include/xcb/render.h:769
-struct xcb_render_tri_fan_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	op: byte
-	pad0: buffer:3
-	src: uint32
-	dst: uint32
-	mask_format: uint32
-	src_x: int16
-	src_y: int16
-}
-
-//Location: /usr/include/xcb/render.h:788
-struct xcb_render_create_glyph_set_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	gsid: uint32
-	format: uint32
-}
-
-//Location: /usr/include/xcb/render.h:802
-struct xcb_render_reference_glyph_set_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	gsid: uint32
-	existing: uint32
-}
-
-//Location: /usr/include/xcb/render.h:816
-struct xcb_render_free_glyph_set_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	glyphset: uint32
-}
-
-//Location: /usr/include/xcb/render.h:829
-struct xcb_render_add_glyphs_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	glyphset: uint32
-	glyphs_len: uint32
-}
-
-//Location: /usr/include/xcb/render.h:843
-struct xcb_render_free_glyphs_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	glyphset: uint32
-}
-
-//Location: /usr/include/xcb/render.h:856
-struct xcb_render_composite_glyphs_8_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	op: byte
-	pad0: buffer:3
-	src: uint32
-	dst: uint32
-	mask_format: uint32
-	glyphset: uint32
-	src_x: int16
-	src_y: int16
-}
-
-//Location: /usr/include/xcb/render.h:876
-struct xcb_render_composite_glyphs_16_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	op: byte
-	pad0: buffer:3
-	src: uint32
-	dst: uint32
-	mask_format: uint32
-	glyphset: uint32
-	src_x: int16
-	src_y: int16
-}
-
-//Location: /usr/include/xcb/render.h:896
-struct xcb_render_composite_glyphs_32_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	op: byte
-	pad0: buffer:3
-	src: uint32
-	dst: uint32
-	mask_format: uint32
-	glyphset: uint32
-	src_x: int16
-	src_y: int16
-}
-
-//Location: /usr/include/xcb/render.h:916
-struct xcb_render_fill_rectangles_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	op: byte
-	pad0: buffer:3
-	dst: uint32
-	color: xcb_render_color_t
-}
-
-//Location: /usr/include/xcb/render.h:932
-struct xcb_render_create_cursor_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	cid: uint32
-	source: uint32
-	x: uint16
-	y: uint16
-}
-
-//Location: /usr/include/xcb/render.h:945
-struct xcb_render_transform_t {
-	matrix11: int32
-	matrix12: int32
-	matrix13: int32
-	matrix21: int32
-	matrix22: int32
-	matrix23: int32
-	matrix31: int32
-	matrix32: int32
-	matrix33: int32
-}
-
-//Location: /usr/include/xcb/render.h:960
-struct xcb_render_transform_iterator_t {
-	data: xcb_render_transform_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:972
-struct xcb_render_set_picture_transform_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	picture: uint32
-	transform: xcb_render_transform_t
-}
-
-//Location: /usr/include/xcb/render.h:983
-struct xcb_render_query_filters_cookie_t {
-	sequence: uint32
-}
-
-//Location: /usr/include/xcb/render.h:993
-struct xcb_render_query_filters_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	drawable: uint32
-}
-
-//Location: /usr/include/xcb/render.h:1003
-struct xcb_render_query_filters_reply_t {
-	response_type: byte
-	pad0: byte
-	sequence: uint16
-	length: uint32
-	num_aliases: uint32
-	num_filters: uint32
-	pad1: buffer:16
-}
-
-//Location: /usr/include/xcb/render.h:1019
-struct xcb_render_set_picture_filter_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	picture: uint32
-	filter_len: uint16
-	pad0: buffer:2
-}
-
-//Location: /usr/include/xcb/render.h:1031
-struct xcb_render_animcursorelt_t {
-	cursor: uint32
-	delay: uint32
-}
-
-//Location: /usr/include/xcb/render.h:1039
-struct xcb_render_animcursorelt_iterator_t {
-	data: xcb_render_animcursorelt_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:1051
-struct xcb_render_create_anim_cursor_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	cid: uint32
-}
-
-//Location: /usr/include/xcb/render.h:1061
-struct xcb_render_spanfix_t {
-	l: int32
-	r: int32
-	y: int32
-}
-
-//Location: /usr/include/xcb/render.h:1070
-struct xcb_render_spanfix_iterator_t {
-	data: xcb_render_spanfix_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:1079
-struct xcb_render_trap_t {
-	top: xcb_render_spanfix_t
-	bot: xcb_render_spanfix_t
-}
-
-//Location: /usr/include/xcb/render.h:1087
-struct xcb_render_trap_iterator_t {
-	data: xcb_render_trap_t*
-	rem: int32
-	index: int32
-}
-
-//Location: /usr/include/xcb/render.h:1099
-struct xcb_render_add_traps_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	picture: uint32
-	x_off: int16
-	y_off: int16
-}
-
-//Location: /usr/include/xcb/render.h:1114
-struct xcb_render_create_solid_fill_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	picture: uint32
-	color: xcb_render_color_t
-}
-
-//Location: /usr/include/xcb/render.h:1128
-struct xcb_render_create_linear_gradient_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	picture: uint32
-	p1: xcb_render_pointfix_t
-	p2: xcb_render_pointfix_t
-	num_stops: uint32
-}
-
-//Location: /usr/include/xcb/render.h:1144
-struct xcb_render_create_radial_gradient_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	picture: uint32
-	inner: xcb_render_pointfix_t
-	outer: xcb_render_pointfix_t
-	inner_radius: int32
-	outer_radius: int32
-	num_stops: uint32
-}
-
-//Location: /usr/include/xcb/render.h:1162
-struct xcb_render_create_conical_gradient_request_t {
-	major_opcode: byte
-	minor_opcode: byte
-	length: uint16
-	picture: uint32
-	center: xcb_render_pointfix_t
-	angle: int32
-	num_stops: uint32
-}
-
-//Location: /usr/include/xcb/render.h:1188
-#define xcb_render_glyph_next(i xcb_render_glyph_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1200
-#define xcb_render_glyph_end(i xcb_render_glyph_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1211
-#define xcb_render_glyphset_next(i xcb_render_glyphset_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1223
-#define xcb_render_glyphset_end(i xcb_render_glyphset_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1234
-#define xcb_render_picture_next(i xcb_render_picture_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1246
-#define xcb_render_picture_end(i xcb_render_picture_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1257
-#define xcb_render_pictformat_next(i xcb_render_pictformat_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1269
-#define xcb_render_pictformat_end(i xcb_render_pictformat_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1280
-#define xcb_render_fixed_next(i xcb_render_fixed_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1292
-#define xcb_render_fixed_end(i xcb_render_fixed_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1303
-#define xcb_render_directformat_next(i xcb_render_directformat_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1315
-#define xcb_render_directformat_end(i xcb_render_directformat_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1326
-#define xcb_render_pictforminfo_next(i xcb_render_pictforminfo_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1338
-#define xcb_render_pictforminfo_end(i xcb_render_pictforminfo_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1349
-#define xcb_render_pictvisual_next(i xcb_render_pictvisual_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1361
-#define xcb_render_pictvisual_end(i xcb_render_pictvisual_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1364
-#define xcb_render_pictdepth_sizeof(_buffer ptr) int32
-
-//Location: /usr/include/xcb/render.h:1367
-#define xcb_render_pictdepth_visuals(R xcb_render_pictdepth_t*) xcb_render_pictvisual_t*
-
-//Location: /usr/include/xcb/render.h:1370
-#define xcb_render_pictdepth_visuals_length(R xcb_render_pictdepth_t*) int32
-
-//Location: /usr/include/xcb/render.h:1373
-#define xcb_render_pictdepth_visuals_iterator(R xcb_render_pictdepth_t*) xcb_render_pictvisual_iterator_t
-
-//Location: /usr/include/xcb/render.h:1384
-#define xcb_render_pictdepth_next(i xcb_render_pictdepth_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1396
-#define xcb_render_pictdepth_end(i xcb_render_pictdepth_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1399
-#define xcb_render_pictscreen_sizeof(_buffer ptr) int32
-
-//Location: /usr/include/xcb/render.h:1402
-#define xcb_render_pictscreen_depths_length(R xcb_render_pictscreen_t*) int32
-
-//Location: /usr/include/xcb/render.h:1405
-#define xcb_render_pictscreen_depths_iterator(R xcb_render_pictscreen_t*) xcb_render_pictdepth_iterator_t
-
-//Location: /usr/include/xcb/render.h:1416
-#define xcb_render_pictscreen_next(i xcb_render_pictscreen_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1428
-#define xcb_render_pictscreen_end(i xcb_render_pictscreen_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1439
-#define xcb_render_indexvalue_next(i xcb_render_indexvalue_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1451
-#define xcb_render_indexvalue_end(i xcb_render_indexvalue_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1462
-#define xcb_render_color_next(i xcb_render_color_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1474
-#define xcb_render_color_end(i xcb_render_color_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1485
-#define xcb_render_pointfix_next(i xcb_render_pointfix_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1497
-#define xcb_render_pointfix_end(i xcb_render_pointfix_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1508
-#define xcb_render_linefix_next(i xcb_render_linefix_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1520
-#define xcb_render_linefix_end(i xcb_render_linefix_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1531
-#define xcb_render_triangle_next(i xcb_render_triangle_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1543
-#define xcb_render_triangle_end(i xcb_render_triangle_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1554
-#define xcb_render_trapezoid_next(i xcb_render_trapezoid_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1566
-#define xcb_render_trapezoid_end(i xcb_render_trapezoid_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1577
-#define xcb_render_glyphinfo_next(i xcb_render_glyphinfo_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:1589
-#define xcb_render_glyphinfo_end(i xcb_render_glyphinfo_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1600
-#define xcb_render_query_version(c ptr, client_major_version uint32, client_minor_version uint32) xcb_render_query_version_cookie_t
-
-//Location: /usr/include/xcb/render.h:1616
-#define xcb_render_query_version_unchecked(c ptr, client_major_version uint32, client_minor_version uint32) xcb_render_query_version_cookie_t
-
-//Location: /usr/include/xcb/render.h:1635
-#define xcb_render_query_version_reply(c ptr, cookie xcb_render_query_version_cookie_t, e xcb_generic_error_t**) xcb_render_query_version_reply_t*
-
-//Location: /usr/include/xcb/render.h:1640
-#define xcb_render_query_pict_formats_sizeof(_buffer ptr) int32
-
-//Location: /usr/include/xcb/render.h:1651
-#define xcb_render_query_pict_formats(c ptr) xcb_render_query_pict_formats_cookie_t
-
-//Location: /usr/include/xcb/render.h:1665
-#define xcb_render_query_pict_formats_unchecked(c ptr) xcb_render_query_pict_formats_cookie_t
-
-//Location: /usr/include/xcb/render.h:1668
-#define xcb_render_query_pict_formats_formats(R xcb_render_query_pict_formats_reply_t*) xcb_render_pictforminfo_t*
-
-//Location: /usr/include/xcb/render.h:1671
-#define xcb_render_query_pict_formats_formats_length(R xcb_render_query_pict_formats_reply_t*) int32
-
-//Location: /usr/include/xcb/render.h:1674
-#define xcb_render_query_pict_formats_formats_iterator(R xcb_render_query_pict_formats_reply_t*) xcb_render_pictforminfo_iterator_t
-
-//Location: /usr/include/xcb/render.h:1677
-#define xcb_render_query_pict_formats_screens_length(R xcb_render_query_pict_formats_reply_t*) int32
-
-//Location: /usr/include/xcb/render.h:1680
-#define xcb_render_query_pict_formats_screens_iterator(R xcb_render_query_pict_formats_reply_t*) xcb_render_pictscreen_iterator_t
-
-//Location: /usr/include/xcb/render.h:1683
-#define xcb_render_query_pict_formats_subpixels(R xcb_render_query_pict_formats_reply_t*) uint32*
-
-//Location: /usr/include/xcb/render.h:1686
-#define xcb_render_query_pict_formats_subpixels_length(R xcb_render_query_pict_formats_reply_t*) int32
-
-//Location: /usr/include/xcb/render.h:1689
-#define xcb_render_query_pict_formats_subpixels_end(R xcb_render_query_pict_formats_reply_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:1706
-#define xcb_render_query_pict_formats_reply(c ptr, cookie xcb_render_query_pict_formats_cookie_t, e xcb_generic_error_t**) xcb_render_query_pict_formats_reply_t*
-
-//Location: /usr/include/xcb/render.h:1711
-#define xcb_render_query_pict_index_values_sizeof(_buffer ptr) int32
-
-//Location: /usr/include/xcb/render.h:1722
-#define xcb_render_query_pict_index_values(c ptr, format uint32) xcb_render_query_pict_index_values_cookie_t
-
-//Location: /usr/include/xcb/render.h:1737
-#define xcb_render_query_pict_index_values_unchecked(c ptr, format uint32) xcb_render_query_pict_index_values_cookie_t
-
-//Location: /usr/include/xcb/render.h:1741
-#define xcb_render_query_pict_index_values_values(R xcb_render_query_pict_index_values_reply_t*) xcb_render_indexvalue_t*
-
-//Location: /usr/include/xcb/render.h:1744
-#define xcb_render_query_pict_index_values_values_length(R xcb_render_query_pict_index_values_reply_t*) int32
-
-//Location: /usr/include/xcb/render.h:1747
-#define xcb_render_query_pict_index_values_values_iterator(R xcb_render_query_pict_index_values_reply_t*) xcb_render_indexvalue_iterator_t
-
-//Location: /usr/include/xcb/render.h:1764
-#define xcb_render_query_pict_index_values_reply(c ptr, cookie xcb_render_query_pict_index_values_cookie_t, e xcb_generic_error_t**) xcb_render_query_pict_index_values_reply_t*
-
-//Location: /usr/include/xcb/render.h:1769
-#define xcb_render_create_picture_value_list_serialize(_buffer ptr*, value_mask uint32, _aux xcb_render_create_picture_value_list_t*) int32
-
-//Location: /usr/include/xcb/render.h:1774
-#define xcb_render_create_picture_value_list_unpack(_buffer ptr, value_mask uint32, _aux xcb_render_create_picture_value_list_t*) int32
-
-//Location: /usr/include/xcb/render.h:1779
-#define xcb_render_create_picture_value_list_sizeof(_buffer ptr, value_mask uint32) int32
-
-//Location: /usr/include/xcb/render.h:1783
-#define xcb_render_create_picture_sizeof(_buffer ptr) int32
-
-//Location: /usr/include/xcb/render.h:1797
-#define xcb_render_create_picture_checked(c ptr, pid uint32, drawable uint32, format uint32, value_mask uint32, value_list ptr) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:1813
-#define xcb_render_create_picture(c ptr, pid uint32, drawable uint32, format uint32, value_mask uint32, value_list ptr) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:1832
-#define xcb_render_create_picture_aux_checked(c ptr, pid uint32, drawable uint32, format uint32, value_mask uint32, value_list xcb_render_create_picture_value_list_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:1848
-#define xcb_render_create_picture_aux(c ptr, pid uint32, drawable uint32, format uint32, value_mask uint32, value_list xcb_render_create_picture_value_list_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:1856
-#define xcb_render_create_picture_value_list(R xcb_render_create_picture_request_t*) ptr
-
-//Location: /usr/include/xcb/render.h:1859
-#define xcb_render_change_picture_value_list_serialize(_buffer ptr*, value_mask uint32, _aux xcb_render_change_picture_value_list_t*) int32
-
-//Location: /usr/include/xcb/render.h:1864
-#define xcb_render_change_picture_value_list_unpack(_buffer ptr, value_mask uint32, _aux xcb_render_change_picture_value_list_t*) int32
-
-//Location: /usr/include/xcb/render.h:1869
-#define xcb_render_change_picture_value_list_sizeof(_buffer ptr, value_mask uint32) int32
-
-//Location: /usr/include/xcb/render.h:1873
-#define xcb_render_change_picture_sizeof(_buffer ptr) int32
-
-//Location: /usr/include/xcb/render.h:1887
-#define xcb_render_change_picture_checked(c ptr, picture uint32, value_mask uint32, value_list ptr) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:1901
-#define xcb_render_change_picture(c ptr, picture uint32, value_mask uint32, value_list ptr) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:1918
-#define xcb_render_change_picture_aux_checked(c ptr, picture uint32, value_mask uint32, value_list xcb_render_change_picture_value_list_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:1932
-#define xcb_render_change_picture_aux(c ptr, picture uint32, value_mask uint32, value_list xcb_render_change_picture_value_list_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:1938
-#define xcb_render_change_picture_value_list(R xcb_render_change_picture_request_t*) ptr
-
-//Location: /usr/include/xcb/render.h:1941
-#define xcb_render_set_picture_clip_rectangles_sizeof(_buffer ptr, rectangles_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:1956
-#define xcb_render_set_picture_clip_rectangles_checked(c ptr, picture uint32, clip_x_origin int16, clip_y_origin int16, rectangles_len uint32, rectangles xcb_rectangle_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:1972
-#define xcb_render_set_picture_clip_rectangles(c ptr, picture uint32, clip_x_origin int16, clip_y_origin int16, rectangles_len uint32, rectangles xcb_rectangle_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:1980
-#define xcb_render_set_picture_clip_rectangles_rectangles(R xcb_render_set_picture_clip_rectangles_request_t*) xcb_rectangle_t*
-
-//Location: /usr/include/xcb/render.h:1983
-#define xcb_render_set_picture_clip_rectangles_rectangles_length(R xcb_render_set_picture_clip_rectangles_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:1986
-#define xcb_render_set_picture_clip_rectangles_rectangles_iterator(R xcb_render_set_picture_clip_rectangles_request_t*) xcb_rectangle_iterator_t
-
-//Location: /usr/include/xcb/render.h:2000
-#define xcb_render_free_picture_checked(c ptr, picture uint32) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2012
-#define xcb_render_free_picture(c ptr, picture uint32) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2027
-#define xcb_render_composite_checked(c ptr, op byte, src uint32, mask uint32, dst uint32, src_x int16, src_y int16, mask_x int16, mask_y int16, dst_x int16, dst_y int16, width uint16, height uint16) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2050
-#define xcb_render_composite(c ptr, op byte, src uint32, mask uint32, dst uint32, src_x int16, src_y int16, mask_x int16, mask_y int16, dst_x int16, dst_y int16, width uint16, height uint16) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2065
-#define xcb_render_trapezoids_sizeof(_buffer ptr, traps_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:2080
-#define xcb_render_trapezoids_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, traps_len uint32, traps xcb_render_trapezoid_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2099
-#define xcb_render_trapezoids(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, traps_len uint32, traps xcb_render_trapezoid_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2110
-#define xcb_render_trapezoids_traps(R xcb_render_trapezoids_request_t*) xcb_render_trapezoid_t*
-
-//Location: /usr/include/xcb/render.h:2113
-#define xcb_render_trapezoids_traps_length(R xcb_render_trapezoids_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2116
-#define xcb_render_trapezoids_traps_iterator(R xcb_render_trapezoids_request_t*) xcb_render_trapezoid_iterator_t
-
-//Location: /usr/include/xcb/render.h:2119
-#define xcb_render_triangles_sizeof(_buffer ptr, triangles_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:2134
-#define xcb_render_triangles_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, triangles_len uint32, triangles xcb_render_triangle_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2153
-#define xcb_render_triangles(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, triangles_len uint32, triangles xcb_render_triangle_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2164
-#define xcb_render_triangles_triangles(R xcb_render_triangles_request_t*) xcb_render_triangle_t*
-
-//Location: /usr/include/xcb/render.h:2167
-#define xcb_render_triangles_triangles_length(R xcb_render_triangles_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2170
-#define xcb_render_triangles_triangles_iterator(R xcb_render_triangles_request_t*) xcb_render_triangle_iterator_t
-
-//Location: /usr/include/xcb/render.h:2173
-#define xcb_render_tri_strip_sizeof(_buffer ptr, points_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:2188
-#define xcb_render_tri_strip_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, points_len uint32, points xcb_render_pointfix_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2207
-#define xcb_render_tri_strip(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, points_len uint32, points xcb_render_pointfix_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2218
-#define xcb_render_tri_strip_points(R xcb_render_tri_strip_request_t*) xcb_render_pointfix_t*
-
-//Location: /usr/include/xcb/render.h:2221
-#define xcb_render_tri_strip_points_length(R xcb_render_tri_strip_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2224
-#define xcb_render_tri_strip_points_iterator(R xcb_render_tri_strip_request_t*) xcb_render_pointfix_iterator_t
-
-//Location: /usr/include/xcb/render.h:2227
-#define xcb_render_tri_fan_sizeof(_buffer ptr, points_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:2242
-#define xcb_render_tri_fan_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, points_len uint32, points xcb_render_pointfix_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2261
-#define xcb_render_tri_fan(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, points_len uint32, points xcb_render_pointfix_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2272
-#define xcb_render_tri_fan_points(R xcb_render_tri_fan_request_t*) xcb_render_pointfix_t*
-
-//Location: /usr/include/xcb/render.h:2275
-#define xcb_render_tri_fan_points_length(R xcb_render_tri_fan_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2278
-#define xcb_render_tri_fan_points_iterator(R xcb_render_tri_fan_request_t*) xcb_render_pointfix_iterator_t
-
-//Location: /usr/include/xcb/render.h:2292
-#define xcb_render_create_glyph_set_checked(c ptr, gsid uint32, format uint32) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2305
-#define xcb_render_create_glyph_set(c ptr, gsid uint32, format uint32) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2321
-#define xcb_render_reference_glyph_set_checked(c ptr, gsid uint32, existing uint32) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2334
-#define xcb_render_reference_glyph_set(c ptr, gsid uint32, existing uint32) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2350
-#define xcb_render_free_glyph_set_checked(c ptr, glyphset uint32) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2362
-#define xcb_render_free_glyph_set(c ptr, glyphset uint32) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2366
-#define xcb_render_add_glyphs_sizeof(_buffer ptr, data_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:2381
-#define xcb_render_add_glyphs_checked(c ptr, glyphset uint32, glyphs_len uint32, glyphids uint32*, glyphs xcb_render_glyphinfo_t*, data_len uint32, data byte*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2398
-#define xcb_render_add_glyphs(c ptr, glyphset uint32, glyphs_len uint32, glyphids uint32*, glyphs xcb_render_glyphinfo_t*, data_len uint32, data byte*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2407
-#define xcb_render_add_glyphs_glyphids(R xcb_render_add_glyphs_request_t*) uint32*
-
-//Location: /usr/include/xcb/render.h:2410
-#define xcb_render_add_glyphs_glyphids_length(R xcb_render_add_glyphs_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2413
-#define xcb_render_add_glyphs_glyphids_end(R xcb_render_add_glyphs_request_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:2416
-#define xcb_render_add_glyphs_glyphs(R xcb_render_add_glyphs_request_t*) xcb_render_glyphinfo_t*
-
-//Location: /usr/include/xcb/render.h:2419
-#define xcb_render_add_glyphs_glyphs_length(R xcb_render_add_glyphs_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2422
-#define xcb_render_add_glyphs_glyphs_iterator(R xcb_render_add_glyphs_request_t*) xcb_render_glyphinfo_iterator_t
-
-//Location: /usr/include/xcb/render.h:2425
-#define xcb_render_add_glyphs_data(R xcb_render_add_glyphs_request_t*) byte*
-
-//Location: /usr/include/xcb/render.h:2428
-#define xcb_render_add_glyphs_data_length(R xcb_render_add_glyphs_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2431
-#define xcb_render_add_glyphs_data_end(R xcb_render_add_glyphs_request_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:2434
-#define xcb_render_free_glyphs_sizeof(_buffer ptr, glyphs_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:2449
-#define xcb_render_free_glyphs_checked(c ptr, glyphset uint32, glyphs_len uint32, glyphs uint32*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2463
-#define xcb_render_free_glyphs(c ptr, glyphset uint32, glyphs_len uint32, glyphs uint32*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2469
-#define xcb_render_free_glyphs_glyphs(R xcb_render_free_glyphs_request_t*) uint32*
-
-//Location: /usr/include/xcb/render.h:2472
-#define xcb_render_free_glyphs_glyphs_length(R xcb_render_free_glyphs_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2475
-#define xcb_render_free_glyphs_glyphs_end(R xcb_render_free_glyphs_request_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:2478
-#define xcb_render_composite_glyphs_8_sizeof(_buffer ptr, glyphcmds_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:2493
-#define xcb_render_composite_glyphs_8_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, glyphset uint32, src_x int16, src_y int16, glyphcmds_len uint32, glyphcmds byte*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2513
-#define xcb_render_composite_glyphs_8(c ptr, op byte, src uint32, dst uint32, mask_format uint32, glyphset uint32, src_x int16, src_y int16, glyphcmds_len uint32, glyphcmds byte*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2525
-#define xcb_render_composite_glyphs_8_glyphcmds(R xcb_render_composite_glyphs_8_request_t*) byte*
-
-//Location: /usr/include/xcb/render.h:2528
-#define xcb_render_composite_glyphs_8_glyphcmds_length(R xcb_render_composite_glyphs_8_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2531
-#define xcb_render_composite_glyphs_8_glyphcmds_end(R xcb_render_composite_glyphs_8_request_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:2534
-#define xcb_render_composite_glyphs_16_sizeof(_buffer ptr, glyphcmds_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:2549
-#define xcb_render_composite_glyphs_16_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, glyphset uint32, src_x int16, src_y int16, glyphcmds_len uint32, glyphcmds byte*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2569
-#define xcb_render_composite_glyphs_16(c ptr, op byte, src uint32, dst uint32, mask_format uint32, glyphset uint32, src_x int16, src_y int16, glyphcmds_len uint32, glyphcmds byte*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2581
-#define xcb_render_composite_glyphs_16_glyphcmds(R xcb_render_composite_glyphs_16_request_t*) byte*
-
-//Location: /usr/include/xcb/render.h:2584
-#define xcb_render_composite_glyphs_16_glyphcmds_length(R xcb_render_composite_glyphs_16_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2587
-#define xcb_render_composite_glyphs_16_glyphcmds_end(R xcb_render_composite_glyphs_16_request_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:2590
-#define xcb_render_composite_glyphs_32_sizeof(_buffer ptr, glyphcmds_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:2605
-#define xcb_render_composite_glyphs_32_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, glyphset uint32, src_x int16, src_y int16, glyphcmds_len uint32, glyphcmds byte*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2625
-#define xcb_render_composite_glyphs_32(c ptr, op byte, src uint32, dst uint32, mask_format uint32, glyphset uint32, src_x int16, src_y int16, glyphcmds_len uint32, glyphcmds byte*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2637
-#define xcb_render_composite_glyphs_32_glyphcmds(R xcb_render_composite_glyphs_32_request_t*) byte*
-
-//Location: /usr/include/xcb/render.h:2640
-#define xcb_render_composite_glyphs_32_glyphcmds_length(R xcb_render_composite_glyphs_32_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2643
-#define xcb_render_composite_glyphs_32_glyphcmds_end(R xcb_render_composite_glyphs_32_request_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:2646
-#define xcb_render_fill_rectangles_sizeof(_buffer ptr, rects_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:2661
-#define xcb_render_fill_rectangles_checked(c ptr, op byte, dst uint32, color xcb_render_color_t, rects_len uint32, rects xcb_rectangle_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2677
-#define xcb_render_fill_rectangles(c ptr, op byte, dst uint32, color xcb_render_color_t, rects_len uint32, rects xcb_rectangle_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2685
-#define xcb_render_fill_rectangles_rects(R xcb_render_fill_rectangles_request_t*) xcb_rectangle_t*
-
-//Location: /usr/include/xcb/render.h:2688
-#define xcb_render_fill_rectangles_rects_length(R xcb_render_fill_rectangles_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2691
-#define xcb_render_fill_rectangles_rects_iterator(R xcb_render_fill_rectangles_request_t*) xcb_rectangle_iterator_t
-
-//Location: /usr/include/xcb/render.h:2705
-#define xcb_render_create_cursor_checked(c ptr, cid uint32, source uint32, x uint16, y uint16) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2720
-#define xcb_render_create_cursor(c ptr, cid uint32, source uint32, x uint16, y uint16) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2735
-#define xcb_render_transform_next(i xcb_render_transform_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:2747
-#define xcb_render_transform_end(i xcb_render_transform_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:2761
-#define xcb_render_set_picture_transform_checked(c ptr, picture uint32, transform xcb_render_transform_t) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2774
-#define xcb_render_set_picture_transform(c ptr, picture uint32, transform xcb_render_transform_t) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2779
-#define xcb_render_query_filters_sizeof(_buffer ptr) int32
-
-//Location: /usr/include/xcb/render.h:2790
-#define xcb_render_query_filters(c ptr, drawable uint32) xcb_render_query_filters_cookie_t
-
-//Location: /usr/include/xcb/render.h:2805
-#define xcb_render_query_filters_unchecked(c ptr, drawable uint32) xcb_render_query_filters_cookie_t
-
-//Location: /usr/include/xcb/render.h:2809
-#define xcb_render_query_filters_aliases(R xcb_render_query_filters_reply_t*) uint16*
-
-//Location: /usr/include/xcb/render.h:2812
-#define xcb_render_query_filters_aliases_length(R xcb_render_query_filters_reply_t*) int32
-
-//Location: /usr/include/xcb/render.h:2815
-#define xcb_render_query_filters_aliases_end(R xcb_render_query_filters_reply_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:2818
-#define xcb_render_query_filters_filters_length(R xcb_render_query_filters_reply_t*) int32
-
-//Location: /usr/include/xcb/render.h:2821
-#define xcb_render_query_filters_filters_iterator(R xcb_render_query_filters_reply_t*) xcb_str_iterator_t
-
-//Location: /usr/include/xcb/render.h:2838
-#define xcb_render_query_filters_reply(c ptr, cookie xcb_render_query_filters_cookie_t, e xcb_generic_error_t**) xcb_render_query_filters_reply_t*
-
-//Location: /usr/include/xcb/render.h:2843
-#define xcb_render_set_picture_filter_sizeof(_buffer ptr, values_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:2858
-#define xcb_render_set_picture_filter_checked(c ptr, picture uint32, filter_len uint16, filter char*, values_len uint32, values int32*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2874
-#define xcb_render_set_picture_filter(c ptr, picture uint32, filter_len uint16, filter char*, values_len uint32, values int32*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2882
-#define xcb_render_set_picture_filter_filter(R xcb_render_set_picture_filter_request_t*) char*
-
-//Location: /usr/include/xcb/render.h:2885
-#define xcb_render_set_picture_filter_filter_length(R xcb_render_set_picture_filter_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2888
-#define xcb_render_set_picture_filter_filter_end(R xcb_render_set_picture_filter_request_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:2891
-#define xcb_render_set_picture_filter_values(R xcb_render_set_picture_filter_request_t*) int32*
-
-//Location: /usr/include/xcb/render.h:2894
-#define xcb_render_set_picture_filter_values_length(R xcb_render_set_picture_filter_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2897
-#define xcb_render_set_picture_filter_values_end(R xcb_render_set_picture_filter_request_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:2908
-#define xcb_render_animcursorelt_next(i xcb_render_animcursorelt_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:2920
-#define xcb_render_animcursorelt_end(i xcb_render_animcursorelt_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:2923
-#define xcb_render_create_anim_cursor_sizeof(_buffer ptr, cursors_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:2938
-#define xcb_render_create_anim_cursor_checked(c ptr, cid uint32, cursors_len uint32, cursors xcb_render_animcursorelt_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2952
-#define xcb_render_create_anim_cursor(c ptr, cid uint32, cursors_len uint32, cursors xcb_render_animcursorelt_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:2958
-#define xcb_render_create_anim_cursor_cursors(R xcb_render_create_anim_cursor_request_t*) xcb_render_animcursorelt_t*
-
-//Location: /usr/include/xcb/render.h:2961
-#define xcb_render_create_anim_cursor_cursors_length(R xcb_render_create_anim_cursor_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:2964
-#define xcb_render_create_anim_cursor_cursors_iterator(R xcb_render_create_anim_cursor_request_t*) xcb_render_animcursorelt_iterator_t
-
-//Location: /usr/include/xcb/render.h:2975
-#define xcb_render_spanfix_next(i xcb_render_spanfix_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:2987
-#define xcb_render_spanfix_end(i xcb_render_spanfix_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:2998
-#define xcb_render_trap_next(i xcb_render_trap_iterator_t*)
-
-//Location: /usr/include/xcb/render.h:3010
-#define xcb_render_trap_end(i xcb_render_trap_iterator_t) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:3013
-#define xcb_render_add_traps_sizeof(_buffer ptr, traps_len uint32) int32
-
-//Location: /usr/include/xcb/render.h:3028
-#define xcb_render_add_traps_checked(c ptr, picture uint32, x_off int16, y_off int16, traps_len uint32, traps xcb_render_trap_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:3044
-#define xcb_render_add_traps(c ptr, picture uint32, x_off int16, y_off int16, traps_len uint32, traps xcb_render_trap_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:3052
-#define xcb_render_add_traps_traps(R xcb_render_add_traps_request_t*) xcb_render_trap_t*
-
-//Location: /usr/include/xcb/render.h:3055
-#define xcb_render_add_traps_traps_length(R xcb_render_add_traps_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:3058
-#define xcb_render_add_traps_traps_iterator(R xcb_render_add_traps_request_t*) xcb_render_trap_iterator_t
-
-//Location: /usr/include/xcb/render.h:3072
-#define xcb_render_create_solid_fill_checked(c ptr, picture uint32, color xcb_render_color_t) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:3085
-#define xcb_render_create_solid_fill(c ptr, picture uint32, color xcb_render_color_t) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:3090
-#define xcb_render_create_linear_gradient_sizeof(_buffer ptr) int32
-
-//Location: /usr/include/xcb/render.h:3104
-#define xcb_render_create_linear_gradient_checked(c ptr, picture uint32, p1 xcb_render_pointfix_t, p2 xcb_render_pointfix_t, num_stops uint32, stops int32*, colors xcb_render_color_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:3121
-#define xcb_render_create_linear_gradient(c ptr, picture uint32, p1 xcb_render_pointfix_t, p2 xcb_render_pointfix_t, num_stops uint32, stops int32*, colors xcb_render_color_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:3130
-#define xcb_render_create_linear_gradient_stops(R xcb_render_create_linear_gradient_request_t*) int32*
-
-//Location: /usr/include/xcb/render.h:3133
-#define xcb_render_create_linear_gradient_stops_length(R xcb_render_create_linear_gradient_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:3136
-#define xcb_render_create_linear_gradient_stops_end(R xcb_render_create_linear_gradient_request_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:3139
-#define xcb_render_create_linear_gradient_colors(R xcb_render_create_linear_gradient_request_t*) xcb_render_color_t*
-
-//Location: /usr/include/xcb/render.h:3142
-#define xcb_render_create_linear_gradient_colors_length(R xcb_render_create_linear_gradient_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:3145
-#define xcb_render_create_linear_gradient_colors_iterator(R xcb_render_create_linear_gradient_request_t*) xcb_render_color_iterator_t
-
-//Location: /usr/include/xcb/render.h:3148
-#define xcb_render_create_radial_gradient_sizeof(_buffer ptr) int32
-
-//Location: /usr/include/xcb/render.h:3162
-#define xcb_render_create_radial_gradient_checked(c ptr, picture uint32, inner xcb_render_pointfix_t, outer xcb_render_pointfix_t, inner_radius int32, outer_radius int32, num_stops uint32, stops int32*, colors xcb_render_color_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:3181
-#define xcb_render_create_radial_gradient(c ptr, picture uint32, inner xcb_render_pointfix_t, outer xcb_render_pointfix_t, inner_radius int32, outer_radius int32, num_stops uint32, stops int32*, colors xcb_render_color_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:3192
-#define xcb_render_create_radial_gradient_stops(R xcb_render_create_radial_gradient_request_t*) int32*
-
-//Location: /usr/include/xcb/render.h:3195
-#define xcb_render_create_radial_gradient_stops_length(R xcb_render_create_radial_gradient_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:3198
-#define xcb_render_create_radial_gradient_stops_end(R xcb_render_create_radial_gradient_request_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:3201
-#define xcb_render_create_radial_gradient_colors(R xcb_render_create_radial_gradient_request_t*) xcb_render_color_t*
-
-//Location: /usr/include/xcb/render.h:3204
-#define xcb_render_create_radial_gradient_colors_length(R xcb_render_create_radial_gradient_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:3207
-#define xcb_render_create_radial_gradient_colors_iterator(R xcb_render_create_radial_gradient_request_t*) xcb_render_color_iterator_t
-
-//Location: /usr/include/xcb/render.h:3210
-#define xcb_render_create_conical_gradient_sizeof(_buffer ptr) int32
-
-//Location: /usr/include/xcb/render.h:3224
-#define xcb_render_create_conical_gradient_checked(c ptr, picture uint32, center xcb_render_pointfix_t, angle int32, num_stops uint32, stops int32*, colors xcb_render_color_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:3241
-#define xcb_render_create_conical_gradient(c ptr, picture uint32, center xcb_render_pointfix_t, angle int32, num_stops uint32, stops int32*, colors xcb_render_color_t*) xcb_void_cookie_t
-
-//Location: /usr/include/xcb/render.h:3250
-#define xcb_render_create_conical_gradient_stops(R xcb_render_create_conical_gradient_request_t*) int32*
-
-//Location: /usr/include/xcb/render.h:3253
-#define xcb_render_create_conical_gradient_stops_length(R xcb_render_create_conical_gradient_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:3256
-#define xcb_render_create_conical_gradient_stops_end(R xcb_render_create_conical_gradient_request_t*) xcb_generic_iterator_t
-
-//Location: /usr/include/xcb/render.h:3259
-#define xcb_render_create_conical_gradient_colors(R xcb_render_create_conical_gradient_request_t*) xcb_render_color_t*
-
-//Location: /usr/include/xcb/render.h:3262
-#define xcb_render_create_conical_gradient_colors_length(R xcb_render_create_conical_gradient_request_t*) int32
-
-//Location: /usr/include/xcb/render.h:3265
-#define xcb_render_create_conical_gradient_colors_iterator(R xcb_render_create_conical_gradient_request_t*) xcb_render_color_iterator_t
+// //Location: /usr/include/xcb/xcb_icccm.h:834
+// #define xcb_icccm_wm_hints_set_iconic(hints xcb_icccm_wm_hints_t*)
+
+// //Location: /usr/include/xcb/xcb_icccm.h:840
+// #define xcb_icccm_wm_hints_set_normal(hints xcb_icccm_wm_hints_t*)
+
+// //Location: /usr/include/xcb/xcb_icccm.h:846
+// #define xcb_icccm_wm_hints_set_withdrawn(hints xcb_icccm_wm_hints_t*)
+
+// //Location: /usr/include/xcb/xcb_icccm.h:852
+// #define xcb_icccm_wm_hints_set_none(hints xcb_icccm_wm_hints_t*)
+
+// //Location: /usr/include/xcb/xcb_icccm.h:859
+// #define xcb_icccm_wm_hints_set_icon_pixmap(hints xcb_icccm_wm_hints_t*, icon_pixmap uint32)
+
+// //Location: /usr/include/xcb/xcb_icccm.h:867
+// #define xcb_icccm_wm_hints_set_icon_mask(hints xcb_icccm_wm_hints_t*, icon_mask uint32)
+
+// //Location: /usr/include/xcb/xcb_icccm.h:874
+// #define xcb_icccm_wm_hints_set_icon_window(hints xcb_icccm_wm_hints_t*, icon_window uint32)
+
+// //Location: /usr/include/xcb/xcb_icccm.h:882
+// #define xcb_icccm_wm_hints_set_window_group(hints xcb_icccm_wm_hints_t*, window_group uint32)
+
+// //Location: /usr/include/xcb/xcb_icccm.h:889
+// #define xcb_icccm_wm_hints_set_urgency(hints xcb_icccm_wm_hints_t*)
+
+// //Location: /usr/include/xcb/xcb_icccm.h:897
+// #define xcb_icccm_set_wm_hints_checked(c ptr, window uint32, hints xcb_icccm_wm_hints_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/xcb_icccm.h:904
+// #define xcb_icccm_set_wm_hints(c ptr, window uint32, hints xcb_icccm_wm_hints_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/xcb_icccm.h:914
+// #define xcb_icccm_get_wm_hints(c ptr, window uint32) xcb_get_property_cookie_t
+
+// //Location: /usr/include/xcb/xcb_icccm.h:920
+// #define xcb_icccm_get_wm_hints_unchecked(c ptr, window uint32) xcb_get_property_cookie_t
+
+// //Location: /usr/include/xcb/xcb_icccm.h:929
+// #define xcb_icccm_get_wm_hints_from_reply(hints xcb_icccm_wm_hints_t*, reply xcb_get_property_reply_t*) byte
+
+// //Location: /usr/include/xcb/xcb_icccm.h:945
+// #define xcb_icccm_get_wm_hints_reply(c ptr, cookie xcb_get_property_cookie_t, hints xcb_icccm_wm_hints_t*, e xcb_generic_error_t**) byte
+
+// //Location: /usr/include/xcb/xcb_icccm.h:960
+// #define xcb_icccm_set_wm_protocols_checked(c ptr, window uint32, wm_protocols uint32, list_len uint32, list uint32*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/xcb_icccm.h:969
+// #define xcb_icccm_set_wm_protocols(c ptr, window uint32, wm_protocols uint32, list_len uint32, list uint32*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/xcb_icccm.h:978
+// struct xcb_icccm_get_wm_protocols_reply_t {
+// 	atoms_len: uint32
+// 	atoms: uint32*
+// 	_reply: xcb_get_property_reply_t*
+// }
+
+// //Location: /usr/include/xcb/xcb_icccm.h:994
+// #define xcb_icccm_get_wm_protocols(c ptr, window uint32, wm_protocol_atom uint32) xcb_get_property_cookie_t
+
+// //Location: /usr/include/xcb/xcb_icccm.h:1001
+// #define xcb_icccm_get_wm_protocols_unchecked(c ptr, window uint32, wm_protocol_atom uint32) xcb_get_property_cookie_t
+
+// //Location: /usr/include/xcb/xcb_icccm.h:1014
+// #define xcb_icccm_get_wm_protocols_from_reply(reply xcb_get_property_reply_t*, protocols xcb_icccm_get_wm_protocols_reply_t*) byte
+
+// //Location: /usr/include/xcb/xcb_icccm.h:1029
+// #define xcb_icccm_get_wm_protocols_reply(c ptr, cookie xcb_get_property_cookie_t, protocols xcb_icccm_get_wm_protocols_reply_t*, e xcb_generic_error_t**) byte
+
+// //Location: /usr/include/xcb/xcb_icccm.h:1039
+// #define xcb_icccm_get_wm_protocols_reply_wipe(protocols xcb_icccm_get_wm_protocols_reply_t*)
+
+// //Enum: xcb_render_pict_type_t
+// //Location: /usr/include/xcb/render.h:19
+// #define xcb_render_pict_type_t uint32
+// const XCB_RENDER_PICT_TYPE_INDEXED = <xcb_render_pict_type_t> 0
+// const XCB_RENDER_PICT_TYPE_DIRECT = <xcb_render_pict_type_t> 1
+
+// //Enum: xcb_render_picture_enum_t
+// //Location: /usr/include/xcb/render.h:24
+// #define xcb_render_picture_enum_t uint32
+// const XCB_RENDER_PICTURE_NONE = <xcb_render_picture_enum_t> 0
+
+// //Enum: xcb_render_pict_op_t
+// //Location: /usr/include/xcb/render.h:28
+// #define xcb_render_pict_op_t uint32
+// const XCB_RENDER_PICT_OP_CLEAR = <xcb_render_pict_op_t> 0
+// const XCB_RENDER_PICT_OP_SRC = <xcb_render_pict_op_t> 1
+// const XCB_RENDER_PICT_OP_DST = <xcb_render_pict_op_t> 2
+// const XCB_RENDER_PICT_OP_OVER = <xcb_render_pict_op_t> 3
+// const XCB_RENDER_PICT_OP_OVER_REVERSE = <xcb_render_pict_op_t> 4
+// const XCB_RENDER_PICT_OP_IN = <xcb_render_pict_op_t> 5
+// const XCB_RENDER_PICT_OP_IN_REVERSE = <xcb_render_pict_op_t> 6
+// const XCB_RENDER_PICT_OP_OUT = <xcb_render_pict_op_t> 7
+// const XCB_RENDER_PICT_OP_OUT_REVERSE = <xcb_render_pict_op_t> 8
+// const XCB_RENDER_PICT_OP_ATOP = <xcb_render_pict_op_t> 9
+// const XCB_RENDER_PICT_OP_ATOP_REVERSE = <xcb_render_pict_op_t> 10
+// const XCB_RENDER_PICT_OP_XOR = <xcb_render_pict_op_t> 11
+// const XCB_RENDER_PICT_OP_ADD = <xcb_render_pict_op_t> 12
+// const XCB_RENDER_PICT_OP_SATURATE = <xcb_render_pict_op_t> 13
+// const XCB_RENDER_PICT_OP_DISJOINT_CLEAR = <xcb_render_pict_op_t> 16
+// const XCB_RENDER_PICT_OP_DISJOINT_SRC = <xcb_render_pict_op_t> 17
+// const XCB_RENDER_PICT_OP_DISJOINT_DST = <xcb_render_pict_op_t> 18
+// const XCB_RENDER_PICT_OP_DISJOINT_OVER = <xcb_render_pict_op_t> 19
+// const XCB_RENDER_PICT_OP_DISJOINT_OVER_REVERSE = <xcb_render_pict_op_t> 20
+// const XCB_RENDER_PICT_OP_DISJOINT_IN = <xcb_render_pict_op_t> 21
+// const XCB_RENDER_PICT_OP_DISJOINT_IN_REVERSE = <xcb_render_pict_op_t> 22
+// const XCB_RENDER_PICT_OP_DISJOINT_OUT = <xcb_render_pict_op_t> 23
+// const XCB_RENDER_PICT_OP_DISJOINT_OUT_REVERSE = <xcb_render_pict_op_t> 24
+// const XCB_RENDER_PICT_OP_DISJOINT_ATOP = <xcb_render_pict_op_t> 25
+// const XCB_RENDER_PICT_OP_DISJOINT_ATOP_REVERSE = <xcb_render_pict_op_t> 26
+// const XCB_RENDER_PICT_OP_DISJOINT_XOR = <xcb_render_pict_op_t> 27
+// const XCB_RENDER_PICT_OP_CONJOINT_CLEAR = <xcb_render_pict_op_t> 32
+// const XCB_RENDER_PICT_OP_CONJOINT_SRC = <xcb_render_pict_op_t> 33
+// const XCB_RENDER_PICT_OP_CONJOINT_DST = <xcb_render_pict_op_t> 34
+// const XCB_RENDER_PICT_OP_CONJOINT_OVER = <xcb_render_pict_op_t> 35
+// const XCB_RENDER_PICT_OP_CONJOINT_OVER_REVERSE = <xcb_render_pict_op_t> 36
+// const XCB_RENDER_PICT_OP_CONJOINT_IN = <xcb_render_pict_op_t> 37
+// const XCB_RENDER_PICT_OP_CONJOINT_IN_REVERSE = <xcb_render_pict_op_t> 38
+// const XCB_RENDER_PICT_OP_CONJOINT_OUT = <xcb_render_pict_op_t> 39
+// const XCB_RENDER_PICT_OP_CONJOINT_OUT_REVERSE = <xcb_render_pict_op_t> 40
+// const XCB_RENDER_PICT_OP_CONJOINT_ATOP = <xcb_render_pict_op_t> 41
+// const XCB_RENDER_PICT_OP_CONJOINT_ATOP_REVERSE = <xcb_render_pict_op_t> 42
+// const XCB_RENDER_PICT_OP_CONJOINT_XOR = <xcb_render_pict_op_t> 43
+// const XCB_RENDER_PICT_OP_MULTIPLY = <xcb_render_pict_op_t> 48
+// const XCB_RENDER_PICT_OP_SCREEN = <xcb_render_pict_op_t> 49
+// const XCB_RENDER_PICT_OP_OVERLAY = <xcb_render_pict_op_t> 50
+// const XCB_RENDER_PICT_OP_DARKEN = <xcb_render_pict_op_t> 51
+// const XCB_RENDER_PICT_OP_LIGHTEN = <xcb_render_pict_op_t> 52
+// const XCB_RENDER_PICT_OP_COLOR_DODGE = <xcb_render_pict_op_t> 53
+// const XCB_RENDER_PICT_OP_COLOR_BURN = <xcb_render_pict_op_t> 54
+// const XCB_RENDER_PICT_OP_HARD_LIGHT = <xcb_render_pict_op_t> 55
+// const XCB_RENDER_PICT_OP_SOFT_LIGHT = <xcb_render_pict_op_t> 56
+// const XCB_RENDER_PICT_OP_DIFFERENCE = <xcb_render_pict_op_t> 57
+// const XCB_RENDER_PICT_OP_EXCLUSION = <xcb_render_pict_op_t> 58
+// const XCB_RENDER_PICT_OP_HSL_HUE = <xcb_render_pict_op_t> 59
+// const XCB_RENDER_PICT_OP_HSL_SATURATION = <xcb_render_pict_op_t> 60
+// const XCB_RENDER_PICT_OP_HSL_COLOR = <xcb_render_pict_op_t> 61
+// const XCB_RENDER_PICT_OP_HSL_LUMINOSITY = <xcb_render_pict_op_t> 62
+
+// //Enum: xcb_render_poly_edge_t
+// //Location: /usr/include/xcb/render.h:84
+// #define xcb_render_poly_edge_t uint32
+// const XCB_RENDER_POLY_EDGE_SHARP = <xcb_render_poly_edge_t> 0
+// const XCB_RENDER_POLY_EDGE_SMOOTH = <xcb_render_poly_edge_t> 1
+
+// //Enum: xcb_render_poly_mode_t
+// //Location: /usr/include/xcb/render.h:89
+// #define xcb_render_poly_mode_t uint32
+// const XCB_RENDER_POLY_MODE_PRECISE = <xcb_render_poly_mode_t> 0
+// const XCB_RENDER_POLY_MODE_IMPRECISE = <xcb_render_poly_mode_t> 1
+
+// //Enum: xcb_render_cp_t
+// //Location: /usr/include/xcb/render.h:94
+// #define xcb_render_cp_t uint32
+// const XCB_RENDER_CP_REPEAT = <xcb_render_cp_t> 1
+// const XCB_RENDER_CP_ALPHA_MAP = <xcb_render_cp_t> 2
+// const XCB_RENDER_CP_ALPHA_X_ORIGIN = <xcb_render_cp_t> 4
+// const XCB_RENDER_CP_ALPHA_Y_ORIGIN = <xcb_render_cp_t> 8
+// const XCB_RENDER_CP_CLIP_X_ORIGIN = <xcb_render_cp_t> 16
+// const XCB_RENDER_CP_CLIP_Y_ORIGIN = <xcb_render_cp_t> 32
+// const XCB_RENDER_CP_CLIP_MASK = <xcb_render_cp_t> 64
+// const XCB_RENDER_CP_GRAPHICS_EXPOSURE = <xcb_render_cp_t> 128
+// const XCB_RENDER_CP_SUBWINDOW_MODE = <xcb_render_cp_t> 256
+// const XCB_RENDER_CP_POLY_EDGE = <xcb_render_cp_t> 512
+// const XCB_RENDER_CP_POLY_MODE = <xcb_render_cp_t> 1024
+// const XCB_RENDER_CP_DITHER = <xcb_render_cp_t> 2048
+// const XCB_RENDER_CP_COMPONENT_ALPHA = <xcb_render_cp_t> 4096
+
+// //Enum: xcb_render_sub_pixel_t
+// //Location: /usr/include/xcb/render.h:110
+// #define xcb_render_sub_pixel_t uint32
+// const XCB_RENDER_SUB_PIXEL_UNKNOWN = <xcb_render_sub_pixel_t> 0
+// const XCB_RENDER_SUB_PIXEL_HORIZONTAL_RGB = <xcb_render_sub_pixel_t> 1
+// const XCB_RENDER_SUB_PIXEL_HORIZONTAL_BGR = <xcb_render_sub_pixel_t> 2
+// const XCB_RENDER_SUB_PIXEL_VERTICAL_RGB = <xcb_render_sub_pixel_t> 3
+// const XCB_RENDER_SUB_PIXEL_VERTICAL_BGR = <xcb_render_sub_pixel_t> 4
+// const XCB_RENDER_SUB_PIXEL_NONE = <xcb_render_sub_pixel_t> 5
+
+// //Enum: xcb_render_repeat_t
+// //Location: /usr/include/xcb/render.h:119
+// #define xcb_render_repeat_t uint32
+// const XCB_RENDER_REPEAT_NONE = <xcb_render_repeat_t> 0
+// const XCB_RENDER_REPEAT_NORMAL = <xcb_render_repeat_t> 1
+// const XCB_RENDER_REPEAT_PAD = <xcb_render_repeat_t> 2
+// const XCB_RENDER_REPEAT_REFLECT = <xcb_render_repeat_t> 3
+
+// //Location: /usr/include/xcb/render.h:131
+// struct xcb_render_glyph_iterator_t {
+// 	data: uint32*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:142
+// struct xcb_render_glyphset_iterator_t {
+// 	data: uint32*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:153
+// struct xcb_render_picture_iterator_t {
+// 	data: uint32*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:164
+// struct xcb_render_pictformat_iterator_t {
+// 	data: uint32*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:175
+// struct xcb_render_fixed_iterator_t {
+// 	data: int32*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:187
+// struct xcb_render_pict_format_error_t {
+// 	response_type: byte
+// 	error_code: byte
+// 	sequence: uint16
+// 	bad_value: uint32
+// 	minor_opcode: uint16
+// 	major_opcode: byte
+// }
+
+// //Location: /usr/include/xcb/render.h:202
+// struct xcb_render_picture_error_t {
+// 	response_type: byte
+// 	error_code: byte
+// 	sequence: uint16
+// 	bad_value: uint32
+// 	minor_opcode: uint16
+// 	major_opcode: byte
+// }
+
+// //Location: /usr/include/xcb/render.h:217
+// struct xcb_render_pict_op_error_t {
+// 	response_type: byte
+// 	error_code: byte
+// 	sequence: uint16
+// 	bad_value: uint32
+// 	minor_opcode: uint16
+// 	major_opcode: byte
+// }
+
+// //Location: /usr/include/xcb/render.h:232
+// struct xcb_render_glyph_set_error_t {
+// 	response_type: byte
+// 	error_code: byte
+// 	sequence: uint16
+// 	bad_value: uint32
+// 	minor_opcode: uint16
+// 	major_opcode: byte
+// }
+
+// //Location: /usr/include/xcb/render.h:247
+// struct xcb_render_glyph_error_t {
+// 	response_type: byte
+// 	error_code: byte
+// 	sequence: uint16
+// 	bad_value: uint32
+// 	minor_opcode: uint16
+// 	major_opcode: byte
+// }
+
+// //Location: /usr/include/xcb/render.h:259
+// struct xcb_render_directformat_t {
+// 	red_shift: uint16
+// 	red_mask: uint16
+// 	green_shift: uint16
+// 	green_mask: uint16
+// 	blue_shift: uint16
+// 	blue_mask: uint16
+// 	alpha_shift: uint16
+// 	alpha_mask: uint16
+// }
+
+// //Location: /usr/include/xcb/render.h:273
+// struct xcb_render_directformat_iterator_t {
+// 	data: xcb_render_directformat_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:282
+// struct xcb_render_pictforminfo_t {
+// 	id: uint32
+// 	type: byte
+// 	depth: byte
+// 	pad0: buffer:2
+// 	direct: xcb_render_directformat_t
+// 	colormap: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:294
+// struct xcb_render_pictforminfo_iterator_t {
+// 	data: xcb_render_pictforminfo_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:303
+// struct xcb_render_pictvisual_t {
+// 	visual: uint32
+// 	format: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:311
+// struct xcb_render_pictvisual_iterator_t {
+// 	data: xcb_render_pictvisual_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:320
+// struct xcb_render_pictdepth_t {
+// 	depth: byte
+// 	pad0: byte
+// 	num_visuals: uint16
+// 	pad1: buffer:4
+// }
+
+// //Location: /usr/include/xcb/render.h:330
+// struct xcb_render_pictdepth_iterator_t {
+// 	data: xcb_render_pictdepth_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:339
+// struct xcb_render_pictscreen_t {
+// 	num_depths: uint32
+// 	fallback: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:347
+// struct xcb_render_pictscreen_iterator_t {
+// 	data: xcb_render_pictscreen_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:356
+// struct xcb_render_indexvalue_t {
+// 	pixel: uint32
+// 	red: uint16
+// 	green: uint16
+// 	blue: uint16
+// 	alpha: uint16
+// }
+
+// //Location: /usr/include/xcb/render.h:367
+// struct xcb_render_indexvalue_iterator_t {
+// 	data: xcb_render_indexvalue_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:376
+// struct xcb_render_color_t {
+// 	red: uint16
+// 	green: uint16
+// 	blue: uint16
+// 	alpha: uint16
+// }
+
+// //Location: /usr/include/xcb/render.h:386
+// struct xcb_render_color_iterator_t {
+// 	data: xcb_render_color_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:395
+// struct xcb_render_pointfix_t {
+// 	x: int32
+// 	y: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:403
+// struct xcb_render_pointfix_iterator_t {
+// 	data: xcb_render_pointfix_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:412
+// struct xcb_render_linefix_t {
+// 	p1: xcb_render_pointfix_t
+// 	p2: xcb_render_pointfix_t
+// }
+
+// //Location: /usr/include/xcb/render.h:420
+// struct xcb_render_linefix_iterator_t {
+// 	data: xcb_render_linefix_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:429
+// struct xcb_render_triangle_t {
+// 	p1: xcb_render_pointfix_t
+// 	p2: xcb_render_pointfix_t
+// 	p3: xcb_render_pointfix_t
+// }
+
+// //Location: /usr/include/xcb/render.h:438
+// struct xcb_render_triangle_iterator_t {
+// 	data: xcb_render_triangle_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:447
+// struct xcb_render_trapezoid_t {
+// 	top: int32
+// 	bottom: int32
+// 	left: xcb_render_linefix_t
+// 	right: xcb_render_linefix_t
+// }
+
+// //Location: /usr/include/xcb/render.h:457
+// struct xcb_render_trapezoid_iterator_t {
+// 	data: xcb_render_trapezoid_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:466
+// struct xcb_render_glyphinfo_t {
+// 	width: uint16
+// 	height: uint16
+// 	x: int16
+// 	y: int16
+// 	x_off: int16
+// 	y_off: int16
+// }
+
+// //Location: /usr/include/xcb/render.h:478
+// struct xcb_render_glyphinfo_iterator_t {
+// 	data: xcb_render_glyphinfo_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:487
+// struct xcb_render_query_version_cookie_t {
+// 	sequence: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:497
+// struct xcb_render_query_version_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	client_major_version: uint32
+// 	client_minor_version: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:508
+// struct xcb_render_query_version_reply_t {
+// 	response_type: byte
+// 	pad0: byte
+// 	sequence: uint16
+// 	length: uint32
+// 	major_version: uint32
+// 	minor_version: uint32
+// 	pad1: buffer:16
+// }
+
+// //Location: /usr/include/xcb/render.h:521
+// struct xcb_render_query_pict_formats_cookie_t {
+// 	sequence: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:531
+// struct xcb_render_query_pict_formats_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// }
+
+// //Location: /usr/include/xcb/render.h:540
+// struct xcb_render_query_pict_formats_reply_t {
+// 	response_type: byte
+// 	pad0: byte
+// 	sequence: uint16
+// 	length: uint32
+// 	num_formats: uint32
+// 	num_screens: uint32
+// 	num_depths: uint32
+// 	num_visuals: uint32
+// 	num_subpixel: uint32
+// 	pad1: buffer:4
+// }
+
+// //Location: /usr/include/xcb/render.h:556
+// struct xcb_render_query_pict_index_values_cookie_t {
+// 	sequence: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:566
+// struct xcb_render_query_pict_index_values_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	format: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:576
+// struct xcb_render_query_pict_index_values_reply_t {
+// 	response_type: byte
+// 	pad0: byte
+// 	sequence: uint16
+// 	length: uint32
+// 	num_values: uint32
+// 	pad1: buffer:20
+// }
+
+// //Location: /usr/include/xcb/render.h:588
+// struct xcb_render_create_picture_value_list_t {
+// 	repeat: uint32
+// 	alphamap: uint32
+// 	alphaxorigin: int32
+// 	alphayorigin: int32
+// 	clipxorigin: int32
+// 	clipyorigin: int32
+// 	clipmask: uint32
+// 	graphicsexposure: uint32
+// 	subwindowmode: uint32
+// 	polyedge: uint32
+// 	polymode: uint32
+// 	dither: uint32
+// 	componentalpha: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:610
+// struct xcb_render_create_picture_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	pid: uint32
+// 	drawable: uint32
+// 	format: uint32
+// 	value_mask: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:623
+// struct xcb_render_change_picture_value_list_t {
+// 	repeat: uint32
+// 	alphamap: uint32
+// 	alphaxorigin: int32
+// 	alphayorigin: int32
+// 	clipxorigin: int32
+// 	clipyorigin: int32
+// 	clipmask: uint32
+// 	graphicsexposure: uint32
+// 	subwindowmode: uint32
+// 	polyedge: uint32
+// 	polymode: uint32
+// 	dither: uint32
+// 	componentalpha: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:645
+// struct xcb_render_change_picture_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	picture: uint32
+// 	value_mask: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:659
+// struct xcb_render_set_picture_clip_rectangles_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	picture: uint32
+// 	clip_x_origin: int16
+// 	clip_y_origin: int16
+// }
+
+// //Location: /usr/include/xcb/render.h:674
+// struct xcb_render_free_picture_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	picture: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:687
+// struct xcb_render_composite_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	op: byte
+// 	pad0: buffer:3
+// 	src: uint32
+// 	mask: uint32
+// 	dst: uint32
+// 	src_x: int16
+// 	src_y: int16
+// 	mask_x: int16
+// 	mask_y: int16
+// 	dst_x: int16
+// 	dst_y: int16
+// 	width: uint16
+// 	height: uint16
+// }
+
+// //Location: /usr/include/xcb/render.h:712
+// struct xcb_render_trapezoids_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	op: byte
+// 	pad0: buffer:3
+// 	src: uint32
+// 	dst: uint32
+// 	mask_format: uint32
+// 	src_x: int16
+// 	src_y: int16
+// }
+
+// //Location: /usr/include/xcb/render.h:731
+// struct xcb_render_triangles_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	op: byte
+// 	pad0: buffer:3
+// 	src: uint32
+// 	dst: uint32
+// 	mask_format: uint32
+// 	src_x: int16
+// 	src_y: int16
+// }
+
+// //Location: /usr/include/xcb/render.h:750
+// struct xcb_render_tri_strip_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	op: byte
+// 	pad0: buffer:3
+// 	src: uint32
+// 	dst: uint32
+// 	mask_format: uint32
+// 	src_x: int16
+// 	src_y: int16
+// }
+
+// //Location: /usr/include/xcb/render.h:769
+// struct xcb_render_tri_fan_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	op: byte
+// 	pad0: buffer:3
+// 	src: uint32
+// 	dst: uint32
+// 	mask_format: uint32
+// 	src_x: int16
+// 	src_y: int16
+// }
+
+// //Location: /usr/include/xcb/render.h:788
+// struct xcb_render_create_glyph_set_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	gsid: uint32
+// 	format: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:802
+// struct xcb_render_reference_glyph_set_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	gsid: uint32
+// 	existing: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:816
+// struct xcb_render_free_glyph_set_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	glyphset: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:829
+// struct xcb_render_add_glyphs_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	glyphset: uint32
+// 	glyphs_len: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:843
+// struct xcb_render_free_glyphs_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	glyphset: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:856
+// struct xcb_render_composite_glyphs_8_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	op: byte
+// 	pad0: buffer:3
+// 	src: uint32
+// 	dst: uint32
+// 	mask_format: uint32
+// 	glyphset: uint32
+// 	src_x: int16
+// 	src_y: int16
+// }
+
+// //Location: /usr/include/xcb/render.h:876
+// struct xcb_render_composite_glyphs_16_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	op: byte
+// 	pad0: buffer:3
+// 	src: uint32
+// 	dst: uint32
+// 	mask_format: uint32
+// 	glyphset: uint32
+// 	src_x: int16
+// 	src_y: int16
+// }
+
+// //Location: /usr/include/xcb/render.h:896
+// struct xcb_render_composite_glyphs_32_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	op: byte
+// 	pad0: buffer:3
+// 	src: uint32
+// 	dst: uint32
+// 	mask_format: uint32
+// 	glyphset: uint32
+// 	src_x: int16
+// 	src_y: int16
+// }
+
+// //Location: /usr/include/xcb/render.h:916
+// struct xcb_render_fill_rectangles_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	op: byte
+// 	pad0: buffer:3
+// 	dst: uint32
+// 	color: xcb_render_color_t
+// }
+
+// //Location: /usr/include/xcb/render.h:932
+// struct xcb_render_create_cursor_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	cid: uint32
+// 	source: uint32
+// 	x: uint16
+// 	y: uint16
+// }
+
+// //Location: /usr/include/xcb/render.h:945
+// struct xcb_render_transform_t {
+// 	matrix11: int32
+// 	matrix12: int32
+// 	matrix13: int32
+// 	matrix21: int32
+// 	matrix22: int32
+// 	matrix23: int32
+// 	matrix31: int32
+// 	matrix32: int32
+// 	matrix33: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:960
+// struct xcb_render_transform_iterator_t {
+// 	data: xcb_render_transform_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:972
+// struct xcb_render_set_picture_transform_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	picture: uint32
+// 	transform: xcb_render_transform_t
+// }
+
+// //Location: /usr/include/xcb/render.h:983
+// struct xcb_render_query_filters_cookie_t {
+// 	sequence: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:993
+// struct xcb_render_query_filters_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	drawable: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:1003
+// struct xcb_render_query_filters_reply_t {
+// 	response_type: byte
+// 	pad0: byte
+// 	sequence: uint16
+// 	length: uint32
+// 	num_aliases: uint32
+// 	num_filters: uint32
+// 	pad1: buffer:16
+// }
+
+// //Location: /usr/include/xcb/render.h:1019
+// struct xcb_render_set_picture_filter_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	picture: uint32
+// 	filter_len: uint16
+// 	pad0: buffer:2
+// }
+
+// //Location: /usr/include/xcb/render.h:1031
+// struct xcb_render_animcursorelt_t {
+// 	cursor: uint32
+// 	delay: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:1039
+// struct xcb_render_animcursorelt_iterator_t {
+// 	data: xcb_render_animcursorelt_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:1051
+// struct xcb_render_create_anim_cursor_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	cid: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:1061
+// struct xcb_render_spanfix_t {
+// 	l: int32
+// 	r: int32
+// 	y: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:1070
+// struct xcb_render_spanfix_iterator_t {
+// 	data: xcb_render_spanfix_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:1079
+// struct xcb_render_trap_t {
+// 	top: xcb_render_spanfix_t
+// 	bot: xcb_render_spanfix_t
+// }
+
+// //Location: /usr/include/xcb/render.h:1087
+// struct xcb_render_trap_iterator_t {
+// 	data: xcb_render_trap_t*
+// 	rem: int32
+// 	index: int32
+// }
+
+// //Location: /usr/include/xcb/render.h:1099
+// struct xcb_render_add_traps_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	picture: uint32
+// 	x_off: int16
+// 	y_off: int16
+// }
+
+// //Location: /usr/include/xcb/render.h:1114
+// struct xcb_render_create_solid_fill_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	picture: uint32
+// 	color: xcb_render_color_t
+// }
+
+// //Location: /usr/include/xcb/render.h:1128
+// struct xcb_render_create_linear_gradient_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	picture: uint32
+// 	p1: xcb_render_pointfix_t
+// 	p2: xcb_render_pointfix_t
+// 	num_stops: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:1144
+// struct xcb_render_create_radial_gradient_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	picture: uint32
+// 	inner: xcb_render_pointfix_t
+// 	outer: xcb_render_pointfix_t
+// 	inner_radius: int32
+// 	outer_radius: int32
+// 	num_stops: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:1162
+// struct xcb_render_create_conical_gradient_request_t {
+// 	major_opcode: byte
+// 	minor_opcode: byte
+// 	length: uint16
+// 	picture: uint32
+// 	center: xcb_render_pointfix_t
+// 	angle: int32
+// 	num_stops: uint32
+// }
+
+// //Location: /usr/include/xcb/render.h:1188
+// #define xcb_render_glyph_next(i xcb_render_glyph_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1200
+// #define xcb_render_glyph_end(i xcb_render_glyph_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1211
+// #define xcb_render_glyphset_next(i xcb_render_glyphset_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1223
+// #define xcb_render_glyphset_end(i xcb_render_glyphset_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1234
+// #define xcb_render_picture_next(i xcb_render_picture_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1246
+// #define xcb_render_picture_end(i xcb_render_picture_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1257
+// #define xcb_render_pictformat_next(i xcb_render_pictformat_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1269
+// #define xcb_render_pictformat_end(i xcb_render_pictformat_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1280
+// #define xcb_render_fixed_next(i xcb_render_fixed_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1292
+// #define xcb_render_fixed_end(i xcb_render_fixed_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1303
+// #define xcb_render_directformat_next(i xcb_render_directformat_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1315
+// #define xcb_render_directformat_end(i xcb_render_directformat_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1326
+// #define xcb_render_pictforminfo_next(i xcb_render_pictforminfo_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1338
+// #define xcb_render_pictforminfo_end(i xcb_render_pictforminfo_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1349
+// #define xcb_render_pictvisual_next(i xcb_render_pictvisual_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1361
+// #define xcb_render_pictvisual_end(i xcb_render_pictvisual_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1364
+// #define xcb_render_pictdepth_sizeof(_buffer ptr) int32
+
+// //Location: /usr/include/xcb/render.h:1367
+// #define xcb_render_pictdepth_visuals(R xcb_render_pictdepth_t*) xcb_render_pictvisual_t*
+
+// //Location: /usr/include/xcb/render.h:1370
+// #define xcb_render_pictdepth_visuals_length(R xcb_render_pictdepth_t*) int32
+
+// //Location: /usr/include/xcb/render.h:1373
+// #define xcb_render_pictdepth_visuals_iterator(R xcb_render_pictdepth_t*) xcb_render_pictvisual_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1384
+// #define xcb_render_pictdepth_next(i xcb_render_pictdepth_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1396
+// #define xcb_render_pictdepth_end(i xcb_render_pictdepth_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1399
+// #define xcb_render_pictscreen_sizeof(_buffer ptr) int32
+
+// //Location: /usr/include/xcb/render.h:1402
+// #define xcb_render_pictscreen_depths_length(R xcb_render_pictscreen_t*) int32
+
+// //Location: /usr/include/xcb/render.h:1405
+// #define xcb_render_pictscreen_depths_iterator(R xcb_render_pictscreen_t*) xcb_render_pictdepth_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1416
+// #define xcb_render_pictscreen_next(i xcb_render_pictscreen_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1428
+// #define xcb_render_pictscreen_end(i xcb_render_pictscreen_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1439
+// #define xcb_render_indexvalue_next(i xcb_render_indexvalue_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1451
+// #define xcb_render_indexvalue_end(i xcb_render_indexvalue_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1462
+// #define xcb_render_color_next(i xcb_render_color_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1474
+// #define xcb_render_color_end(i xcb_render_color_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1485
+// #define xcb_render_pointfix_next(i xcb_render_pointfix_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1497
+// #define xcb_render_pointfix_end(i xcb_render_pointfix_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1508
+// #define xcb_render_linefix_next(i xcb_render_linefix_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1520
+// #define xcb_render_linefix_end(i xcb_render_linefix_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1531
+// #define xcb_render_triangle_next(i xcb_render_triangle_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1543
+// #define xcb_render_triangle_end(i xcb_render_triangle_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1554
+// #define xcb_render_trapezoid_next(i xcb_render_trapezoid_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1566
+// #define xcb_render_trapezoid_end(i xcb_render_trapezoid_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1577
+// #define xcb_render_glyphinfo_next(i xcb_render_glyphinfo_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:1589
+// #define xcb_render_glyphinfo_end(i xcb_render_glyphinfo_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1600
+// #define xcb_render_query_version(c ptr, client_major_version uint32, client_minor_version uint32) xcb_render_query_version_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1616
+// #define xcb_render_query_version_unchecked(c ptr, client_major_version uint32, client_minor_version uint32) xcb_render_query_version_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1635
+// #define xcb_render_query_version_reply(c ptr, cookie xcb_render_query_version_cookie_t, e xcb_generic_error_t**) xcb_render_query_version_reply_t*
+
+// //Location: /usr/include/xcb/render.h:1640
+// #define xcb_render_query_pict_formats_sizeof(_buffer ptr) int32
+
+// //Location: /usr/include/xcb/render.h:1651
+// #define xcb_render_query_pict_formats(c ptr) xcb_render_query_pict_formats_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1665
+// #define xcb_render_query_pict_formats_unchecked(c ptr) xcb_render_query_pict_formats_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1668
+// #define xcb_render_query_pict_formats_formats(R xcb_render_query_pict_formats_reply_t*) xcb_render_pictforminfo_t*
+
+// //Location: /usr/include/xcb/render.h:1671
+// #define xcb_render_query_pict_formats_formats_length(R xcb_render_query_pict_formats_reply_t*) int32
+
+// //Location: /usr/include/xcb/render.h:1674
+// #define xcb_render_query_pict_formats_formats_iterator(R xcb_render_query_pict_formats_reply_t*) xcb_render_pictforminfo_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1677
+// #define xcb_render_query_pict_formats_screens_length(R xcb_render_query_pict_formats_reply_t*) int32
+
+// //Location: /usr/include/xcb/render.h:1680
+// #define xcb_render_query_pict_formats_screens_iterator(R xcb_render_query_pict_formats_reply_t*) xcb_render_pictscreen_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1683
+// #define xcb_render_query_pict_formats_subpixels(R xcb_render_query_pict_formats_reply_t*) uint32*
+
+// //Location: /usr/include/xcb/render.h:1686
+// #define xcb_render_query_pict_formats_subpixels_length(R xcb_render_query_pict_formats_reply_t*) int32
+
+// //Location: /usr/include/xcb/render.h:1689
+// #define xcb_render_query_pict_formats_subpixels_end(R xcb_render_query_pict_formats_reply_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1706
+// #define xcb_render_query_pict_formats_reply(c ptr, cookie xcb_render_query_pict_formats_cookie_t, e xcb_generic_error_t**) xcb_render_query_pict_formats_reply_t*
+
+// //Location: /usr/include/xcb/render.h:1711
+// #define xcb_render_query_pict_index_values_sizeof(_buffer ptr) int32
+
+// //Location: /usr/include/xcb/render.h:1722
+// #define xcb_render_query_pict_index_values(c ptr, format uint32) xcb_render_query_pict_index_values_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1737
+// #define xcb_render_query_pict_index_values_unchecked(c ptr, format uint32) xcb_render_query_pict_index_values_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1741
+// #define xcb_render_query_pict_index_values_values(R xcb_render_query_pict_index_values_reply_t*) xcb_render_indexvalue_t*
+
+// //Location: /usr/include/xcb/render.h:1744
+// #define xcb_render_query_pict_index_values_values_length(R xcb_render_query_pict_index_values_reply_t*) int32
+
+// //Location: /usr/include/xcb/render.h:1747
+// #define xcb_render_query_pict_index_values_values_iterator(R xcb_render_query_pict_index_values_reply_t*) xcb_render_indexvalue_iterator_t
+
+// //Location: /usr/include/xcb/render.h:1764
+// #define xcb_render_query_pict_index_values_reply(c ptr, cookie xcb_render_query_pict_index_values_cookie_t, e xcb_generic_error_t**) xcb_render_query_pict_index_values_reply_t*
+
+// //Location: /usr/include/xcb/render.h:1769
+// #define xcb_render_create_picture_value_list_serialize(_buffer ptr*, value_mask uint32, _aux xcb_render_create_picture_value_list_t*) int32
+
+// //Location: /usr/include/xcb/render.h:1774
+// #define xcb_render_create_picture_value_list_unpack(_buffer ptr, value_mask uint32, _aux xcb_render_create_picture_value_list_t*) int32
+
+// //Location: /usr/include/xcb/render.h:1779
+// #define xcb_render_create_picture_value_list_sizeof(_buffer ptr, value_mask uint32) int32
+
+// //Location: /usr/include/xcb/render.h:1783
+// #define xcb_render_create_picture_sizeof(_buffer ptr) int32
+
+// //Location: /usr/include/xcb/render.h:1797
+// #define xcb_render_create_picture_checked(c ptr, pid uint32, drawable uint32, format uint32, value_mask uint32, value_list ptr) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1813
+// #define xcb_render_create_picture(c ptr, pid uint32, drawable uint32, format uint32, value_mask uint32, value_list ptr) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1832
+// #define xcb_render_create_picture_aux_checked(c ptr, pid uint32, drawable uint32, format uint32, value_mask uint32, value_list xcb_render_create_picture_value_list_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1848
+// #define xcb_render_create_picture_aux(c ptr, pid uint32, drawable uint32, format uint32, value_mask uint32, value_list xcb_render_create_picture_value_list_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1856
+// #define xcb_render_create_picture_value_list(R xcb_render_create_picture_request_t*) ptr
+
+// //Location: /usr/include/xcb/render.h:1859
+// #define xcb_render_change_picture_value_list_serialize(_buffer ptr*, value_mask uint32, _aux xcb_render_change_picture_value_list_t*) int32
+
+// //Location: /usr/include/xcb/render.h:1864
+// #define xcb_render_change_picture_value_list_unpack(_buffer ptr, value_mask uint32, _aux xcb_render_change_picture_value_list_t*) int32
+
+// //Location: /usr/include/xcb/render.h:1869
+// #define xcb_render_change_picture_value_list_sizeof(_buffer ptr, value_mask uint32) int32
+
+// //Location: /usr/include/xcb/render.h:1873
+// #define xcb_render_change_picture_sizeof(_buffer ptr) int32
+
+// //Location: /usr/include/xcb/render.h:1887
+// #define xcb_render_change_picture_checked(c ptr, picture uint32, value_mask uint32, value_list ptr) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1901
+// #define xcb_render_change_picture(c ptr, picture uint32, value_mask uint32, value_list ptr) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1918
+// #define xcb_render_change_picture_aux_checked(c ptr, picture uint32, value_mask uint32, value_list xcb_render_change_picture_value_list_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1932
+// #define xcb_render_change_picture_aux(c ptr, picture uint32, value_mask uint32, value_list xcb_render_change_picture_value_list_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1938
+// #define xcb_render_change_picture_value_list(R xcb_render_change_picture_request_t*) ptr
+
+// //Location: /usr/include/xcb/render.h:1941
+// #define xcb_render_set_picture_clip_rectangles_sizeof(_buffer ptr, rectangles_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:1956
+// #define xcb_render_set_picture_clip_rectangles_checked(c ptr, picture uint32, clip_x_origin int16, clip_y_origin int16, rectangles_len uint32, rectangles xcb_rectangle_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1972
+// #define xcb_render_set_picture_clip_rectangles(c ptr, picture uint32, clip_x_origin int16, clip_y_origin int16, rectangles_len uint32, rectangles xcb_rectangle_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:1980
+// #define xcb_render_set_picture_clip_rectangles_rectangles(R xcb_render_set_picture_clip_rectangles_request_t*) xcb_rectangle_t*
+
+// //Location: /usr/include/xcb/render.h:1983
+// #define xcb_render_set_picture_clip_rectangles_rectangles_length(R xcb_render_set_picture_clip_rectangles_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:1986
+// #define xcb_render_set_picture_clip_rectangles_rectangles_iterator(R xcb_render_set_picture_clip_rectangles_request_t*) xcb_rectangle_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2000
+// #define xcb_render_free_picture_checked(c ptr, picture uint32) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2012
+// #define xcb_render_free_picture(c ptr, picture uint32) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2027
+// #define xcb_render_composite_checked(c ptr, op byte, src uint32, mask uint32, dst uint32, src_x int16, src_y int16, mask_x int16, mask_y int16, dst_x int16, dst_y int16, width uint16, height uint16) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2050
+// #define xcb_render_composite(c ptr, op byte, src uint32, mask uint32, dst uint32, src_x int16, src_y int16, mask_x int16, mask_y int16, dst_x int16, dst_y int16, width uint16, height uint16) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2065
+// #define xcb_render_trapezoids_sizeof(_buffer ptr, traps_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:2080
+// #define xcb_render_trapezoids_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, traps_len uint32, traps xcb_render_trapezoid_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2099
+// #define xcb_render_trapezoids(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, traps_len uint32, traps xcb_render_trapezoid_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2110
+// #define xcb_render_trapezoids_traps(R xcb_render_trapezoids_request_t*) xcb_render_trapezoid_t*
+
+// //Location: /usr/include/xcb/render.h:2113
+// #define xcb_render_trapezoids_traps_length(R xcb_render_trapezoids_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2116
+// #define xcb_render_trapezoids_traps_iterator(R xcb_render_trapezoids_request_t*) xcb_render_trapezoid_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2119
+// #define xcb_render_triangles_sizeof(_buffer ptr, triangles_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:2134
+// #define xcb_render_triangles_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, triangles_len uint32, triangles xcb_render_triangle_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2153
+// #define xcb_render_triangles(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, triangles_len uint32, triangles xcb_render_triangle_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2164
+// #define xcb_render_triangles_triangles(R xcb_render_triangles_request_t*) xcb_render_triangle_t*
+
+// //Location: /usr/include/xcb/render.h:2167
+// #define xcb_render_triangles_triangles_length(R xcb_render_triangles_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2170
+// #define xcb_render_triangles_triangles_iterator(R xcb_render_triangles_request_t*) xcb_render_triangle_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2173
+// #define xcb_render_tri_strip_sizeof(_buffer ptr, points_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:2188
+// #define xcb_render_tri_strip_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, points_len uint32, points xcb_render_pointfix_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2207
+// #define xcb_render_tri_strip(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, points_len uint32, points xcb_render_pointfix_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2218
+// #define xcb_render_tri_strip_points(R xcb_render_tri_strip_request_t*) xcb_render_pointfix_t*
+
+// //Location: /usr/include/xcb/render.h:2221
+// #define xcb_render_tri_strip_points_length(R xcb_render_tri_strip_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2224
+// #define xcb_render_tri_strip_points_iterator(R xcb_render_tri_strip_request_t*) xcb_render_pointfix_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2227
+// #define xcb_render_tri_fan_sizeof(_buffer ptr, points_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:2242
+// #define xcb_render_tri_fan_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, points_len uint32, points xcb_render_pointfix_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2261
+// #define xcb_render_tri_fan(c ptr, op byte, src uint32, dst uint32, mask_format uint32, src_x int16, src_y int16, points_len uint32, points xcb_render_pointfix_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2272
+// #define xcb_render_tri_fan_points(R xcb_render_tri_fan_request_t*) xcb_render_pointfix_t*
+
+// //Location: /usr/include/xcb/render.h:2275
+// #define xcb_render_tri_fan_points_length(R xcb_render_tri_fan_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2278
+// #define xcb_render_tri_fan_points_iterator(R xcb_render_tri_fan_request_t*) xcb_render_pointfix_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2292
+// #define xcb_render_create_glyph_set_checked(c ptr, gsid uint32, format uint32) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2305
+// #define xcb_render_create_glyph_set(c ptr, gsid uint32, format uint32) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2321
+// #define xcb_render_reference_glyph_set_checked(c ptr, gsid uint32, existing uint32) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2334
+// #define xcb_render_reference_glyph_set(c ptr, gsid uint32, existing uint32) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2350
+// #define xcb_render_free_glyph_set_checked(c ptr, glyphset uint32) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2362
+// #define xcb_render_free_glyph_set(c ptr, glyphset uint32) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2366
+// #define xcb_render_add_glyphs_sizeof(_buffer ptr, data_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:2381
+// #define xcb_render_add_glyphs_checked(c ptr, glyphset uint32, glyphs_len uint32, glyphids uint32*, glyphs xcb_render_glyphinfo_t*, data_len uint32, data byte*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2398
+// #define xcb_render_add_glyphs(c ptr, glyphset uint32, glyphs_len uint32, glyphids uint32*, glyphs xcb_render_glyphinfo_t*, data_len uint32, data byte*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2407
+// #define xcb_render_add_glyphs_glyphids(R xcb_render_add_glyphs_request_t*) uint32*
+
+// //Location: /usr/include/xcb/render.h:2410
+// #define xcb_render_add_glyphs_glyphids_length(R xcb_render_add_glyphs_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2413
+// #define xcb_render_add_glyphs_glyphids_end(R xcb_render_add_glyphs_request_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2416
+// #define xcb_render_add_glyphs_glyphs(R xcb_render_add_glyphs_request_t*) xcb_render_glyphinfo_t*
+
+// //Location: /usr/include/xcb/render.h:2419
+// #define xcb_render_add_glyphs_glyphs_length(R xcb_render_add_glyphs_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2422
+// #define xcb_render_add_glyphs_glyphs_iterator(R xcb_render_add_glyphs_request_t*) xcb_render_glyphinfo_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2425
+// #define xcb_render_add_glyphs_data(R xcb_render_add_glyphs_request_t*) byte*
+
+// //Location: /usr/include/xcb/render.h:2428
+// #define xcb_render_add_glyphs_data_length(R xcb_render_add_glyphs_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2431
+// #define xcb_render_add_glyphs_data_end(R xcb_render_add_glyphs_request_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2434
+// #define xcb_render_free_glyphs_sizeof(_buffer ptr, glyphs_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:2449
+// #define xcb_render_free_glyphs_checked(c ptr, glyphset uint32, glyphs_len uint32, glyphs uint32*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2463
+// #define xcb_render_free_glyphs(c ptr, glyphset uint32, glyphs_len uint32, glyphs uint32*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2469
+// #define xcb_render_free_glyphs_glyphs(R xcb_render_free_glyphs_request_t*) uint32*
+
+// //Location: /usr/include/xcb/render.h:2472
+// #define xcb_render_free_glyphs_glyphs_length(R xcb_render_free_glyphs_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2475
+// #define xcb_render_free_glyphs_glyphs_end(R xcb_render_free_glyphs_request_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2478
+// #define xcb_render_composite_glyphs_8_sizeof(_buffer ptr, glyphcmds_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:2493
+// #define xcb_render_composite_glyphs_8_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, glyphset uint32, src_x int16, src_y int16, glyphcmds_len uint32, glyphcmds byte*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2513
+// #define xcb_render_composite_glyphs_8(c ptr, op byte, src uint32, dst uint32, mask_format uint32, glyphset uint32, src_x int16, src_y int16, glyphcmds_len uint32, glyphcmds byte*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2525
+// #define xcb_render_composite_glyphs_8_glyphcmds(R xcb_render_composite_glyphs_8_request_t*) byte*
+
+// //Location: /usr/include/xcb/render.h:2528
+// #define xcb_render_composite_glyphs_8_glyphcmds_length(R xcb_render_composite_glyphs_8_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2531
+// #define xcb_render_composite_glyphs_8_glyphcmds_end(R xcb_render_composite_glyphs_8_request_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2534
+// #define xcb_render_composite_glyphs_16_sizeof(_buffer ptr, glyphcmds_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:2549
+// #define xcb_render_composite_glyphs_16_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, glyphset uint32, src_x int16, src_y int16, glyphcmds_len uint32, glyphcmds byte*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2569
+// #define xcb_render_composite_glyphs_16(c ptr, op byte, src uint32, dst uint32, mask_format uint32, glyphset uint32, src_x int16, src_y int16, glyphcmds_len uint32, glyphcmds byte*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2581
+// #define xcb_render_composite_glyphs_16_glyphcmds(R xcb_render_composite_glyphs_16_request_t*) byte*
+
+// //Location: /usr/include/xcb/render.h:2584
+// #define xcb_render_composite_glyphs_16_glyphcmds_length(R xcb_render_composite_glyphs_16_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2587
+// #define xcb_render_composite_glyphs_16_glyphcmds_end(R xcb_render_composite_glyphs_16_request_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2590
+// #define xcb_render_composite_glyphs_32_sizeof(_buffer ptr, glyphcmds_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:2605
+// #define xcb_render_composite_glyphs_32_checked(c ptr, op byte, src uint32, dst uint32, mask_format uint32, glyphset uint32, src_x int16, src_y int16, glyphcmds_len uint32, glyphcmds byte*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2625
+// #define xcb_render_composite_glyphs_32(c ptr, op byte, src uint32, dst uint32, mask_format uint32, glyphset uint32, src_x int16, src_y int16, glyphcmds_len uint32, glyphcmds byte*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2637
+// #define xcb_render_composite_glyphs_32_glyphcmds(R xcb_render_composite_glyphs_32_request_t*) byte*
+
+// //Location: /usr/include/xcb/render.h:2640
+// #define xcb_render_composite_glyphs_32_glyphcmds_length(R xcb_render_composite_glyphs_32_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2643
+// #define xcb_render_composite_glyphs_32_glyphcmds_end(R xcb_render_composite_glyphs_32_request_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2646
+// #define xcb_render_fill_rectangles_sizeof(_buffer ptr, rects_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:2661
+// #define xcb_render_fill_rectangles_checked(c ptr, op byte, dst uint32, color xcb_render_color_t, rects_len uint32, rects xcb_rectangle_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2677
+// #define xcb_render_fill_rectangles(c ptr, op byte, dst uint32, color xcb_render_color_t, rects_len uint32, rects xcb_rectangle_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2685
+// #define xcb_render_fill_rectangles_rects(R xcb_render_fill_rectangles_request_t*) xcb_rectangle_t*
+
+// //Location: /usr/include/xcb/render.h:2688
+// #define xcb_render_fill_rectangles_rects_length(R xcb_render_fill_rectangles_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2691
+// #define xcb_render_fill_rectangles_rects_iterator(R xcb_render_fill_rectangles_request_t*) xcb_rectangle_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2705
+// #define xcb_render_create_cursor_checked(c ptr, cid uint32, source uint32, x uint16, y uint16) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2720
+// #define xcb_render_create_cursor(c ptr, cid uint32, source uint32, x uint16, y uint16) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2735
+// #define xcb_render_transform_next(i xcb_render_transform_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:2747
+// #define xcb_render_transform_end(i xcb_render_transform_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2761
+// #define xcb_render_set_picture_transform_checked(c ptr, picture uint32, transform xcb_render_transform_t) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2774
+// #define xcb_render_set_picture_transform(c ptr, picture uint32, transform xcb_render_transform_t) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2779
+// #define xcb_render_query_filters_sizeof(_buffer ptr) int32
+
+// //Location: /usr/include/xcb/render.h:2790
+// #define xcb_render_query_filters(c ptr, drawable uint32) xcb_render_query_filters_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2805
+// #define xcb_render_query_filters_unchecked(c ptr, drawable uint32) xcb_render_query_filters_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2809
+// #define xcb_render_query_filters_aliases(R xcb_render_query_filters_reply_t*) uint16*
+
+// //Location: /usr/include/xcb/render.h:2812
+// #define xcb_render_query_filters_aliases_length(R xcb_render_query_filters_reply_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2815
+// #define xcb_render_query_filters_aliases_end(R xcb_render_query_filters_reply_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2818
+// #define xcb_render_query_filters_filters_length(R xcb_render_query_filters_reply_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2821
+// #define xcb_render_query_filters_filters_iterator(R xcb_render_query_filters_reply_t*) xcb_str_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2838
+// #define xcb_render_query_filters_reply(c ptr, cookie xcb_render_query_filters_cookie_t, e xcb_generic_error_t**) xcb_render_query_filters_reply_t*
+
+// //Location: /usr/include/xcb/render.h:2843
+// #define xcb_render_set_picture_filter_sizeof(_buffer ptr, values_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:2858
+// #define xcb_render_set_picture_filter_checked(c ptr, picture uint32, filter_len uint16, filter char*, values_len uint32, values int32*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2874
+// #define xcb_render_set_picture_filter(c ptr, picture uint32, filter_len uint16, filter char*, values_len uint32, values int32*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2882
+// #define xcb_render_set_picture_filter_filter(R xcb_render_set_picture_filter_request_t*) char*
+
+// //Location: /usr/include/xcb/render.h:2885
+// #define xcb_render_set_picture_filter_filter_length(R xcb_render_set_picture_filter_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2888
+// #define xcb_render_set_picture_filter_filter_end(R xcb_render_set_picture_filter_request_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2891
+// #define xcb_render_set_picture_filter_values(R xcb_render_set_picture_filter_request_t*) int32*
+
+// //Location: /usr/include/xcb/render.h:2894
+// #define xcb_render_set_picture_filter_values_length(R xcb_render_set_picture_filter_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2897
+// #define xcb_render_set_picture_filter_values_end(R xcb_render_set_picture_filter_request_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2908
+// #define xcb_render_animcursorelt_next(i xcb_render_animcursorelt_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:2920
+// #define xcb_render_animcursorelt_end(i xcb_render_animcursorelt_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2923
+// #define xcb_render_create_anim_cursor_sizeof(_buffer ptr, cursors_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:2938
+// #define xcb_render_create_anim_cursor_checked(c ptr, cid uint32, cursors_len uint32, cursors xcb_render_animcursorelt_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2952
+// #define xcb_render_create_anim_cursor(c ptr, cid uint32, cursors_len uint32, cursors xcb_render_animcursorelt_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:2958
+// #define xcb_render_create_anim_cursor_cursors(R xcb_render_create_anim_cursor_request_t*) xcb_render_animcursorelt_t*
+
+// //Location: /usr/include/xcb/render.h:2961
+// #define xcb_render_create_anim_cursor_cursors_length(R xcb_render_create_anim_cursor_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:2964
+// #define xcb_render_create_anim_cursor_cursors_iterator(R xcb_render_create_anim_cursor_request_t*) xcb_render_animcursorelt_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2975
+// #define xcb_render_spanfix_next(i xcb_render_spanfix_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:2987
+// #define xcb_render_spanfix_end(i xcb_render_spanfix_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:2998
+// #define xcb_render_trap_next(i xcb_render_trap_iterator_t*)
+
+// //Location: /usr/include/xcb/render.h:3010
+// #define xcb_render_trap_end(i xcb_render_trap_iterator_t) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:3013
+// #define xcb_render_add_traps_sizeof(_buffer ptr, traps_len uint32) int32
+
+// //Location: /usr/include/xcb/render.h:3028
+// #define xcb_render_add_traps_checked(c ptr, picture uint32, x_off int16, y_off int16, traps_len uint32, traps xcb_render_trap_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:3044
+// #define xcb_render_add_traps(c ptr, picture uint32, x_off int16, y_off int16, traps_len uint32, traps xcb_render_trap_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:3052
+// #define xcb_render_add_traps_traps(R xcb_render_add_traps_request_t*) xcb_render_trap_t*
+
+// //Location: /usr/include/xcb/render.h:3055
+// #define xcb_render_add_traps_traps_length(R xcb_render_add_traps_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:3058
+// #define xcb_render_add_traps_traps_iterator(R xcb_render_add_traps_request_t*) xcb_render_trap_iterator_t
+
+// //Location: /usr/include/xcb/render.h:3072
+// #define xcb_render_create_solid_fill_checked(c ptr, picture uint32, color xcb_render_color_t) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:3085
+// #define xcb_render_create_solid_fill(c ptr, picture uint32, color xcb_render_color_t) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:3090
+// #define xcb_render_create_linear_gradient_sizeof(_buffer ptr) int32
+
+// //Location: /usr/include/xcb/render.h:3104
+// #define xcb_render_create_linear_gradient_checked(c ptr, picture uint32, p1 xcb_render_pointfix_t, p2 xcb_render_pointfix_t, num_stops uint32, stops int32*, colors xcb_render_color_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:3121
+// #define xcb_render_create_linear_gradient(c ptr, picture uint32, p1 xcb_render_pointfix_t, p2 xcb_render_pointfix_t, num_stops uint32, stops int32*, colors xcb_render_color_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:3130
+// #define xcb_render_create_linear_gradient_stops(R xcb_render_create_linear_gradient_request_t*) int32*
+
+// //Location: /usr/include/xcb/render.h:3133
+// #define xcb_render_create_linear_gradient_stops_length(R xcb_render_create_linear_gradient_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:3136
+// #define xcb_render_create_linear_gradient_stops_end(R xcb_render_create_linear_gradient_request_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:3139
+// #define xcb_render_create_linear_gradient_colors(R xcb_render_create_linear_gradient_request_t*) xcb_render_color_t*
+
+// //Location: /usr/include/xcb/render.h:3142
+// #define xcb_render_create_linear_gradient_colors_length(R xcb_render_create_linear_gradient_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:3145
+// #define xcb_render_create_linear_gradient_colors_iterator(R xcb_render_create_linear_gradient_request_t*) xcb_render_color_iterator_t
+
+// //Location: /usr/include/xcb/render.h:3148
+// #define xcb_render_create_radial_gradient_sizeof(_buffer ptr) int32
+
+// //Location: /usr/include/xcb/render.h:3162
+// #define xcb_render_create_radial_gradient_checked(c ptr, picture uint32, inner xcb_render_pointfix_t, outer xcb_render_pointfix_t, inner_radius int32, outer_radius int32, num_stops uint32, stops int32*, colors xcb_render_color_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:3181
+// #define xcb_render_create_radial_gradient(c ptr, picture uint32, inner xcb_render_pointfix_t, outer xcb_render_pointfix_t, inner_radius int32, outer_radius int32, num_stops uint32, stops int32*, colors xcb_render_color_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:3192
+// #define xcb_render_create_radial_gradient_stops(R xcb_render_create_radial_gradient_request_t*) int32*
+
+// //Location: /usr/include/xcb/render.h:3195
+// #define xcb_render_create_radial_gradient_stops_length(R xcb_render_create_radial_gradient_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:3198
+// #define xcb_render_create_radial_gradient_stops_end(R xcb_render_create_radial_gradient_request_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:3201
+// #define xcb_render_create_radial_gradient_colors(R xcb_render_create_radial_gradient_request_t*) xcb_render_color_t*
+
+// //Location: /usr/include/xcb/render.h:3204
+// #define xcb_render_create_radial_gradient_colors_length(R xcb_render_create_radial_gradient_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:3207
+// #define xcb_render_create_radial_gradient_colors_iterator(R xcb_render_create_radial_gradient_request_t*) xcb_render_color_iterator_t
+
+// //Location: /usr/include/xcb/render.h:3210
+// #define xcb_render_create_conical_gradient_sizeof(_buffer ptr) int32
+
+// //Location: /usr/include/xcb/render.h:3224
+// #define xcb_render_create_conical_gradient_checked(c ptr, picture uint32, center xcb_render_pointfix_t, angle int32, num_stops uint32, stops int32*, colors xcb_render_color_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:3241
+// #define xcb_render_create_conical_gradient(c ptr, picture uint32, center xcb_render_pointfix_t, angle int32, num_stops uint32, stops int32*, colors xcb_render_color_t*) xcb_void_cookie_t
+
+// //Location: /usr/include/xcb/render.h:3250
+// #define xcb_render_create_conical_gradient_stops(R xcb_render_create_conical_gradient_request_t*) int32*
+
+// //Location: /usr/include/xcb/render.h:3253
+// #define xcb_render_create_conical_gradient_stops_length(R xcb_render_create_conical_gradient_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:3256
+// #define xcb_render_create_conical_gradient_stops_end(R xcb_render_create_conical_gradient_request_t*) xcb_generic_iterator_t
+
+// //Location: /usr/include/xcb/render.h:3259
+// #define xcb_render_create_conical_gradient_colors(R xcb_render_create_conical_gradient_request_t*) xcb_render_color_t*
+
+// //Location: /usr/include/xcb/render.h:3262
+// #define xcb_render_create_conical_gradient_colors_length(R xcb_render_create_conical_gradient_request_t*) int32
+
+// //Location: /usr/include/xcb/render.h:3265
+// #define xcb_render_create_conical_gradient_colors_iterator(R xcb_render_create_conical_gradient_request_t*) xcb_render_color_iterator_t
 

@@ -362,7 +362,6 @@ struct ui extend window {
                 if event == windowEventMouseMove {
                     win.redraw()
                 } else if event == windowEventDraw || event == windowEventInitialize {
-                    win.clear(BLACK)
                     win.setCursor("hand1")
                     win.font.setSize(8)
 
@@ -371,14 +370,14 @@ struct ui extend window {
                     i=0; for i < len(win.list), i++ {
                         pos = [1, i * 31 + 1]
 
-                        bgColor = WHITE
-                        fgColor = BLACK
+                        bgColor = ELEMENT_BACKGROUND_COLOR
+                        fgColor = ELEMENT_TEXT_COLOR
 
                         if win.choice == i {
-                            fgColor = WHITE
-                            bgColor = rgbColor{120, 120, 255}
+                            fgColor = ELEMENT_CLICKED_TEXT_COLOR
+                            bgColor = ELEMENT_FOCUSED_BACKGROUND_COLOR
                         } else if cursorPos[1] >= pos[1] && cursorPos[1] < pos[1] + 30 {
-                            bgColor = rgbColor{191, 191, 255}
+                            bgColor = ELEMENT_HOVERED_BACKGROUND_COLOR
                         }
                         win.drawRect(pos, [win.width - 2, 30], bgColor)
 
@@ -447,7 +446,7 @@ struct ui extend window {
 
 __uiFindElement(ui ui*, id str) uiElement* {
     i=0; for i < len(ui.elements), i++ {
-        f = ui.elements[i].find(id)
+        f = ui.elements[i]._find(id)
         if f != null {
             return f
         }
@@ -731,6 +730,13 @@ __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
 }
 
 __uiRedrawElementDelayed(ui ui*, elem uiElement*, ms uint) {
+    currElem = elem
+    for currElem != null, currElem = currElem.parent {
+        if currElem.toRemove {
+            return
+        }
+    }
+
     now = getTimeUnix() / 1000000
     i=0; for i < len(ui.animations), i++ {
         anim = &ui.animations[i]

@@ -139,8 +139,8 @@ struct uiVerticalGridArray extend uiElement {
 
         }
 
-        innerSize = this.getInnerSize()
         if this.dynamicSize {
+            innerSize = this.getInnerSize()
             this.size[1] = pixels(innerSize[1])
         }
 

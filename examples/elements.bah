@@ -135,7 +135,6 @@ main(args []str) int {
                                                                 btn.text = "disable my borders"
                                                             } else {
                                                                 tabs.border = 0
-                                                                tabs.radius = 0
                                                                 btn.text = "restore my borders"
                                                             }
                                                             tabs.redraw()

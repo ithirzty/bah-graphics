@@ -509,13 +509,6 @@ main(args []str) int {
                                 }
                             },
                             uiContextItem {
-                                name: "Collect"
-                                ctrl: false
-                                callback: (itm uiContextItem*, el uiElement*) {
-                                    GC_collect()
-                                }
-                            },
-                            uiContextItem {
                                 name: "Go back"
                                 key: Char_arr_left
                                 ctrl: false

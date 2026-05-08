@@ -20,7 +20,7 @@ struct uiButton extend uiElement {
     borderColor: rgbColor = ELEMENT_BORDER_COLOR
     //colors hovered
     hoveredBgColor: rgbColor = ELEMENT_HOVERED_BACKGROUND_COLOR
-    hoveredFgColor: rgbColor = ELEMENT_TEXT_COLOR
+    hoveredFgColor: rgbColor = ELEMENT_HOVERED_TEXT_COLOR
     hoveredBorderColor: rgbColor = ELEMENT_HOVERED_BORDER_COLOR
     //colors clicked
     clickedBgColor: rgbColor = ELEMENT_CLICKED_BACKGROUND_COLOR
@@ -219,14 +219,14 @@ struct uiDropdown extend uiButton {
                     i=0; for i < len(win.list), i++ {
                         pos = [1, i * 31 + 1]
 
-                        bgColor = WHITE
-                        fgColor = BLACK
+                        bgColor = ELEMENT_BACKGROUND_COLOR
+                        fgColor = ELEMENT_TEXT_COLOR
 
                         if win.choice == i {
-                            fgColor = WHITE
-                            bgColor = rgbColor{120, 120, 255}
+                            fgColor = ELEMENT_CLICKED_TEXT_COLOR
+                            bgColor = ELEMENT_FOCUSED_BACKGROUND_COLOR
                         } else if cursorPos[1] >= pos[1] && cursorPos[1] < pos[1] + 30 {
-                            bgColor = rgbColor{191, 191, 255}
+                            bgColor = ELEMENT_HOVERED_BACKGROUND_COLOR
                         }
                         win.drawRect(pos, [win.width - 2, 30], bgColor)
 

@@ -203,7 +203,7 @@ struct window {
         cookie = xcb_query_pointer(this.connection, this.window)
         reply = xcb_query_pointer_reply(this.connection, cookie, null)
 
-        return [<uint>reply.win_x, <uint>reply.win_y]
+        return [<int>reply.win_x, <int>reply.win_y]
     }
 
     setClipboard(s str) {
@@ -343,12 +343,16 @@ struct window {
         offset = (pos[1] * this.width + pos[0]) * 4
 
         if color.a != 255 {
-            da = <float><uint>color.a / 255.0
-            ida = 1.0 - da
+            da = <uint>color.a
+            ida uint = 255 - da
 
-            color.b = <uint>(<float><uint>color.b * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset))     * ida)
-            color.g = <uint>(<float><uint>color.g * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset + 1)) * ida)
-            color.r = <uint>(<float><uint>color.r * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + offset + 2)) * ida)
+            b = <uint>*(<byte*>(<uint>this.frameBuffer + offset))
+            g = <uint>*(<byte*>(<uint>this.frameBuffer + offset + 1))
+            r = <uint>*(<byte*>(<uint>this.frameBuffer + offset + 2))
+
+            color.b = (((<uint>color.b * da) + (b * ida) + 128) * 257) >> 16
+            color.g = (((<uint>color.g * da) + (g * ida) + 128) * 257) >> 16
+            color.r = (((<uint>color.r * da) + (r * ida) + 128) * 257) >> 16
         }
 
         v = (<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16)
@@ -359,75 +363,82 @@ struct window {
         l += offset
         v = <uint32>((<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16))
         if color.a != 255 {
-            if l - offset > 7 {
-                $movd(v, $xmm0)
-                $vpbroadcastd($xmm0, $ymm0)
-                $vpxor($ymm15, $ymm15, $ymm15)
-                $vpunpcklbw($ymm15, $ymm0, $ymm2)
-                $vpunpckhbw($ymm15, $ymm0, $ymm3)
+            #avx {
+                if l - offset > 7 {
+                    $movd(v, $xmm0)
+                    $vpbroadcastd($xmm0, $ymm0)
+                    $vpxor($ymm15, $ymm15, $ymm15)
+                    $vpunpcklbw($ymm15, $ymm0, $ymm2)
+                    $vpunpckhbw($ymm15, $ymm0, $ymm3)
 
-                $vmovd(<uint32>color.a, $xmm1)
-                $vpbroadcastw($xmm1, $ymm6)
+                    $vmovd(<uint32>color.a, $xmm1)
+                    $vpbroadcastw($xmm1, $ymm6)
 
-                $vmovd((255 - <uint32>color.a), $xmm1)
-                $vpbroadcastw($xmm1, $ymm7)
+                    $vmovd((255 - <uint32>color.a), $xmm1)
+                    $vpbroadcastw($xmm1, $ymm7)
 
-                $movl(<uint32>128, $eax); $vmovd($eax, $xmm1)
-                $vpbroadcastw($xmm1, $ymm8)
+                    $movl(<uint32>128, $eax); $vmovd($eax, $xmm1)
+                    $vpbroadcastw($xmm1, $ymm8)
 
-                $movl(<uint32>257, $eax); $vmovd($eax, $xmm1)
-                $vpbroadcastw($xmm1, $ymm9)
+                    $movl(<uint32>257, $eax); $vmovd($eax, $xmm1)
+                    $vpbroadcastw($xmm1, $ymm9)
 
-                lm = l - 7
-                for offset < lm, offset += 8 {
-                    $movq(<uint>this.frameBuffer + offset * 4, $rax)
-                    $vmovdqu(*$rax, $ymm0)
+                    lm = l - 7
+                    for offset < lm, offset += 8 {
+                        $movq(<uint>this.frameBuffer + offset * 4, $rax)
+                        $vmovdqu(*$rax, $ymm0)
 
-                    $vpunpcklbw($ymm15, $ymm0, $ymm4)
-                    $vpunpckhbw($ymm15, $ymm0, $ymm5)
+                        $vpunpcklbw($ymm15, $ymm0, $ymm4)
+                        $vpunpckhbw($ymm15, $ymm0, $ymm5)
 
-                    $vpmullw($ymm6, $ymm2, $ymm10)
-                    $vpmullw($ymm7, $ymm4, $ymm11)
-                    $vpaddw($ymm11, $ymm10, $ymm10)
+                        $vpmullw($ymm6, $ymm2, $ymm10)
+                        $vpmullw($ymm7, $ymm4, $ymm11)
+                        $vpaddw($ymm11, $ymm10, $ymm10)
 
-                    $vpaddw($ymm8, $ymm10, $ymm10)
-                    $vpmulhuw($ymm9, $ymm10, $ymm10)
+                        $vpaddw($ymm8, $ymm10, $ymm10)
+                        $vpmulhuw($ymm9, $ymm10, $ymm10)
 
-                    $vpmullw($ymm6, $ymm3, $ymm12)
-                    $vpmullw($ymm7, $ymm5, $ymm13)
-                    $vpaddw($ymm13, $ymm12, $ymm12)
+                        $vpmullw($ymm6, $ymm3, $ymm12)
+                        $vpmullw($ymm7, $ymm5, $ymm13)
+                        $vpaddw($ymm13, $ymm12, $ymm12)
 
-                    $vpaddw($ymm8, $ymm12, $ymm12)
-                    $vpmulhuw($ymm9, $ymm12, $ymm12)
+                        $vpaddw($ymm8, $ymm12, $ymm12)
+                        $vpmulhuw($ymm9, $ymm12, $ymm12)
 
-                    $vpackuswb($ymm12, $ymm10, $ymm0)
-                    $vmovdqu($ymm0, *$rax)
+                        $vpackuswb($ymm12, $ymm10, $ymm0)
+                        $vmovdqu($ymm0, *$rax)
+                    }
                 }
             }
 
-            da = <float><uint>color.a / 255.0
-            ida = 1.0 - da
+            da = <uint>color.a
+            ida uint = 255 - da
             for offset < l, offset++ {
                 pOffset = 4 * offset
-                pColor rgbColor
-                pColor.b = <uint>(<float><uint>color.b * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + pOffset))     * ida)
-                pColor.g = <uint>(<float><uint>color.g * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + pOffset + 1)) * ida)
-                pColor.r = <uint>(<float><uint>color.r * da + <float><uint>*(<byte*>(<uint>this.frameBuffer + pOffset + 2)) * ida)
-                v = (<uint32>pColor.b) | (<uint32>pColor.g << 8) | (<uint32>pColor.r << 16)
+                b = <uint>*(<byte*>(<uint>this.frameBuffer + pOffset))
+                g = <uint>*(<byte*>(<uint>this.frameBuffer + pOffset + 1))
+                r = <uint>*(<byte*>(<uint>this.frameBuffer + pOffset + 2))
+
+                b = (((<uint>color.b * da) + (b * ida) + 128) * 257) >> 16
+                g = (((<uint>color.g * da) + (g * ida) + 128) * 257) >> 16
+                r = (((<uint>color.r * da) + (r * ida) + 128) * 257) >> 16
+                v = (<uint32>b) | (<uint32>g << 8) | (<uint32>r << 16)
                 *(<uint32*>(<uint>this.frameBuffer + offset * 4)) = v
             }
             return
         }
 
-        if l - offset > 15 {
-            lm = l - 15
-            $movd(v, $xmm0)
-            $vpbroadcastd($xmm0, $ymm0)
-            for offset < lm, offset += 16 {
-                $movq(<uint>this.frameBuffer + offset * 4, $rax)
-                $vmovdqu($ymm0, *$rax)
-                $addq(8 * 4, $rax)
-                $vmovdqu($ymm0, *$rax)
+        #avx {
+            if l - offset > 15 {
+                lm = l - 15
+                $movd(v, $xmm0)
+                $vpbroadcastd($xmm0, $ymm0)
+                for offset < lm, offset += 16 {
+                    $movq(<uint>this.frameBuffer + offset * 4, $rax)
+                    $vmovdqu($ymm0, *$rax)
+                    $addq(8 * 4, $rax)
+                    $vmovdqu($ymm0, *$rax)
+                }
             }
         }
 
@@ -437,69 +448,75 @@ struct window {
     }
 
     _scanLineFromBuffer(pos [int,int], from int, length int, colors []rgbColor) {
-        $movq((<Bah_Array_Type*>__simd_perm_mask_rgba_bgra).data, $rax)
-        $vmovdqu(*$rax, $ymm14)
+        #avx {
+            $movq((<Bah_Array_Type*>__simd_perm_mask_rgba_bgra).data, $rax)
+            $vmovdqu(*$rax, $ymm14)
 
-        $movq((<Bah_Array_Type*>__simd_perm_mask_alpha).data, $rax)
-        $vmovdqu(*$rax, $ymm13)
+            $movq((<Bah_Array_Type*>__simd_perm_mask_alpha).data, $rax)
+            $vmovdqu(*$rax, $ymm13)
 
-        $movl(128, $ebx); $vmovd($ebx, $xmm8)
-        $vpbroadcastw($xmm8, $ymm8)
+            $movl(128, $ebx); $vmovd($ebx, $xmm8)
+            $vpbroadcastw($xmm8, $ymm8)
 
-        $vpxor($ymm15, $ymm15, $ymm15)
-        $movl(257, $eax); $vmovd($eax, $xmm9)
-        $vpbroadcastw($xmm9, $ymm9)
+            $vpxor($ymm15, $ymm15, $ymm15)
+            $movl(257, $eax); $vmovd($eax, $xmm9)
+            $vpbroadcastw($xmm9, $ymm9)
 
-        $movl(255, $ebx); $vmovd($ebx, $xmm10)
-        $vpbroadcastw($xmm10, $ymm10)
+            $movl(255, $ebx); $vmovd($ebx, $xmm10)
+            $vpbroadcastw($xmm10, $ymm10)
 
-        x = 0; for x < length - 7, x += 8 {
-            offset = pos[1] * this.width + pos[0] + x
+            x = 0; for x < length - 7, x += 8 {
+                offset = pos[1] * this.width + pos[0] + x
 
-            $movq(&colors[from + x], $rax)
-            $vmovdqu(*$rax, $ymm0)
+                $movq(&colors[from + x], $rax)
+                $vmovdqu(*$rax, $ymm0)
 
-            $movq(<uint>this.frameBuffer + offset * 4, $rax)
-            $vmovdqu(*$rax, $ymm1)
+                $movq(<uint>this.frameBuffer + offset * 4, $rax)
+                $vmovdqu(*$rax, $ymm1)
 
-            $vpshufb($ymm14, $ymm0, $ymm0)
+                $vpshufb($ymm14, $ymm0, $ymm0)
 
-            $vpshufb($ymm13, $ymm0, $ymm6)
-            $vpunpckhbw($ymm15, $ymm6, $ymm7)
-            $vpunpcklbw($ymm15, $ymm6, $ymm6)
+                $vpshufb($ymm13, $ymm0, $ymm6)
+                $vpunpckhbw($ymm15, $ymm6, $ymm7)
+                $vpunpcklbw($ymm15, $ymm6, $ymm6)
 
-            $vpunpcklbw($ymm15, $ymm0, $ymm2)
-            $vpunpckhbw($ymm15, $ymm0, $ymm3)
+                $vpunpcklbw($ymm15, $ymm0, $ymm2)
+                $vpunpckhbw($ymm15, $ymm0, $ymm3)
 
-            $vpunpcklbw($ymm15, $ymm1, $ymm4)
-            $vpunpckhbw($ymm15, $ymm1, $ymm5)
+                $vpunpcklbw($ymm15, $ymm1, $ymm4)
+                $vpunpckhbw($ymm15, $ymm1, $ymm5)
 
-            //src * alpha
-            $vpmullw($ymm2, $ymm6, $ymm2)
-            $vpmullw($ymm3, $ymm7, $ymm3)
+                //src * alpha
+                $vpmullw($ymm2, $ymm6, $ymm2)
+                $vpmullw($ymm3, $ymm7, $ymm3)
 
 
-            //inv_alpha = 255 - alpha
-            $vpsubw($ymm6, $ymm10, $ymm6)
-            $vpsubw($ymm7, $ymm10, $ymm7)
+                //inv_alpha = 255 - alpha
+                $vpsubw($ymm6, $ymm10, $ymm6)
+                $vpsubw($ymm7, $ymm10, $ymm7)
 
-            //dist * inv_alpha
-            $vpmullw($ymm4, $ymm6, $ymm4)
-            $vpmullw($ymm5, $ymm7, $ymm5)
+                //dist * inv_alpha
+                $vpmullw($ymm4, $ymm6, $ymm4)
+                $vpmullw($ymm5, $ymm7, $ymm5)
 
-            //dist + src
-            $vpaddw($ymm4, $ymm2, $ymm2)
-            $vpaddw($ymm5, $ymm3, $ymm3)
+                //dist + src
+                $vpaddw($ymm4, $ymm2, $ymm2)
+                $vpaddw($ymm5, $ymm3, $ymm3)
 
-            //rounding bias
-            $vpaddw($ymm8, $ymm2, $ymm2)
-            $vpaddw($ymm8, $ymm3, $ymm3)
+                //rounding bias
+                $vpaddw($ymm8, $ymm2, $ymm2)
+                $vpaddw($ymm8, $ymm3, $ymm3)
 
-            $vpmulhuw($ymm9, $ymm2, $ymm2)
-            $vpmulhuw($ymm9, $ymm3, $ymm3)
+                $vpmulhuw($ymm9, $ymm2, $ymm2)
+                $vpmulhuw($ymm9, $ymm3, $ymm3)
 
-            $vpackuswb($ymm3, $ymm2, $ymm0)
-            $vmovdqu($ymm0, *$rax)
+                $vpackuswb($ymm3, $ymm2, $ymm0)
+                $vmovdqu($ymm0, *$rax)
+            }
+        }
+
+        #avx! {
+            x = 0
         }
 
         for x < length, x++ {
@@ -510,70 +527,75 @@ struct window {
 
     _scanLineFromAlphaBuffer(pos [int,int], alpha byte*, width int, color rgbColor) {
         v = <uint32>((<uint32>color.b) | (<uint32>color.g << 8) | (<uint32>color.r << 16))
+        #avx {
+            $movq((<Bah_Array_Type*>__simd_perm_mask_alphabits).data, $rax)
+            $vmovdqu(*$rax, $ymm13)
 
-        $movq((<Bah_Array_Type*>__simd_perm_mask_alphabits).data, $rax)
-        $vmovdqu(*$rax, $ymm13)
+            $movl(128, $ebx); $vmovd($ebx, $xmm8)
+            $vpbroadcastw($xmm8, $ymm8)
 
-        $movl(128, $ebx); $vmovd($ebx, $xmm8)
-        $vpbroadcastw($xmm8, $ymm8)
+            $vpxor($ymm15, $ymm15, $ymm15)
+            $movl(257, $eax); $vmovd($eax, $xmm9)
+            $vpbroadcastw($xmm9, $ymm9)
 
-        $vpxor($ymm15, $ymm15, $ymm15)
-        $movl(257, $eax); $vmovd($eax, $xmm9)
-        $vpbroadcastw($xmm9, $ymm9)
+            $movl(255, $ebx); $vmovd($ebx, $xmm10)
+            $vpbroadcastw($xmm10, $ymm10)
 
-        $movl(255, $ebx); $vmovd($ebx, $xmm10)
-        $vpbroadcastw($xmm10, $ymm10)
+            $movd(v, $xmm0)
+            $vpbroadcastd($xmm0, $ymm0)
+            $vpunpcklbw($ymm15, $ymm0, $ymm2)
+            $vpunpckhbw($ymm15, $ymm0, $ymm3)
 
-        $movd(v, $xmm0)
-        $vpbroadcastd($xmm0, $ymm0)
-        $vpunpcklbw($ymm15, $ymm0, $ymm2)
-        $vpunpckhbw($ymm15, $ymm0, $ymm3)
+            x = 0; for x < width - 7, x += 8 {
+                offset = pos[1] * this.width + pos[0] + x
 
-        x = 0; for x < width - 7, x += 8 {
-            offset = pos[1] * this.width + pos[0] + x
+                $movq(<uint>alpha + x, $rax)
+                $vmovq(*$rax, $xmm1)
+                $movdqa($xmm1, $xmm11)
+                $psrldq(4, $xmm11)
+                $vinserti128(0, $xmm1, $ymm11, $ymm11)
+                $vinserti128(1, $xmm11, $ymm11, $ymm11)
+                $movq((<Bah_Array_Type*>__simd_perm_mask_alphabits).data, $rbx)
+                $vpshufb(*$rbx, $ymm11, $ymm11)
+                $vpunpcklbw($ymm15, $ymm11, $ymm6)
+                $vpunpckhbw($ymm15, $ymm11, $ymm7)
 
-            $movq(<uint>alpha + x, $rax)
-            $vmovq(*$rax, $xmm1)
-            $movdqa($xmm1, $xmm11)
-            $psrldq(4, $xmm11)
-            $vinserti128(0, $xmm1, $ymm11, $ymm11)
-            $vinserti128(1, $xmm11, $ymm11, $ymm11)
-            $movq((<Bah_Array_Type*>__simd_perm_mask_alphabits).data, $rbx)
-            $vpshufb(*$rbx, $ymm11, $ymm11)
-            $vpunpcklbw($ymm15, $ymm11, $ymm6)
-            $vpunpckhbw($ymm15, $ymm11, $ymm7)
+                $movq(<uint>this.frameBuffer + offset * 4, $rax)
+                $vmovdqu(*$rax, $ymm1)
 
-            $movq(<uint>this.frameBuffer + offset * 4, $rax)
-            $vmovdqu(*$rax, $ymm1)
+                $vpunpcklbw($ymm15, $ymm1, $ymm4)
+                $vpunpckhbw($ymm15, $ymm1, $ymm5)
 
-            $vpunpcklbw($ymm15, $ymm1, $ymm4)
-            $vpunpckhbw($ymm15, $ymm1, $ymm5)
+                //src * alpha
+                $vpmullw($ymm2, $ymm6, $ymm12)
+                $vpmullw($ymm3, $ymm7, $ymm13)
 
-            //src * alpha
-            $vpmullw($ymm2, $ymm6, $ymm12)
-            $vpmullw($ymm3, $ymm7, $ymm13)
+                //inv_alpha = 255 - alpha
+                $vpsubw($ymm6, $ymm10, $ymm6)
+                $vpsubw($ymm7, $ymm10, $ymm7)
 
-            //inv_alpha = 255 - alpha
-            $vpsubw($ymm6, $ymm10, $ymm6)
-            $vpsubw($ymm7, $ymm10, $ymm7)
+                //dist * inv_alpha
+                $vpmullw($ymm4, $ymm6, $ymm4)
+                $vpmullw($ymm5, $ymm7, $ymm5)
 
-            //dist * inv_alpha
-            $vpmullw($ymm4, $ymm6, $ymm4)
-            $vpmullw($ymm5, $ymm7, $ymm5)
+                //dist + src
+                $vpaddw($ymm4, $ymm12, $ymm12)
+                $vpaddw($ymm5, $ymm13, $ymm13)
 
-            //dist + src
-            $vpaddw($ymm4, $ymm12, $ymm12)
-            $vpaddw($ymm5, $ymm13, $ymm13)
+                //rounding bias
+                $vpaddw($ymm8, $ymm12, $ymm12)
+                $vpaddw($ymm8, $ymm13, $ymm13)
 
-            //rounding bias
-            $vpaddw($ymm8, $ymm12, $ymm12)
-            $vpaddw($ymm8, $ymm13, $ymm13)
+                $vpmulhuw($ymm9, $ymm12, $ymm12)
+                $vpmulhuw($ymm9, $ymm13, $ymm13)
 
-            $vpmulhuw($ymm9, $ymm12, $ymm12)
-            $vpmulhuw($ymm9, $ymm13, $ymm13)
+                $vpackuswb($ymm13, $ymm12, $ymm0)
+                $vmovdqu($ymm0, *$rax)
+            }
+        }
 
-            $vpackuswb($ymm13, $ymm12, $ymm0)
-            $vmovdqu($ymm0, *$rax)
+        #avx! {
+            x = 0
         }
 
         for x < width, x++ {
@@ -948,10 +970,10 @@ struct window {
                 if fradi - d < 1.0 {
                     rColor.a = <byte>((fradi - d) * <float><uint>color.a)
                     if p >= rect[0] {
-                        this.setPixel([x,y], rColor)
+                        this._setPixel([x,y], rColor)
                     } 
                     if p + l < rect[2] {
-                        this.setPixel([pos[0] - x + pos[0] - 1,y], rColor)
+                        this._setPixel([pos[0] - x + pos[0] - 1,y], rColor)
                     }
                 } else {
                     if p + l > rect[2] {
@@ -1454,6 +1476,29 @@ struct window {
     }
 
     drawLine(from [int, int], to [int, int], color rgbColor) {
+
+        if to[1] == from[1] {
+            if this.scissor[0] {
+                if from[0] < this.scissor[1] {
+                    from[0] = this.scissor[1]
+                }
+
+                if to[0] > this.scissor[3] {
+                    to[0] = this.scissor[3]
+                }
+            }
+            if from[0] < 0 {
+                from[0] = 0
+            }
+
+            if to[0] > this.width {
+                to[0] = this.width
+            }
+
+            offset = (this.width * from[1]) + from[0] 
+            this._scanLineFromColor(offset, to[0] - from[0], color)
+            return
+        }
 
         m = <float>(to[1] - from[1]) / <float>(to[0] - from[0])
 
