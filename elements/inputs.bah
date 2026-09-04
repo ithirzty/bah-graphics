@@ -27,17 +27,19 @@ struct uiTextInput extend uiElement {
     text: str = "Text input"
     onsubmit: function(uiTextInput*)
     validate: function(uiTextInput*, []byte)
-    lastAction: uint
+    maxLength: int = -1
     value: []byte
     carret: uint
+    invalid: bool
+    border: int = 1
+    radius: int = 6
+
+    lastAction: uint
     offsets: [int,int]
     selection: [int, int]
     selectionType: byte
     showTime: uint
-    invalid: bool
     isDragging: bool
-    border: int = 1
-    radius: int = 6
     _bgColor: rgbColor
     _fgColor: rgbColor
     transitionTime: int = ELEMENT_TRANSITION_TIME
@@ -56,6 +58,11 @@ struct uiTextInput extend uiElement {
     invalidBgColor: rgbColor = ELEMENT_INVALID_BACKGROUND_COLOR
     invalidFgColor: rgbColor = ELEMENT_TEXT_COLOR
     placeholderColor: rgbColor = ELEMENT_PLACEHOLDER_TEXT_COLOR
+
+    setValue(value []byte) {
+        this.value = value
+        this.redraw()
+    }
 
     _deleteSelection() {
         from = this.selection[0]
@@ -224,19 +231,21 @@ struct uiTextInput extend uiElement {
                     
                 } else if this.window.isKeyModifier(Key_CTRL) == false {
                     if c < 65000 {
-                        if this.selectionType != 0 {
-                            this._deleteSelection()
-                        }
-                        if this.carret == len(this.value) {
-                            this.value[len(this.value)] = c
-                        } else {
-                            i=len(this.value)
-                            for i > this.carret, i-- {
-                                this.value[i] = this.value[i-1]
+                        if len(this.value) < this.maxLength || this.maxLength == -1 {
+                            if this.selectionType != 0 {
+                                this._deleteSelection()
                             }
-                            this.value[this.carret] = c
+                            if this.carret == len(this.value) {
+                                this.value[len(this.value)] = c
+                            } else {
+                                i=len(this.value)
+                                for i > this.carret, i-- {
+                                    this.value[i] = this.value[i-1]
+                                }
+                                this.value[this.carret] = c
+                            }
+                            this.carret++
                         }
-                        this.carret++
                     } else {
                         println(intToStr(c))
                     }
@@ -365,7 +374,7 @@ struct uiTextInput extend uiElement {
         fullTextLength = w.measureByteArr(w.font, this.value, 0, len(this.value))[0]
         carretTextLength = w.measureByteArr(w.font, this.value, 0, this.carret)[0]
 
-        availableWidth = size[0] - this.padding[0] * 2
+        availableWidth = size[0] - this.padding[0] - this.padding[2] - 2 * this.border
 
         textMin = 0
         textMax = len(this.value)

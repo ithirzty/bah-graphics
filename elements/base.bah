@@ -20,6 +20,13 @@ ELEMENT_SECONDARY_BORDER_COLOR = rgbColor{100, 100, 100}
 BACKGROUND_COLOR = rgbColor{255, 255, 255}
 ELEMENT_TRANSITION_TIME = 240000000
 
+WINDOW_BACKGROUND_COLOR = rgbColor{0,0,0,0}
+UI_TEXT_COLOR = rgbColor{0, 0, 0}
+UI_TEXT_SELECTION_COLOR = rgbColor{120, 120, 255}
+UI_TEXT_SELECTION_COLOR_FOCUSED_OUT = rgbColor{120, 120, 120}
+SCROLLBAR_TRACK_COLOR = rgbColor{220, 220, 220}
+SCROLLBAR_THUMB_COLOR = rgbColor{120, 120, 255}
+
 const __uiElementDrawTypeFull = 0
 const __uiElementDrawTypeChildren = 1
 const __uiElementDrawTypeBackground = 2
@@ -98,6 +105,18 @@ struct uiElement {
         return null
     }
 
+    _findAll(id str, arr []uiElement*) {
+        if this.toRemove {
+            return
+        }
+        if this.id == id {
+            arr[len(arr)] = this
+        }
+        i=0; for i < len(this.elements), i++ {
+            this.elements[i]._findAll(id, arr)
+        }
+    }
+
     find(id str) uiElement* {
         guarded = __uiThreadGuard(this)
 
@@ -107,6 +126,16 @@ struct uiElement {
             __uiReturnThreadGuard(this)
         }
         return r
+    }
+
+    findAll(id str, arr []uiElement*) {
+        guarded = __uiThreadGuard(this)
+
+        this._findAll(id, arr)
+
+        if guarded {
+            __uiReturnThreadGuard(this)
+        }
     }
 
     getSize() [int,int] {

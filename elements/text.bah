@@ -2,13 +2,9 @@
 
 #import "./base.bah"
 
-UI_TEXT_COLOR = rgbColor{0, 0, 0}
-UI_TEXT_SELECTION_COLOR = rgbColor{120, 120, 255}
-UI_TEXT_SELECTION_COLOR_FOCUSED_OUT = rgbColor{120, 120, 120}
-
 struct uiText extend uiElement {
     text: str = ""
-    color: rgbColor
+    color: rgbColor = rgbColor{0,0,0,0}
     bgColor: rgbColor = rgbColor{0,0,0,0}
             //pixel coords, text offset
     selBeg: [int, int, int]

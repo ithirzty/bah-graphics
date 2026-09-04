@@ -20,7 +20,6 @@ main(args []str) int {
     img.load(execPath+"/assets/test image.png")
 
     ui.addElement(new uiBox {
-        bgColor: WHITE
         size: [percents(100), percents(100)]
 
         elements: {
@@ -51,7 +50,7 @@ main(args []str) int {
                                 },
                                 new uiBox {
                                     size: [percents(100), pixels(50)]
-                                    bgColor: BLACK
+                                    bgColor: ELEMENT_SECONDARY_BACKGROUND_COLOR
                                     padding: [5,5,5,5]
                                     elements: {
                                         new uiText {
@@ -231,8 +230,8 @@ main(args []str) int {
                                             radius: 8
                                             border: 2
                                             padding: [8,8,8,8]
-                                            bgColor: rgbColor{191, 191, 255}
-                                            borderColor: rgbColor{120, 120, 255}
+                                            bgColor: ELEMENT_HOVERED_BACKGROUND_COLOR
+                                            borderColor: ELEMENT_CLICKED_BACKGROUND_COLOR
 
                                             elements: {
                                                 new uiText {

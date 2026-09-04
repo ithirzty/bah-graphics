@@ -11,3 +11,141 @@
 #import "./elements/separators.bah"
 #import "./elements/tabs.bah"
 #import "./elements/image.bah"
+
+__uiGetSystemColors() {
+    fs = fileStream{}
+    
+    //kde
+    fs.open(cStrToBah(getenv("HOME"))+"/.config/kdeglobals", "r")
+    if fs.isValid()  {
+
+        kdeParseColorLine = function(line str) rgbColor {
+            c = rgbColor{}
+            i=len(line)-1
+            end = len(line)
+            for i != 0, i-- {
+                if line[i] == ',' {
+                    break
+                }
+            }
+            c.b = strToInt(line[i+1:end])
+
+            end = i
+            i--
+            for i != 0, i-- {
+                if line[i] == ',' {
+                    break
+                }
+            }
+            c.g = strToInt(line[i+1:end])
+
+            end = i
+            i--
+            for i != 0, i-- {
+                if line[i] == '=' {
+                    break
+                }
+            }
+            c.r = strToInt(line[i+1:end])
+
+            return c
+        }
+
+        lines = strSplit(fs.readContent(), "\n")
+        i=0; for i < len(lines), i++ {
+            if lines[i][0] != '[' {
+                continue
+            }
+
+            if lines[i] == "[Colors:Button]" {
+                i++
+                for i < len(lines), i++ {
+                    if lines[i][0] == '[' {
+                        i--
+                        break
+                    }
+
+                    if strHasPrefix(lines[i], "BackgroundNormal=") {
+                        ELEMENT_BACKGROUND_COLOR = kdeParseColorLine(lines[i])
+                    } else if strHasPrefix(lines[i], "BackgroundAlternate=") {
+                        ELEMENT_HOVERED_BACKGROUND_COLOR = kdeParseColorLine(lines[i])
+                        ELEMENT_CLICKED_BACKGROUND_COLOR = ELEMENT_HOVERED_BACKGROUND_COLOR
+                    } else if strHasPrefix(lines[i], "DecorationFocus=") {
+                        ELEMENT_FOCUSED_BACKGROUND_COLOR = kdeParseColorLine(lines[i])
+                    } else if strHasPrefix(lines[i], "DecorationHover=") {
+                        ELEMENT_HOVERED_BORDER_COLOR = kdeParseColorLine(lines[i])
+                        SCROLLBAR_THUMB_COLOR = ELEMENT_HOVERED_BORDER_COLOR
+                    } else if strHasPrefix(lines[i], "ForegroundNormal=") {
+                        ELEMENT_TEXT_COLOR = kdeParseColorLine(lines[i])
+                        ELEMENT_HOVERED_TEXT_COLOR = ELEMENT_TEXT_COLOR
+                        ELEMENT_CLICKED_TEXT_COLOR = ELEMENT_TEXT_COLOR
+                    } else if strHasPrefix(lines[i], "ForegroundInactive=") {
+                        ELEMENT_PLACEHOLDER_TEXT_COLOR = kdeParseColorLine(lines[i])
+                    } else if strHasPrefix(lines[i], "ForegroundNegative=") {
+                        ELEMENT_INVALID_BACKGROUND_COLOR = kdeParseColorLine(lines[i])
+                    }
+                }
+            } else if lines[i] == "[Colors:View]" {
+                i++
+                for i < len(lines), i++ {
+                    if lines[i][0] == '[' {
+                        i--
+                        break
+                    }
+
+                    if strHasPrefix(lines[i], "BackgroundNormal=") {
+                        BACKGROUND_COLOR = kdeParseColorLine(lines[i])
+                        WINDOW_BACKGROUND_COLOR = BACKGROUND_COLOR
+                        SCROLLBAR_TRACK_COLOR = BACKGROUND_COLOR
+                    } else if strHasPrefix(lines[i], "ForegroundNormal=") {
+                        UI_TEXT_COLOR = kdeParseColorLine(lines[i])
+                    }
+                }
+            } else if lines[i] == "[WM]" {
+                i++
+                for i < len(lines), i++ {
+                    if lines[i][0] == '[' {
+                        i--
+                        break
+                    }
+                    if strHasPrefix(lines[i], "inactiveForeground=") {
+                        ELEMENT_BORDER_COLOR = kdeParseColorLine(lines[i])              
+                    }
+                }
+            } else if lines[i] == "[Colors:Selection]" {
+                i++
+                for i < len(lines), i++ {
+                    if lines[i][0] == '[' {
+                        i--
+                        break
+                    }
+
+                    if strHasPrefix(lines[i], "BackgroundNormal=") {
+                        UI_TEXT_SELECTION_COLOR = kdeParseColorLine(lines[i])              
+                    } else if strHasPrefix(lines[i], "BackgroundAlternate=") {
+                        UI_TEXT_SELECTION_COLOR_FOCUSED_OUT = kdeParseColorLine(lines[i])              
+                    }
+                }
+            } else if lines[i] == "[Colors:Window]" {
+                i++
+                for i < len(lines), i++ {
+                    if lines[i][0] == '[' {
+                        i--
+                        break
+                    }
+
+                    if strHasPrefix(lines[i], "BackgroundNormal=") {
+                        ELEMENT_SECONDARY_BACKGROUND_COLOR = kdeParseColorLine(lines[i])              
+                    } else if strHasPrefix(lines[i], "BackgroundAlternate=") {
+                        ELEMENT_SECONDARY_BORDER_COLOR = kdeParseColorLine(lines[i])              
+                    }
+                }
+            }
+        }
+
+        fs.close()
+        return
+    }
+
+    // ELEMENT_INVALID_BACKGROUND_COLOR = rgbColor{255, 191, 191}
+}

@@ -53,6 +53,7 @@ const __simd_perm_mask_alphabits = []byte {
 __lastActiveWindow ptr
 
 #define floor(x float) float
+#define abs(x int) int
 #define type256bytes [uint,uint,uint,uint]
 #define type512bytes [uint,uint,uint,uint,uint,uint,uint,uint]
 
@@ -425,26 +426,26 @@ struct window {
                 v = (<uint32>b) | (<uint32>g << 8) | (<uint32>r << 16)
                 *(<uint32*>(<uint>this.frameBuffer + offset * 4)) = v
             }
-            return
-        }
-
-        #avx {
-            if l - offset > 15 {
-                lm = l - 15
-                $movd(v, $xmm0)
-                $vpbroadcastd($xmm0, $ymm0)
-                for offset < lm, offset += 16 {
-                    $movq(<uint>this.frameBuffer + offset * 4, $rax)
-                    $vmovdqu($ymm0, *$rax)
-                    $addq(8 * 4, $rax)
-                    $vmovdqu($ymm0, *$rax)
+        } else {
+            #avx {
+                if l - offset > 15 {
+                    lm = l - 15
+                    $movd(v, $xmm0)
+                    $vpbroadcastd($xmm0, $ymm0)
+                    for offset < lm, offset += 16 {
+                        $movq(<uint>this.frameBuffer + offset * 4, $rax)
+                        $vmovdqu($ymm0, *$rax)
+                        $addq(8 * 4, $rax)
+                        $vmovdqu($ymm0, *$rax)
+                    }
                 }
+            }
+
+            for offset < l, offset++ {
+                *(<uint32*>(<uint>this.frameBuffer + offset * 4)) = v
             }
         }
 
-        for offset < l, offset++ {
-            *(<uint32*>(<uint>this.frameBuffer + offset * 4)) = v
-        }
     }
 
     _scanLineFromBuffer(pos [int,int], from int, length int, colors []rgbColor) {
@@ -1476,44 +1477,78 @@ struct window {
     }
 
     drawLine(from [int, int], to [int, int], color rgbColor) {
-
-        if to[1] == from[1] {
-            if this.scissor[0] {
-                if from[0] < this.scissor[1] {
-                    from[0] = this.scissor[1]
-                }
-
-                if to[0] > this.scissor[3] {
-                    to[0] = this.scissor[3]
-                }
-            }
-            if from[0] < 0 {
-                from[0] = 0
-            }
-
-            if to[0] > this.width {
-                to[0] = this.width
-            }
-
-            offset = (this.width * from[1]) + from[0] 
-            this._scanLineFromColor(offset, to[0] - from[0], color)
+        if this.isExposed == false {
             return
         }
 
         m = <float>(to[1] - from[1]) / <float>(to[0] - from[0])
+        x = 0
+        xEnd = 0
 
-        if to[0] - from[0] > to[1] - from[1] {
-            x=from[0]; for x <= to[0], x++ {
+        if abs(to[0] - from[0]) > abs(to[1] - from[1]) {
+            if to[0] < from[0] {
+                tmp = to
+                to = from
+                from = tmp
+            }
+            x = from[0]
+            xEnd = to[0]
+
+            if this.scissor[0] {
+                if x < this.scissor[1] {
+                    x = this.scissor[1]
+                }
+
+                if xEnd >= this.scissor[3] {
+                    xEnd = this.scissor[3] - 1
+                }
+            }
+            if x < 0 {
+                x = 0
+            }
+
+            if xEnd >= this.width {
+                xEnd = this.width-1
+            }
+
+            for x <= xEnd, x++ {
                 y = <int>(m * <float>(x - from[0]) + <float>from[1])
                 this.setPixel([x, y], color)
             }
         } else {
+            if to[1] < from[1] {
+                tmp = to
+                to = from
+                from = tmp
+            }
             m = 1.0 / m
-            y=from[1]; for y <= to[1], y++ {
+            y = from[1]
+            yEnd = to[1]
+
+            if this.scissor[0] {
+                if y < this.scissor[2] {
+                    y = this.scissor[2]
+                }
+
+                if yEnd >= this.scissor[4] {
+                    yEnd = this.scissor[4] - 1
+                }
+            }
+            if y < 0 {
+                y = 0
+            }
+
+            if yEnd >= this.height {
+                yEnd = this.height-1
+            }
+
+
+            for y <= yEnd, y++ {
                 x = <int>(m * <float>(y - from[1]) + <float>from[0])
                 this.setPixel([x, y], color)
             }
         }
+
 
     }
 

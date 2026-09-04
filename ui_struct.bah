@@ -13,6 +13,7 @@ const uiEventElementMouseDown       = 1031
 const uiEventElementFileDrag        = 1032
 const uiEventElementFileDrop        = 1033
 const uiEventElementFileDropOutside = 1034
+const uiEventElementDragged         = 1035
 
 #import "./elements/base.bah"
 
@@ -21,6 +22,7 @@ const uiEventElementFileDropOutside = 1034
 #define __uiHandleEvents(ui window*, event uint32)
 #define __uiSetElementOnFocus(ui window*, elem uiElement*)
 #define __uiAnimationHandler(ui window*)
+#define __uiGetSystemColors()
 
 #define __uiRedrawElement_inner(ui window*, elem ptr, drawType int)
 
@@ -258,6 +260,23 @@ struct contextMenuWindow extend uiBorderlessWindow {
     list: []uiContextItem
     choice: int = -1
     elem: uiElement*
+
+    launch(x uint, y uint, width uint, height uint) {
+
+        screenSize = [<int>this.parent.screen.width_in_pixels, <int>this.parent.screen.height_in_pixels]
+
+        offsets = [<int>(x + width) - screenSize[0], <int>(y + height) - screenSize[1]]
+
+        if offsets[0] > 0 {
+            x -= offsets[0]
+        }
+
+        if offsets[1] > 0 {
+            y -= offsets[1]
+        }
+
+        (<uiBorderlessWindow*>this).launch(x,y,width,height)
+    }
 }
 
 struct fileDragWindow extend uiBorderlessWindow {
@@ -276,6 +295,7 @@ struct ui extend window {
     animations: []uiAnimation
     animationsMutex: mutex
     animationsCond: mutexCondition
+    _hasExited: int
 
     frameStart: uint
     isDrawing: bool
@@ -301,6 +321,7 @@ struct ui extend window {
         this.events = __uiHandleEvents
         this.animationsMutex.init()
         this.animationsCond.init()
+        __uiGetSystemColors()
     }
 
     addElement(elem uiElement*) {
@@ -351,8 +372,25 @@ struct ui extend window {
         return e
     }
 
+    findAll(id str, arr []uiElement) {
+        foreignThread = this.threadId != currentThread()
+        if foreignThread {
+            this.animationsMutex.lock()
+        }
+        
+        i=0; for i < len(this.elements), i++ {
+            this.elements[i]._findAll(id, arr)
+        }
+        
+
+        if foreignThread {
+            this.animationsMutex.unlock()
+        }
+    }
+
     launch(width uint, height uint, title str) {
         this.threadId = currentThread()
+        this._hasExited = 0
         this.ctxWindow = new contextMenuWindow {
             parent: this
             font: getSystemUIfont("")
@@ -439,6 +477,14 @@ struct ui extend window {
         }
         win = <window*>this
         win.launch(width, height, title)
+
+        this.animationsCond.send()
+
+        //if ui was allocated on the stack, we need to wait for its animation
+        //thread to return if we do not want it to work on outdated stack memory
+        for atomic_load(&this._hasExited) != 1 {
+            sched_yield()
+        }
     }
 }
 
@@ -489,7 +535,7 @@ _uiDrawElementBackground(pos [int,int], size [int,int], currElem uiElement*) {
         }
         __uiRedrawElement_inner(ui, currElem.parent, __uiElementDrawTypeBackground + i)
     } else {
-        ui.clear(BLACK)
+        ui.clear(WINDOW_BACKGROUND_COLOR)
         i=0; for i < len(ui.elements), i++ {
             if ui.elements[i] == currElem {
                 break
@@ -758,7 +804,7 @@ __uiAnimationHandler(ui ui*) {
     freq = 16
     for ui.isRunning {
         ui.animationsMutex.lock()
-        for len(ui.animations) == 0 {
+        for len(ui.animations) == 0 && ui.isRunning {
             ui.animationsCond.wait(ui.animationsMutex)
         }
         ui.animationsMutex.unlock()
@@ -795,8 +841,10 @@ __uiAnimationHandler(ui ui*) {
         }
         ui.animationsMutex.unlock()
     }
+    
     ui.animationsMutex.destroy()
     ui.animationsCond.destroy()
+    atomic_store(&ui._hasExited, 1)
 }
 
 __uiDispatchEvent(ui ui*, elem uiElement*, event uint32) {
@@ -1190,6 +1238,8 @@ __uiStartFileDrag(ui ui*, uri str, elem uiElement*) {
 
     ui.scissor = os
 
+    __uiDispatchEvent(ui, elem, uiEventElementDragged)
+
     async bdlWindow.launch(screenPosCurs[0] - bdlWindow.offsets[0], screenPosCurs[1] - bdlWindow.offsets[1], elemSize[0], elemSize[1])
 
 }
@@ -1263,7 +1313,7 @@ __uiHandleEvents(ui ui*, event uint32) {
                 ui.frameStart = getTimeUnix()
                 ui.isDrawing = true
             }
-            ui.clear(BLACK)
+            ui.clear(WINDOW_BACKGROUND_COLOR)
             i=0; for i < len(ui.elements), i++ {
                 __uiForceDrawElement(ui, ui.elements[i])
             }

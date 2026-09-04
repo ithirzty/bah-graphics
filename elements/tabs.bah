@@ -129,6 +129,9 @@ struct uiTabs extend uiElement {
             y=0; for y <= this.radius, y++ {
                 l = this.radius - <int>sqrt(<float>(this.radius*this.radius) - <float>(y*y))
                 offset = ((this.radius-y+24+pos[1]) * w.width) + pos[0]
+                if offset > w.width * w.height {
+                    continue
+                }
                 w._scanLineFromColor(offset, l, this.borderColor)
             }
             w.strokeRoundedRect([pos[0], pos[1] + 24], [size[0], size[1] - 24], this.radius, this.border, this.borderColor)

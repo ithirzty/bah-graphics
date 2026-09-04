@@ -2,9 +2,6 @@
 
 #import "./base.bah"
 
-SCROLLBAR_TRACK_COLOR = rgbColor{220, 220, 220}
-SCROLLBAR_THUMB_COLOR = rgbColor{120, 120, 255}
-
 #define __uiBox_hasBothscrollBar(box uiElement*) bool
 
 struct _uiBoxScrollbar extend uiElement {
