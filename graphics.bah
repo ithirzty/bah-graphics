@@ -638,13 +638,11 @@ struct window {
             }
         } else if req.type == __graphicsDrawRequestTypeClear {
             nbLines = (this.height / (__graphicsNbDrawers + 1))
-            localFrom = m * nbLines
-            localTo = localFrom + nbLines
             c = <uint32>req.color
-            if m == __graphicsNbDrawers {
-                localTo = req.to[1]
-            }
-            memset(<ptr>(<uint>this.frameBuffer + localFrom * this.width * 4), c, (nbLines * this.width) * 4)
+
+            this._scanLineFromColor(m * nbLines * this.width, nbLines * this.width, req.color)
+
+            // memset(<ptr>(<uint>this.frameBuffer + localFrom * this.width * 4), c, (nbLines * this.width) * 4)
         } else if req.type == __graphicsDrawRequestTypeRectImg {
             n = req.n
             buff = <[]rgbColor>req.buff

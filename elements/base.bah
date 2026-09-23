@@ -31,6 +31,8 @@ const __uiElementDrawTypeFull = 0
 const __uiElementDrawTypeChildren = 1
 const __uiElementDrawTypeBackground = 2
 
+__ui_current_pos_fetch_id = 0
+
 #define __uiRedrawElement(ui window*, elem ptr, drawType int)
 #define __uiRedrawElementDelayed(ui window*, elem ptr, ms uint)
 #define __uiThreadGuard(elem ptr) bool
@@ -66,11 +68,16 @@ struct uiElement {
     focusable: bool = true
     manualDrawingMode: bool = false
     dragTarget: bool
-    id: str
+    id: str = ""
     fileURI: str
     lastDraw: int
 
-    _memSize: uint
+    _cached_pos: [int,int]
+    _cached_size: [int,int]
+    _cached_inner_pos: [int,int]
+    _cached_inner_size: [int,int]
+    _valid_inner_size: bool
+    _cached_fetch_id: int
 
     elements: []uiElement*
     parent: uiElement*
@@ -138,15 +145,26 @@ struct uiElement {
         }
     }
 
-    getSize() [int,int] {
-        return __uiCalculateElemPosVec(this, this.size, false)
+    _getSize() [int,int] {
+        if this._cached_fetch_id == __ui_current_pos_fetch_id {
+            r = this._cached_size
+            return r
+        }
+        r = __uiCalculateElemPosVec(this, this.size, false)
+        this._cached_fetch_id = __ui_current_pos_fetch_id
+        this._cached_size = r
+        return r
     }
 
-    getPosition() [int,int] {
+    _getPosition() [int,int] {
+        if this._cached_fetch_id == __ui_current_pos_fetch_id {
+            r = this._cached_pos
+            return r
+        }
         r = __uiCalculateElemPosVec(this, this.pos, true)
         
         if this.parent != null {
-            parentPos = this.parent.getPosition()
+            parentPos = this.parent._getPosition()
             r[0] += parentPos[0]
             r[1] += parentPos[1]
 
@@ -155,21 +173,42 @@ struct uiElement {
                 r[1] -= this.parent.offsets[1]
             }
         }
+        this._cached_fetch_id = __ui_current_pos_fetch_id
+        this._cached_pos = r
         return r
     }
 
-    getInnerSize() [uint,uint] {
+    _getInnerPosition() [int,int] {
+        if this._cached_fetch_id == __ui_current_pos_fetch_id {
+            r = this._cached_inner_pos
+            return r
+        }
+        r = __uiCalculateElemPosVec(this, this.pos, true)
+
+        if this.absolutePosition == false && this.parent != null {
+            r[0] -= this.parent.offsets[0]
+            r[1] -= this.parent.offsets[1]
+        }
+        this._cached_fetch_id = __ui_current_pos_fetch_id
+        this._cached_inner_pos = r
+        return r
+    }
+
+    _getInnerSize() [uint,uint] {
+        if this._valid_inner_size {
+            r = this._cached_inner_size
+            return r
+        }
         innerSize = [0,0]
-        thisPos = this.getPosition()
         i=0; for i < len(this.elements), i++ {
             if this.elements[i].absolutePosition {
                 continue
             }
-            ePos = this.elements[i].getPosition()
-            eSize = this.elements[i].getSize()
+            ePos = this.elements[i]._getInnerPosition()
+            eSize = this.elements[i]._getSize()
 
-            x = ePos[0] + eSize[0] - thisPos[0]
-            y = ePos[1] + eSize[1] - thisPos[1]
+            x = ePos[0] + eSize[0]
+            y = ePos[1] + eSize[1]
 
             if x > innerSize[0] {
                 innerSize[0] = x
@@ -183,7 +222,49 @@ struct uiElement {
         innerSize[1] += this.offsets[1] + this.padding[3]
         innerSize[0] += this.offsets[0] + this.padding[2]
 
+        this._valid_inner_size = true
+        this._cached_inner_size = innerSize
         return innerSize
+    }
+
+    getSize() [int,int] {
+        guarded = __uiThreadGuard(this)
+        __ui_current_pos_fetch_id++
+        r = this._getSize()
+        if guarded {
+            __uiReturnThreadGuard(this)
+        }
+        return r
+    }
+
+    getPosition() [int,int] {
+        guarded = __uiThreadGuard(this)
+        __ui_current_pos_fetch_id++
+        r = this._getPosition()
+        if guarded {
+            __uiReturnThreadGuard(this)
+        }
+        return r
+    }
+
+    getInnerPosition() [int,int] {
+        guarded = __uiThreadGuard(this)
+        __ui_current_pos_fetch_id++
+        r = this._getInnerPosition()
+        if guarded {
+            __uiReturnThreadGuard(this)
+        }
+        return r
+    }
+
+    getInnerSize() [uint,uint] {
+        guarded = __uiThreadGuard(this)
+        __ui_current_pos_fetch_id++
+        r = this._getInnerSize()
+        if guarded {
+            __uiReturnThreadGuard(this)
+        }
+        return r
     }
 
     remove() {
@@ -211,6 +292,10 @@ struct uiElement {
         newHash = pos[0] + (pos[1] << 16) + (size[0] << 32) + (size[1] << 48)
         if this.maskHash != newHash {
             this.maskHash = newHash
+            currEleme = this
+            for currEleme != null, currEleme = currEleme.parent {
+                currEleme._valid_inner_size = false
+            }
             return true
         }
         return false

@@ -589,7 +589,6 @@ __uiRedrawElement_inner(ui ui*, elem uiElement*, drawType int) {
         ui.alreadyDrawn = true
         drawFn = currElem._draw
         if drawFn != null {
-
             pos = currElem.getPosition()
             size = currElem.getSize()
             if ui.scissor[0] && __uiIsOutsideScissor(ui, pos, size) {
@@ -639,6 +638,7 @@ __uiRedrawElement_inner(ui ui*, elem uiElement*, drawType int) {
             }
 
             os = ui.scissor
+            //set the correct scissor
             if drawType < __uiElementDrawTypeBackground {
                 if elem.parent != null {
                     scissor = [0,0,0,0]
@@ -648,12 +648,10 @@ __uiRedrawElement_inner(ui ui*, elem uiElement*, drawType int) {
                         bSize = currBox.getSize()
                         bPos = currBox.getPosition()
 
-                        // if currElem.absolutePosition == false {
-                            bPos[0] += currBox.innerMargin[0]
-                            bPos[1] += currBox.innerMargin[1]
-                            bSize[0] -= (currBox.innerMargin[0] + currBox.innerMargin[2])
-                            bSize[1] -= (currBox.innerMargin[1] + currBox.innerMargin[3])
-                        // }
+                        bPos[0] += currBox.innerMargin[0]
+                        bPos[1] += currBox.innerMargin[1]
+                        bSize[0] -= (currBox.innerMargin[0] + currBox.innerMargin[2])
+                        bSize[1] -= (currBox.innerMargin[1] + currBox.innerMargin[3])
 
                         if scissor[2] + scissor[3] == 0 {
                             scissor[0] = bPos[0]
@@ -748,7 +746,6 @@ __uiRedrawElement_inner(ui ui*, elem uiElement*, drawType int) {
         ui.alreadyDrawn = false
         ui.redraw()
     }
-
 }
 
 __uiRedrawElement(ui ui*, elem uiElement*, drawType int) {
