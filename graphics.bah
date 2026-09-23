@@ -606,6 +606,9 @@ struct window {
     }
 
     setPixel(pos [int,int], color rgbColor) {
+        if this.isExposed == false {
+            return
+        }
         offset = (pos[1] * this.width + pos[0]) * 4
 
         if offset < 0 || offset >= this.width * this.height * 4 {

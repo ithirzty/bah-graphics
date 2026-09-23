@@ -60,7 +60,7 @@ main(args []str) int {
                                     }
                                 },
                                 new uiText {
-                                    text: "\nHere is an uiImage element.\nNote that for now only PNG are supported.\nAlso any element can be draggable (as this image).\nYou can also drag an image on the uiImage element to update it."
+                                    text: "\nHere is an uiImage element.\nNote that for now only PNG and JPEG are supported.\nAlso any element can be draggable (as this image).\nYou can also drag an image on the uiImage element to update it."
                                     focusable: false
                                 },
                                 new uiHorizontalArray {
@@ -101,9 +101,20 @@ main(args []str) int {
                                     image: &img
                                     size: [pixels(300), nullPos]
                                     //to make the image draggable
-                                    focusable: true
                                     fileURI: img.path
                                     dragTarget: true
+
+                                    _events: (image uiImage*, evt uint32) {
+                                        if evt == uiEventElementFileDrop {
+                                            files = ui.getEventFiles()
+                                            if len(files) == 0 {
+                                                return
+                                            }
+                                            if image.image.load(files[0]) {
+                                                image.fileURI = files[0]
+                                            }
+                                        }
+                                    }
 
                                 },
                                 new uiTabs {
@@ -251,18 +262,7 @@ main(args []str) int {
     })
 
     uiImg = <uiImage*>ui.find("imgPreview")
-    //Make image element focusable to be able to drag files on it.
-    uiImg.focusable = true 
-    //Overwrite uiImg._events function to change the image on image drop 
-    uiImg._events = function (e uiImage*, evnt uint32) {
-        if evnt == uiEventElementFileDrop {
-            file = ui.getEventFiles()[0]
-            if e.image.load(file) {
-                e.redraw()
-                e.fileURI = file
-            }
-        }
-    }
+    uiImg.focusable = true //Make image element focusable to be able to drag files on it.
 
 
     ui.launch(600, 500, "Elements showdown")

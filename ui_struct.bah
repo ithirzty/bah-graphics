@@ -314,6 +314,7 @@ struct ui extend window {
     contextItems: []uiContextItem
 
     threadId: pthread_t
+    previousThreadId: pthread_t
 
     _init() {
         this.threadId = currentThread()
@@ -325,17 +326,14 @@ struct ui extend window {
     }
 
     addElement(elem uiElement*) {
-        foreignThread = this.threadId != currentThread()
-        if foreignThread {
-            this.animationsMutex.lock()
-        }
+        guarded = __uiThreadGuard(this)
         elem.window = this
         this.elements[len(this.elements)] = elem
 
         __uiConstructElementTreeRecursively(elem)
 
-        if foreignThread {
-            this.animationsMutex.unlock()
+        if guarded {
+            __uiReturnThreadGuard(this)
             return
         }
 
@@ -350,41 +348,33 @@ struct ui extend window {
     }
 
     setFocus(elem uiElement*) {
-        foreignThread = this.threadId != currentThread()
-        if foreignThread {
-            this.animationsMutex.lock()
-        }
+        guarded = __uiThreadGuard(this)
+
         __uiSetElementOnFocus(this, elem)
-        if foreignThread {
-            this.animationsMutex.unlock()
+        if guarded {
+            __uiReturnThreadGuard(this)
         }
     }
 
     find(id str) uiElement* {
-        foreignThread = this.threadId != currentThread()
-        if foreignThread {
-            this.animationsMutex.lock()
-        }
+        guarded = __uiThreadGuard(this)
+
         e = __uiFindElement(this, id)
-        if foreignThread {
-            this.animationsMutex.unlock()
+        if guarded {
+            __uiReturnThreadGuard(this)
         }
         return e
     }
 
     findAll(id str, arr []uiElement) {
-        foreignThread = this.threadId != currentThread()
-        if foreignThread {
-            this.animationsMutex.lock()
-        }
+        guarded = __uiThreadGuard(this)
         
         i=0; for i < len(this.elements), i++ {
             this.elements[i]._findAll(id, arr)
         }
-        
 
-        if foreignThread {
-            this.animationsMutex.unlock()
+        if guarded {
+            __uiReturnThreadGuard(this)
         }
     }
 
@@ -1743,21 +1733,23 @@ __uiComposeElementTreeRecursively(elem uiElement*) {
     __uiForceDrawElement(elem.window, elem)
 }
 
-__uiThreadGuard(elem uiElement*) bool {
-    ui = <ui*>elem.window
+__uiThreadGuard(ui ui*) bool {
     if ui == null {
         return false
     }
-    if ui.threadId != currentThread() {
+    ct = currentThread()
+    if ui.threadId != ct {
         ui.animationsMutex.lock()
+        ui.previousThreadId = ui.threadId
+        ui.threadId = ct
         return true
     }
 
     return false
 }
 
-__uiReturnThreadGuard(elem uiElement*) {
-    ui = <ui*>elem.window
+__uiReturnThreadGuard(ui ui*) {
+    ui.threadId = ui.previousThreadId
     ui.animationsMutex.unlock()
 }
 

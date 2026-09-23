@@ -35,7 +35,7 @@ __ui_current_pos_fetch_id = 0
 
 #define __uiRedrawElement(ui window*, elem ptr, drawType int)
 #define __uiRedrawElementDelayed(ui window*, elem ptr, ms uint)
-#define __uiThreadGuard(elem ptr) bool
+#define __uiThreadGuard(win window*) bool
 #define __uiReturnThreadGuard(elem ptr)
 
 #define __uiCalculateElemPosVec(elem ptr, posVec [uiPos,uiPos], absPos bool) [int,int]
@@ -125,23 +125,23 @@ struct uiElement {
     }
 
     find(id str) uiElement* {
-        guarded = __uiThreadGuard(this)
+        guarded = __uiThreadGuard(this.window)
 
         r = this._find(id)
 
         if guarded {
-            __uiReturnThreadGuard(this)
+            __uiReturnThreadGuard(this.window)
         }
         return r
     }
 
     findAll(id str, arr []uiElement*) {
-        guarded = __uiThreadGuard(this)
+        guarded = __uiThreadGuard(this.window)
 
         this._findAll(id, arr)
 
         if guarded {
-            __uiReturnThreadGuard(this)
+            __uiReturnThreadGuard(this.window)
         }
     }
 
@@ -228,61 +228,61 @@ struct uiElement {
     }
 
     getSize() [int,int] {
-        guarded = __uiThreadGuard(this)
+        guarded = __uiThreadGuard(this.window)
         __ui_current_pos_fetch_id++
         r = this._getSize()
         if guarded {
-            __uiReturnThreadGuard(this)
+            __uiReturnThreadGuard(this.window)
         }
         return r
     }
 
     getPosition() [int,int] {
-        guarded = __uiThreadGuard(this)
+        guarded = __uiThreadGuard(this.window)
         __ui_current_pos_fetch_id++
         r = this._getPosition()
         if guarded {
-            __uiReturnThreadGuard(this)
+            __uiReturnThreadGuard(this.window)
         }
         return r
     }
 
     getInnerPosition() [int,int] {
-        guarded = __uiThreadGuard(this)
+        guarded = __uiThreadGuard(this.window)
         __ui_current_pos_fetch_id++
         r = this._getInnerPosition()
         if guarded {
-            __uiReturnThreadGuard(this)
+            __uiReturnThreadGuard(this.window)
         }
         return r
     }
 
     getInnerSize() [uint,uint] {
-        guarded = __uiThreadGuard(this)
+        guarded = __uiThreadGuard(this.window)
         __ui_current_pos_fetch_id++
         r = this._getInnerSize()
         if guarded {
-            __uiReturnThreadGuard(this)
+            __uiReturnThreadGuard(this.window)
         }
         return r
     }
 
     remove() {
-        guarded = __uiThreadGuard(this)
+        guarded = __uiThreadGuard(this.window)
         this.toRemove = true
         if guarded {
-            __uiReturnThreadGuard(this)
+            __uiReturnThreadGuard(this.window)
         }
     }
 
     removeChild(index uint) {
-        guarded = __uiThreadGuard(this)
+        guarded = __uiThreadGuard(this.window)
         if index < len(this.elements) {
             this.elements[index].toRemove = true
             delete(this.elements, index)
         }
         if guarded {
-            __uiReturnThreadGuard(this)
+            __uiReturnThreadGuard(this.window)
         }
     }
 
@@ -302,27 +302,26 @@ struct uiElement {
     }
 
     addElement(elem uiElement*) {
-        guarded = __uiThreadGuard(this)
+        guarded = __uiThreadGuard(this.window)
         elem.parent = this
         elem.window = this.window
         this.elements[len(this.elements)] = elem
-        if guarded {
-            __uiRedrawElementDelayed(this.window, this, 0)
-            __uiReturnThreadGuard(this)
-            return
-        }
         if this.window != null {
             __uiConstructElementTreeRecursively(elem)
             __uiComposeElementTreeRecursively(elem)
-
-            if this.parent != null {
-                __uiRedrawElement(this.window, this, __uiElementDrawTypeFull)
-            }
+        }
+        if guarded {
+            __uiRedrawElementDelayed(this.window, this, 0)
+            __uiReturnThreadGuard(this.window)
+            return
+        }
+        if this.window != null && this.parent != null {
+            __uiRedrawElement(this.window, this, __uiElementDrawTypeFull)
         }
     }
 
     setChild(index int, elem uiElement*) {
-        guarded = __uiThreadGuard(this)
+        guarded = __uiThreadGuard(this.window)
         if index < len(this.elements) {
             this.elements[index].toRemove = true
         }
@@ -332,18 +331,19 @@ struct uiElement {
         if this.window != null {
             __uiConstructElementTreeRecursively(elem)
             __uiComposeElementTreeRecursively(elem)
-
-            if this.parent != null {
-                __uiRedrawElement(this.window, this, __uiElementDrawTypeFull)
-            }
         }
         if guarded {
-            __uiReturnThreadGuard(this)
+            __uiRedrawElementDelayed(this.window, this, 0)
+            __uiReturnThreadGuard(this.window)
+            return
+        }
+        if this.window != null && this.parent != null {
+            __uiRedrawElement(this.window, this, __uiElementDrawTypeFull)
         }
     }
 
     addElementNoRedraw(elem uiElement*) {
-        guarded = __uiThreadGuard(this)
+        guarded = __uiThreadGuard(this.window)
         elem.parent = this
         elem.window = this.window
         this.elements[len(this.elements)] = elem
@@ -352,7 +352,7 @@ struct uiElement {
             __uiComposeElementTreeRecursively(elem)
         }
         if guarded {
-            __uiReturnThreadGuard(this)
+            __uiReturnThreadGuard(this.window)
         }
     }
 
@@ -360,12 +360,12 @@ struct uiElement {
         if this.window == null {
             return
         }
-        guarded = __uiThreadGuard(this)
+        guarded = __uiThreadGuard(this.window)
         
         __uiRedrawElementDelayed(this.window, this, ms)
 
         if guarded {
-            __uiReturnThreadGuard(this)
+            __uiReturnThreadGuard(this.window)
         }
     }
 
@@ -373,9 +373,9 @@ struct uiElement {
         if this.window == null {
             return
         }
-        if __uiThreadGuard(this) {
+        if __uiThreadGuard(this.window) {
             __uiRedrawElementDelayed(this.window, this, 0)
-            __uiReturnThreadGuard(this)
+            __uiReturnThreadGuard(this.window)
             return
         }
         __uiRedrawElement(this.window, this, __uiElementDrawTypeFull)
